@@ -9,7 +9,7 @@ DEPENDS = " \
 
 # Specify the first two important SRCREVs as the format
 SRCREV_FORMAT="compose_survey"
-SRCREV_compose = "02ad467f89ebc343aa03ce89d18875ea4d604ea3"
+SRCREV_compose = "8d0df1876296bc639614653ba5de38a377da5356"
 
 SRC_URI = "git://github.com/docker/compose;name=compose;branch=main;protocol=https"
 
@@ -18,19 +18,19 @@ include src_uri.inc
 # patches and config
 SRC_URI += "file://modules.txt"
 
-SRC_URI[sha256sum] = "d7b05a9bff34dfb25abe7e5b1e54cf2607f953d91cb33fb231a4775a1a4afa3d"
-
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://src/import/LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 GO_IMPORT = "import"
 
-PV = "v2.17.2"
+PV = "v2.20.3"
 
 COMPOSE_PKG = "github.com/docker/compose/v2"
 
 inherit go goarch
 inherit pkgconfig
+
+COMPATIBLE_HOST = "^(?!mips).*"
 
 do_configure[noexec] = "1"
 
@@ -38,6 +38,7 @@ PACKAGECONFIG ?= ""
 
 include relocation.inc
 
+GOBUILDFLAGS:append = " -mod=vendor"
 do_compile() {
     	cd ${S}/src/import
 
@@ -50,8 +51,6 @@ do_compile() {
 	export CGO_CFLAGS="${CFLAGS} --sysroot=${STAGING_DIR_TARGET}"
 	export CGO_LDFLAGS="${LDFLAGS} --sysroot=${STAGING_DIR_TARGET}"
 
-	export GOFLAGS="-mod=vendor -trimpath"
-
 	# our copied .go files are to be used for the build
 	ln -sf vendor.copy vendor
 	# inform go that we know what we are doing
@@ -60,7 +59,7 @@ do_compile() {
 	GO_LDFLAGS="-s -w -X internal.Version=${PV} -X ${COMPOSE_PKG}/internal.Version=${PV}"
 	GO_BUILDTAGS=""
 	mkdir -p ./bin
-	${GO} build $GOFLAGS -tags "$GO_BUILDTAGS" -ldflags "$GO_LDFLAGS" -o ./bin/docker-compose ./cmd
+	${GO} build ${GOBUILDFLAGS} -tags "$GO_BUILDTAGS" -ldflags "$GO_LDFLAGS" -o ./bin/docker-compose ./cmd
 }
 
 do_install() {
@@ -68,14 +67,14 @@ do_install() {
         #install -m 755 "${S}/src/import/bin/docker-compose" "${D}${BIN_PREFIX}/bin"
 
 	# commonly installed to: /usr/lib/docker/cli-plugins/
-	install -d "${D}${libdir}/docker/cli-plugins/"
-	install -m 755 "${S}/src/import/bin/docker-compose" "${D}${libdir}/docker/cli-plugins/"
+	install -d "${D}${nonarch_libdir}/docker/cli-plugins/"
+	install -m 755 "${S}/src/import/bin/docker-compose" "${D}${nonarch_libdir}/docker/cli-plugins/"
 
 }
 
 RDEPENDS:${PN} += " docker"
 
-FILES:${PN} += " ${libdir}/docker/cli-plugins/"
+FILES:${PN} += " ${nonarch_libdir}/docker/cli-plugins/"
 
 INHIBIT_PACKAGE_STRIP = "1"
 INSANE_SKIP:${PN} += "ldflags already-stripped"
