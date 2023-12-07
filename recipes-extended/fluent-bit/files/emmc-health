@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Parse Type A Liftime and EoL Data.
+# Convert hex to decimal to be more human readable.
+# Multiply Type A data by 10 to get a percentage.
+TYPE_A_DATA=$(($(mmc extcsd read /dev/emmc | \
+              grep EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A | \
+              cut -d ' ' -f 7) * 10))
+EOL_DATA=$(($(mmc extcsd read /dev/emmc | \
+           grep EXT_CSD_PRE_EOL_INFO | \
+           cut -d ' ' -f 6)))
+
+jq -c <<EOF
+{
+    "emmc_life_time_est_typ_a": "${TYPE_A_DATA}",
+    "emmc_pre_eol_info": "${EOL_DATA}"
+}
+EOF
