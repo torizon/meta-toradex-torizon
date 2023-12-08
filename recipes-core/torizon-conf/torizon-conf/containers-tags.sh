@@ -8,7 +8,6 @@ if [ "$TORIZON_PURPOSE" = "devel" ]; then
     export CT_TAG_DEBIAN="rc-bookworm"
     export CT_TAG_CHROMIUM="rc"
     export CT_TAG_COG="rc"
-    export CT_TAG_DOCKER_COMPOSE="rc"
     export CT_TAG_GRAPHICS_TESTS="rc"
     export CT_TAG_PORTAINER_DEMO="rc"
     export CT_TAG_QT5_WAYLAND="rc"
