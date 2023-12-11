@@ -23,7 +23,7 @@ PREFERRED_PROVIDER_virtual/dtb = ""
 PREFERRED_RPROVIDER_network-configuration:qemuarm64 = "networkd-static-conf"
 
 PREFERRED_PROVIDER_virtual/bootloader = "u-boot"
-PREFERRED_PROVIDER_virtual/kernel_qemuarm64 = "linux-yocto"
-PREFERRED_PROVIDER_virtual/kernel_qemuarm64_preempt-rt = "linux-yocto-rt"
+PREFERRED_PROVIDER_virtual/kernel:qemuarm64 = "linux-yocto"
+PREFERRED_PROVIDER_virtual/kernel:qemuarm64:preempt-rt = "linux-yocto-rt"
 
 PREFERRED_PROVIDER_u-boot-default-script:qemuarm64 = "u-boot-distro-boot"
