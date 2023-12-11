@@ -27,6 +27,9 @@ python adjust_tezi_artifacts() {
 
 TEZI_IMAGE_TEZIIMG_PREFUNCS:append = " adjust_tezi_artifacts"
 
+# '^metadata_csum' is needed to allow uboot save env to ext4 filesystem
+EXTRA_IMAGECMD:ota-ext4:qemuarm64 = "-O ^64bit,^metadata_csum -L otaroot -i 4096 -t ext4"
+
 IMAGE_CMD:ota:prepend() {
 	if [ "${OSTREE_BOOTLOADER}" = "u-boot" ]; then
 		cp -a ${DEPLOY_DIR_IMAGE}/boot.scr-${MACHINE} ${OTA_SYSROOT}/boot.scr
