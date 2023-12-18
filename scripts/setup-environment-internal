@@ -386,7 +386,6 @@ if [ "${MACHINE}" = "qemuarm64" ]; then
 You can also run generated qemuarm64 image with runqemu by:
 
     runqemu qemuarm64
-    xtightvncviewer 127.0.0.1
 
 EOF
 fi

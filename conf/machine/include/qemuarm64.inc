@@ -4,7 +4,7 @@ UBOOT_ENTRYPOINT = "0x40080000"
 WKS_FILE_DEPENDS:remove = "tezi-metadata virtual/dtb"
 WKS_FILE:sota:qemuarm64 = "torizon-sota.wks"
 
-OSTREE_KERNEL_ARGS:qemuarm64 = "console=ttyAMA0 root=LABEL=otaroot rootfstype=ext4"
+OSTREE_KERNEL_ARGS:qemuarm64 = "quiet logo.nologo plymouth.ignore-serial-consoles splash console=ttyAMA0 root=LABEL=otaroot rootfstype=ext4"
 OSTREE_DEPLOY_DEVICETREE:qemuarm64 = "0"
 
 QB_MACHINE = "-machine virt"
@@ -18,6 +18,9 @@ IMAGE_FSTYPES:append = " wic"
 
 hostname:pn-base-files = "${MACHINE}"
 CORE_IMAGE_BASE_INSTALL:remove = "set-hostname"
+
+PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
+PACKAGECONFIG:append:pn-nativesdk-qemu = " sdl"
 
 PREFERRED_PROVIDER_virtual/dtb = ""
 PREFERRED_RPROVIDER_network-configuration:qemuarm64 = "networkd-static-conf"
