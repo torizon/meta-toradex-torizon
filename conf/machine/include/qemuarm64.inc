@@ -16,9 +16,6 @@ QB_OPT_APPEND:qemuarm64 = "-device qemu-xhci -device usb-tablet -device usb-kbd 
 IMAGE_FSTYPES_REMOVE = "tar.bz2 ext4 teziimg"
 IMAGE_FSTYPES:append = " wic"
 
-hostname:pn-base-files = "${MACHINE}"
-CORE_IMAGE_BASE_INSTALL:remove = "set-hostname"
-
 PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
 PACKAGECONFIG:append:pn-nativesdk-qemu = " sdl"
 
