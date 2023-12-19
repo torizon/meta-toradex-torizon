@@ -34,7 +34,8 @@ COMPATIBLE_HOST = "^(?!mips).*"
 
 do_configure[noexec] = "1"
 
-PACKAGECONFIG ?= ""
+PACKAGECONFIG ?= "docker-plugin"
+PACKAGECONFIG[docker-plugin] = ",,,docker"
 
 include relocation.inc
 
@@ -63,16 +64,14 @@ do_compile() {
 }
 
 do_install() {
-        #install -d "${D}${BIN_PREFIX}/bin"
-        #install -m 755 "${S}/src/import/bin/docker-compose" "${D}${BIN_PREFIX}/bin"
-
-	# commonly installed to: /usr/lib/docker/cli-plugins/
-	install -d "${D}${nonarch_libdir}/docker/cli-plugins/"
-	install -m 755 "${S}/src/import/bin/docker-compose" "${D}${nonarch_libdir}/docker/cli-plugins/"
-
+	if ${@bb.utils.contains('PACKAGECONFIG', 'docker-plugin', 'true', 'false', d)}; then
+		install -d ${D}${nonarch_libdir}/docker/cli-plugins
+		install -m 755 ${S}/src/import/bin/docker-compose ${D}${nonarch_libdir}/docker/cli-plugins
+	else
+		install -d ${D}${bindir}
+		install -m 755 ${S}/src/import/bin/docker-compose ${D}${bindir}
+	fi
 }
-
-RDEPENDS:${PN} += " docker"
 
 FILES:${PN} += " ${nonarch_libdir}/docker/cli-plugins/"
 
