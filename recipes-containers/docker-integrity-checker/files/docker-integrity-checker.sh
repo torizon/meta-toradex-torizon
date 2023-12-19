@@ -2,6 +2,22 @@
 
 echo "docker-compose service has failed."
 
+VARIANT=`sed -n 's/VARIANT=\"\(.*\)\"/\1/p' /etc/os-release`
+if [ "$VARIANT" = "Podman" ]; then
+   # detect graphroot from /etc/containers/storage.conf
+   GRAPH_ROOT=`sed -n "s/graphroot.*=.*\"\(.*\)\"/\1/p" /etc/containers/storage.conf`
+elif [ "$VARIANT" = "Docker" ]; then
+   GRAPH_ROOT="/var/lib/docker"
+else
+   echo "No container engine is installed on this filesystem."
+   exit 1
+fi
+
+if [ ! -d "$GRAPH_ROOT" ]; then
+   echo "Invalid graph root: $GRAPH_ROOT."
+   exit 1
+fi
+
 if [ ! -f "/etc/docker/enable-integrity-checker" ]; then
    echo "Docker integrity checker is disabled. Create /etc/docker/enable-integrity-checker file to enable it."
    echo "Restarting docker-compose in 10 seconds..."
@@ -100,19 +116,19 @@ elif [ "$RECOVERY_ATTEMPT" -eq 13 ]; then
    systemctl restart docker-compose
 elif [ "$RECOVERY_ATTEMPT" -eq 14 ]; then
    systemctl stop docker-compose
-   echo "Backup Docker volumes to /var/lib/docker/backup/."
-   mkdir -p /var/lib/docker/backup/volumes/ && cp -r /var/lib/docker/volumes/. /var/lib/docker/backup/volumes/
+   echo "Backup Docker volumes to $GRAPH_ROOT/backup/."
+   mkdir -p $GRAPH_ROOT/backup/volumes/ && cp -r $GRAPH_ROOT/volumes/. $GRAPH_ROOT/backup/volumes/
    echo "Starting docker system prune --all --volumes."
    docker system prune --all --volumes -f
    systemctl stop docker
    echo "Restoring Docker volumes."
-   cp -r /var/lib/docker/backup/volumes/. /var/lib/docker/volumes/ && rm -r /var/lib/docker/backup/volumes/
+   cp -r $GRAPH_ROOT/backup/volumes/. $GRAPH_ROOT/volumes/ && rm -r $GRAPH_ROOT/backup/volumes/
    echo "Restarting docker.service."
    systemctl start docker
    echo "Restarting docker-compose.service."
    systemctl restart docker-compose
 elif [ "$RECOVERY_ATTEMPT" -gt 14 ]; then
-   echo "Docker seems to be broken beyond repair. To manually recover your system, stop the Docker engine (systemctl stop docker), delete the entire /var/lib/docker directory and restart Docker engine (systemctl start docker). WARNING: That can result in losing important data."
+   echo "Docker seems to be broken beyond repair. To manually recover your system, stop the Docker engine (systemctl stop docker), delete the entire $GRAPH_ROOT directory and restart Docker engine (systemctl start docker). WARNING: That can result in losing important data."
    exit 0
 fi
 
