@@ -29,8 +29,8 @@ then
 	exit 0
 fi
 
-if [[ $USER != "root" ]]; then
-	echo "This script must be run as root!"
+if [[ "$(id -u)" != "0" ]]; then
+	echo "This script must be run as a sudoer!"
 	exit 1
 fi
 
