@@ -205,6 +205,13 @@ tweak_os_release_variant () {
 			install -d ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins
 			ln -sf ${bindir}/docker-compose ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins/docker-compose
 		fi
+
+		if [ "${IMAGE_VARIANT}" = "Podman" ]; then
+			# Allow torizon user to execute podman without password
+			echo >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+			echo "# torizon user can execute podman without password" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+			echo "torizon ALL=(ALL) NOPASSWD:/usr/bin/podman" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+		fi
 	else
 		bbwarn "IMAGE_VARIANT is missing, would be better to define it for a TorizonCore image recipe."
 	fi

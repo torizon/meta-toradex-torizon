@@ -11,5 +11,8 @@ do_install:append () {
 			# Add alias docker.service to podman.service
 			echo "Alias=docker.service" >> ${D}${systemd_unitdir}/system/podman.service
 		fi
+
+		# Run podman binary with sudo
+		sed -i -e "s#${bindir}/podman#sudo ${bindir}/podman#" ${D}${bindir}/docker
 	fi
 }
