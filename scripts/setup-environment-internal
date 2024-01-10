@@ -383,7 +383,7 @@ EOF
 
 if [ "${MACHINE}" = "qemuarm64" ]; then
     cat <<EOF
-You can also run generated qemuarm64 image with runqemu by:
+You can run generated qemuarm64 image with runqemu by:
 
     runqemu qemuarm64
 
@@ -392,6 +392,10 @@ fi
 
 if [ "${MACHINE}" = "genericx86-64" ]; then
     cat <<EOF
+You can run generated genericx86-64 image with runqemu by:
+
+    runqemu genericx86-64 ovmf
+
 You can also run generated genericx86-64 image in VirtualBox by:
 
     Create a new machine by choosing 'Other Linux (64-bits)' type
