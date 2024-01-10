@@ -1,0 +1,8 @@
+#!/bin/bash
+
+shopt -s extglob
+
+# Skip the plugin tests because those example plugins are built only while
+# running cargo test and for this to work as a ptest they would need to be cross
+# compiled and installed as part of the ptest.
+NETAVARK=/usr/libexec/podman/netavark bats test/!(*-plugin.bats)
