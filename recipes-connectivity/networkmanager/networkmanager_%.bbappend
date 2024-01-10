@@ -12,18 +12,18 @@ DEPENDS += "libedit"
 PACKAGECONFIG:remove = "dnsmasq"
 
 PACKAGECONFIG:append = " modemmanager ppp"
-RPROVIDES:${PN} = "network-configuration"
+
+NET_NAME = "ethernet"
+NET_NUMS = "0 1"
 
 do_install:append() {
     install -m 0600 ${WORKDIR}/toradex-nmconnection.conf ${D}${nonarch_libdir}/NetworkManager/conf.d
 
-    sed -e "s/@NET_NUM@/0/g" \
-        ${WORKDIR}/network.nmconnection.in \
-        >  ${D}${sysconfdir}/NetworkManager/system-connections/network0.nmconnection
-
-    sed -e "s/@NET_NUM@/1/g" \
-        ${WORKDIR}/network.nmconnection.in \
-        >  ${D}${sysconfdir}/NetworkManager/system-connections/network1.nmconnection
+    for netnum in ${NET_NUMS}; do
+        sed -e "s/@NET_NAME@/${NET_NAME}/g" -e "s/@NET_NUM@/$netnum/g" \
+            ${WORKDIR}/network.nmconnection.in \
+            >  ${D}${sysconfdir}/NetworkManager/system-connections/network"$netnum".nmconnection
+    done
 
     chmod 0600 ${D}${sysconfdir}/NetworkManager/system-connections/network?.nmconnection
 }

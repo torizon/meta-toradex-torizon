@@ -1,4 +1,4 @@
 [connection]
 id=network@NET_NUM@
 type=ethernet
-interface-name=ethernet@NET_NUM@
+interface-name=@NET_NAME@@NET_NUM@

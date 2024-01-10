@@ -31,9 +31,6 @@ PACKAGECONFIG:append:pn-${PREFERRED_PROVIDER_virtual/runc} = " seccomp"
 PACKAGECONFIG:append:pn-${PREFERRED_PROVIDER_virtual/docker} = " seccomp"
 PACKAGECONFIG:append:pn-systemd = " seccomp"
 
-# Set default network configuration
-PREFERRED_RPROVIDER_network-configuration = "networkmanager"
-
 # SOTA
 OSTREE_OSNAME = "torizon"
 OSTREE_MULTI_DEVICETREE_SUPPORT = "1"

@@ -19,8 +19,10 @@ IMAGE_FSTYPES:append = " wic"
 PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
 PACKAGECONFIG:append:pn-nativesdk-qemu = " sdl"
 
+NET_NAME:pn-networkmanager = "enp"
+NET_NUMS:pn-networkmanager = "0"
+
 PREFERRED_PROVIDER_virtual/dtb = ""
-PREFERRED_RPROVIDER_network-configuration:qemuarm64 = "networkd-static-conf"
 
 PREFERRED_PROVIDER_virtual/bootloader = "u-boot"
 PREFERRED_PROVIDER_virtual/kernel:qemuarm64 = "linux-yocto"

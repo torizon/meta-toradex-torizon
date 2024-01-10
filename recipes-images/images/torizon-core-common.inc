@@ -42,7 +42,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     mmc-utils \
     nano \
     neofetch \
-    network-configuration \
+    networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
     ostree-devicetree-overlays \
