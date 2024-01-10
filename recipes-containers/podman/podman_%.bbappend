@@ -2,6 +2,8 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://0001-cmd-support-config-option-to-locate-authentication-f.patch"
 
+VIRTUAL-RUNTIME_container_networking = "netavark"
+
 PACKAGECONFIG:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'qemu-usermode', 'completion', '', d)}"
 DEPENDS:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'qemu-usermode', 'qemu-native', '', d)}"
 
