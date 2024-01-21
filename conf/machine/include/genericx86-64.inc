@@ -11,6 +11,8 @@ SOTA_CLIENT_FEATURES:remove = "ubootenv"
 IMAGE_FSTYPES_REMOVE = "hddimg teziimg"
 IMAGE_FSTYPES:append = " wic.vmdk wic.vdi"
 
+EXTRA_IMAGEDEPENDS += "qemu-system-native qemu-helper-native:do_addto_recipe_sysroot"
+
 QB_DRIVE_TYPE = "/dev/hd"
 QB_DEFAULT_FSTYPE = "wic"
 QB_MEM:genericx86-64 = "-m 2048"
