@@ -22,4 +22,9 @@ do_install:append() {
         sed -i -e "/^\[registries.search\]/{n;d}" ${D}${sysconfdir}/containers/registries.conf
         sed -i -e "/^\[registries.search\]/a $registries" ${D}${sysconfdir}/containers/registries.conf
     fi
+
+    if ${@bb.utils.contains('PACKAGECONFIG', 'transient-store', 'true', 'false', d)}; then
+        # Enable transient container storage
+        sed -i -e "/\[storage\]/a # Enable transient container storage\ntransient_store = true" ${D}${sysconfdir}/containers/storage.conf
+    fi
 }
