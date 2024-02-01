@@ -1,9 +1,13 @@
+FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
+
 # A list of registry strings, for instance:
 # PODMAN_DEFAULT_REGISTRIES = "docker.io registry.fedoraproject.org quay.io registry.access.redhat.com registry.centos.org"
 #
 # When set with a non-empty value, it would replace the original '[registries.search]' field
 # in ${sysconfdir}/containers/registries.conf.
 PODMAN_DEFAULT_REGISTRIES = "docker.io"
+
+PACKAGECONFIG[transient-store] = ""
 
 do_install:append() {
     if [ -n "${PODMAN_DEFAULT_REGISTRIES}" ]; then
@@ -25,6 +29,6 @@ do_install:append() {
 
     if ${@bb.utils.contains('PACKAGECONFIG', 'transient-store', 'true', 'false', d)}; then
         # Enable transient container storage
-        sed -i -e "/\[storage\]/a # Enable transient container storage\ntransient_store = true" ${D}${sysconfdir}/containers/storage.conf
+        sed -i -e "s/^.*transient_store.*=.*$/transient_store = true/" ${D}${sysconfdir}/containers/storage.conf
     fi
 }
