@@ -138,6 +138,11 @@ function restart_services()
     log "Enabling and restarting fluent-bit"
     touch /etc/fluent-bit/enabled
     systemctl restart fluent-bit
+
+    if systemctl is-enabled remote-access; then
+        log "Restarting Remote Access Client (RAC)"
+        systemctl restart remote-access
+    fi
 }
 
 function main()
