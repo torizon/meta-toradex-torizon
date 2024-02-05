@@ -103,6 +103,11 @@ SRC_URI += "git://github.com/uber-go/goleak;name=goleak;protocol=https;nobranch=
 SRCREV_tools="031fc75960d487b0b15db12fb328676236a3a39c"
 SRC_URI += "git://go.googlesource.com/tools;name=tools;protocol=https;nobranch=1;destsuffix=${WORKDIR}/${BP}/src/import/vendor.fetch/golang.org/x/tools"
 
+#       github.com/adrg/xdg v0.4.0
+# [1] git ls-remote https://github.com/adrg/xdg 4ec40e24f0cf1039f93c773f2984decdea9719b5
+SRCREV_xdg="4ec40e24f0cf1039f93c773f2984decdea9719b5"
+SRC_URI += "git://github.com/adrg/xdg;name=xdg;protocol=https;nobranch=1;destsuffix=${WORKDIR}/${BP}/src/import/vendor.fetch/github.com/adrg/xdg"
+
 #       golang.org/x/crypto v0.7.0
 # [1] git ls-remote https://go.googlesource.com/crypto 776e461a4e6d8b372a43c72122c5c28cfc40dca2
 SRCREV_crypto="776e461a4e6d8b372a43c72122c5c28cfc40dca2"
@@ -558,9 +563,9 @@ SRC_URI += "git://github.com/jonboulle/clockwork;name=clockwork;protocol=https;n
 SRCREV_go-shellwords="973b9d5391598d4ee601db46fa32f6e186a356ac"
 SRC_URI += "git://github.com/mattn/go-shellwords;name=go-shellwords;protocol=https;nobranch=1;destsuffix=${WORKDIR}/${BP}/src/import/vendor.fetch/github.com/mattn/go-shellwords"
 
-#       github.com/moby/patternmatcher v0.5.0
-# [1] git ls-remote https://github.com/moby/patternmatcher c5e4b22c8cb290f9439a339c08bba6cb13aa296d
-SRCREV_patternmatcher="c5e4b22c8cb290f9439a339c08bba6cb13aa296d"
+#       github.com/moby/patternmatcher v0.6.0
+# [1] git ls-remote https://github.com/moby/patternmatcher 347bb8d8d557f90d1b75cd8bca3c0177f380a979
+SRCREV_patternmatcher="347bb8d8d557f90d1b75cd8bca3c0177f380a979"
 SRC_URI += "git://github.com/moby/patternmatcher;name=patternmatcher;protocol=https;nobranch=1;destsuffix=${WORKDIR}/${BP}/src/import/vendor.fetch/github.com/moby/patternmatcher"
 
 #       go.opentelemetry.io/otel/trace v1.14.0
@@ -698,9 +703,9 @@ SRC_URI += "git://github.com/in-toto/in-toto-golang;name=in-toto-golang;protocol
 SRCREV_go-shellquote="95032a82bc518f77982ea72343cc1ade730072f0"
 SRC_URI += "git://github.com/kballard/go-shellquote;name=go-shellquote;protocol=https;nobranch=1;destsuffix=${WORKDIR}/${BP}/src/import/vendor.fetch/github.com/kballard/go-shellquote"
 
-#       github.com/compose-spec/compose-go v1.18.1
-# [1] git ls-remote https://github.com/compose-spec/compose-go 45494a8f6b0176d040c82577f82c84377426a9e6
-SRCREV_compose-go="45494a8f6b0176d040c82577f82c84377426a9e6"
+#       github.com/compose-spec/compose-go v1.18.3
+# [1] git ls-remote https://github.com/compose-spec/compose-go c6eecc55b95f952b6d6406adcd297499d11a300b
+SRCREV_compose-go="c6eecc55b95f952b6d6406adcd297499d11a300b"
 SRC_URI += "git://github.com/compose-spec/compose-go;name=compose-go;protocol=https;nobranch=1;destsuffix=${WORKDIR}/${BP}/src/import/vendor.fetch/github.com/compose-spec/compose-go"
 
 #       github.com/hashicorp/go-multierror v1.1.1

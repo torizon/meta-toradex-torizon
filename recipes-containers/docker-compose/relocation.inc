@@ -19,6 +19,7 @@ export sites="k8s.io/api:k8s.io/api:force \
            golang.org/x/time:golang.org/x/time:force \
            go.uber.org/goleak:go.uber.org/goleak:force \
            golang.org/x/tools:golang.org/x/tools:force \
+           github.com/adrg/xdg:github.com/adrg/xdg:force \
            golang.org/x/crypto:golang.org/x/crypto:force \
            golang.org/x/oauth2:golang.org/x/oauth2:force \
            k8s.io/apimachinery:k8s.io/apimachinery:force \
@@ -189,9 +190,9 @@ do_compile:prepend() {
         force_flag=$(echo $s | cut -d: -f3)
         mkdir -p vendor.copy/$site_dest
         if [ -n "$force_flag" ]; then
-	    echo "[INFO] $site_dest: force copying .go files"
-	    rm -rf vendor.copy/$site_dest
-	    rsync -a --exclude='vendor/' --exclude='.git/' vendor.fetch/$site_source/ vendor.copy/$site_dest
+            echo "[INFO] $site_dest: force copying .go files"
+            rm -rf vendor.copy/$site_dest
+            rsync -a --exclude='vendor/' --exclude='.git/' vendor.fetch/$site_source/ vendor.copy/$site_dest
         else
             [ -n "$(ls -A vendor.copy/$site_dest/*.go 2> /dev/null)" ] && { echo "[INFO] vendor.fetch/$site_source -> $site_dest: go copy skipped (files present)" ; true ; } || { echo "[INFO] $site_dest: copying .go files" ; rsync -a --exclude='vendor/' --exclude='.git/' vendor.fetch/$site_source/ vendor.copy/$site_dest ; }
         fi
