@@ -1,0 +1,28 @@
+From 47fa544424a4d0cbcd83f072fa6c9ea4942a3e1e Mon Sep 17 00:00:00 2001
+From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Date: Thu, 8 Feb 2024 23:18:13 -0300
+Subject: [PATCH] configure.ac: disable -Werror=unused-result temporarily
+
+This patch should be dropped later when updating to newer versions of
+composefs.
+
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ configure.ac | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 67fa2de..b8ff154 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -134,7 +134,6 @@ CC_CHECK_FLAGS_APPEND([WARN_CFLAGS], [CFLAGS], [\
+   -Werror=misleading-indentation \
+   -Werror=missing-include-dirs  \
+   -Wstrict-aliasing=2 \
+-  -Werror=unused-result \
+ ])])
+ AC_SUBST(WARN_CFLAGS)
+ 
+-- 
+2.25.1
+
