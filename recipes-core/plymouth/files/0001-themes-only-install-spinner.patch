@@ -1,0 +1,26 @@
+From 518e22cb0ca23f73509e137260ee383a957edcfe Mon Sep 17 00:00:00 2001
+From: Ming Liu <ming.liu@toradex.com>
+Date: Thu, 15 Feb 2024 21:29:01 +0100
+Subject: [PATCH] themes: only install spinner
+
+We dont really need other themes, this can save some space in
+rootfs/initramfs.
+
+Upstream-Status: Inappropriate [embedded specific]
+
+Signed-off-by: Ming Liu <ming.liu@toradex.com>
+---
+ themes/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/themes/Makefile.am b/themes/Makefile.am
+index 8e4566e..40c92c0 100644
+--- a/themes/Makefile.am
++++ b/themes/Makefile.am
+@@ -1,2 +1,2 @@
+-SUBDIRS = spinfinity fade-in text details solar glow script spinner tribar bgrt
++SUBDIRS = spinner
+ MAINTAINERCLEANFILES = Makefile.in
+-- 
+2.34.1
+
