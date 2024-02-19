@@ -1,16 +1,30 @@
 kernel_image_type=@@KERNEL_IMAGETYPE@@
 otaroot=1
-bootcmd_load_k=load ${devtype} ${devnum}:${otaroot} ${kernel_addr_r} "/boot"${kernel_image}
-bootcmd_load_r=load ${devtype} ${devnum}:${otaroot} ${ramdisk_addr_r} "/boot"${ramdisk_image}; env set ramdisk_size ${filesize}
 
 # check kernel_image2 to avoid booting from other then default emmc in case of
 # bootlimit is reached and there is no other deployed image
 check_rollback_needed=if test -n "${kernel_image2}" && test "${rollback}" = "1"; then \
-    echo "Rollback enabled. Booting previously deployed version."; \
-    env set kernel_image ${kernel_image2}; \
-    env set ramdisk_image ${ramdisk_image2}; \
-    env set bootargs ${bootargs2}; \
-fi || true
+                          echo "Rollback enabled. Booting previously deployed version."; \
+                          env set kernel_image ${kernel_image2}; \
+                          env set ramdisk_image ${ramdisk_image2}; \
+                          env set bootargs ${bootargs2}; \
+                      fi || true
 
-bootcmd_boot=@@KERNEL_BOOTCMD@@ ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr}
+bootcmd_load_k=if test ${kernel_image_type} = "fitImage"; then \
+                   load ${devtype} ${devnum}:${otaroot} ${ramdisk_addr_r} "/boot"${kernel_image}; \
+               else \
+                   load ${devtype} ${devnum}:${otaroot} ${kernel_addr_r} "/boot"${kernel_image}; \
+               fi || true
+
+bootcmd_load_r=if test ${kernel_image_type} != "fitImage"; then \
+                   load ${devtype} ${devnum}:${otaroot} ${ramdisk_addr_r} "/boot"${ramdisk_image}; \
+                   env set ramdisk_size ${filesize}; \
+               fi || true
+
+bootcmd_boot=if test ${kernel_image_type} = "fitImage"; then \
+                 bootm ${ramdisk_addr_r}#conf-1 ${ramdisk_addr_r}#conf-1 ${fdt_addr}; \
+             else \
+                 @@KERNEL_BOOTCMD@@ ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr}; \
+             fi || true
+
 bootcmd_run=run check_rollback_needed && run bootcmd_load_k && run bootcmd_load_r && run bootcmd_boot
