@@ -1,0 +1,68 @@
+From 851319436beaae97badbd7e8998ea19e7de10a17 Mon Sep 17 00:00:00 2001
+From: Ming Liu <ming.liu@toradex.com>
+Date: Mon, 19 Feb 2024 13:01:14 +0100
+Subject: [PATCH] neofetch: add info func for container engine
+
+Add a info function to print out container engine and its version by
+checking /etc/os-release for VARIANT.
+
+Also fix a invalid shell information in OE, sh is a symbolic link to
+bash.bash but not bash in OE, handle that case by checking
+BASH_VERSION, in case that's present, treat sh as bash.
+
+Upstream-Status: Inappropriate [OE specific]
+
+Signed-off-by: Ming Liu <ming.liu@toradex.com>
+---
+ neofetch | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/neofetch b/neofetch
+index b453850..8b245f2 100755
+--- a/neofetch
++++ b/neofetch
+@@ -59,6 +59,7 @@ print_info() {
+     info "OS" distro
+     info "Host" model
+     info "Kernel" kernel
++    info "Container Engine" container_engine
+     info "Uptime" uptime
+     info "Packages" packages
+     info "Shell" shell
+@@ -1384,6 +1385,17 @@ get_kernel() {
+         esac
+ }
+ 
++get_container_engine() {
++    source /etc/os-release
++    case $VARIANT in
++        Podman|Docker)
++            VARIANT_VERSION="$(docker --version | cut -d " " -f3)"
++            VARIANT_VERSION="${VARIANT_VERSION%,}"
++            container_engine="$VARIANT ${VARIANT_VERSION}"
++        ;;
++    esac
++}
++
+ get_uptime() {
+     # Get uptime in seconds.
+     case $os in
+@@ -1638,7 +1650,14 @@ get_shell() {
+             shell+=${BASH_VERSION/-*}
+         ;;
+ 
+-        sh|ash|dash|es) ;;
++        sh)
++            if [[ $BASH_VERSION ]]; then
++                BASH_VERSION=$("$SHELL" -c "printf %s \"\$BASH_VERSION\"")
++                shell="bash ${BASH_VERSION/-*}"
++            fi
++        ;;
++
++        ash|dash|es) ;;
+ 
+         *ksh)
+             shell+=$("$SHELL" -c "printf %s \"\$KSH_VERSION\"")
+-- 
+2.34.1
+

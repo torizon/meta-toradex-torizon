@@ -14,6 +14,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.md;md5=d300b86297c170b6498705fbb6794e3f"
 SRC_URI="\
 	git://github.com/dylanaraps/neofetch.git;protocol=https;branch=master \
 	file://0001-Add-TorizonCore-OS.patch \
+	file://0001-neofetch-add-info-func-for-container-engine.patch \
 "
 
 S = "${WORKDIR}/git"
