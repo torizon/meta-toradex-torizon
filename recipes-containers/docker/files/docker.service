@@ -1,7 +1,7 @@
 [Unit]
 Description=Docker Application Container Engine
 Documentation=https://docs.docker.com
-After=network-online.target docker.socket firewalld.service containerd.service usermount.service
+After=network-online.target docker.socket firewalld.service containerd.service usermount.service time-set.target
 Before=boot-complete.target
 Wants=network-online.target containerd.service usermount.service
 Requires=docker.socket
