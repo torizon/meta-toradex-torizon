@@ -19,6 +19,12 @@ do_install:append () {
 			# API session does not expire
 			sed -i -e 's#^ExecStart=\(.*\)$#ExecStart=\1 -t 0#g' ${D}${systemd_unitdir}/system/podman.service
 
+			# After network-online.target, nss-lookup.target, time-set.target, firewalld.service, usermount.service
+			sed -i -e 's#^After=\(.*\)$#After=\1 network-online.target nss-lookup.target time-set.target firewalld.service usermount.service#g' ${D}${systemd_unitdir}/system/podman.service
+
+			# Wants network-online.target, usermount.service
+			sed -i -e '/After=/a Wants=network-online.target usermount.service' ${D}${systemd_unitdir}/system/podman.service
+
 			# Add alias docker.service to podman.service
 			echo "Alias=docker.service" >> ${D}${systemd_unitdir}/system/podman.service
 		fi
