@@ -1,18 +1,3 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-
-PATCHES_NXP_BSP = " "
-PATCHES_NXP_BSP:torizon-signed = "\
-    file://0001-fs-verity-define-a-function-to-return-the-integrity-.patch \
-"
-
-SRC_URI:append:use-nxp-bsp = "\
-    ${PATCHES_NXP_BSP} \
-"
-
-SRC_URI:append:torizon-signed = "\
-    file://0001-fsverity-Export-fsverity_get_digest.patch \
-"
-
 KBUILD_BUILD_VERSION .= "-TorizonCore"
 
 # Print kernel URL and BRANCH to files to be used by ostree commit as metadata
