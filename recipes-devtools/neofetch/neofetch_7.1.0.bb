@@ -22,6 +22,8 @@ S = "${WORKDIR}/git"
 SRCREV="60d07dee6b76769d8c487a40639fb7b5a1a7bc85"
 PV = "7.1.0+git${SRCPV}"
 
+CLEANBROKEN = "1"
+
 do_install(){	
 	install -d ${D}${bindir}
 	install -m 0755 ${S}/neofetch ${D}${bindir}
