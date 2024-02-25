@@ -196,24 +196,27 @@ ROOTFS_POSTPROCESS_COMMAND += "tweak_os_release_variant;"
 tweak_os_release_variant () {
 	if [ -n "${IMAGE_VARIANT}" ]; then
 		sed -i -e "s/^VARIANT=.*$/VARIANT=\"${IMAGE_VARIANT}\"/g" ${IMAGE_ROOTFS}${sysconfdir}/os-release
-
-		if [ "${IMAGE_VARIANT}" = "Docker" ]; then
-			# We build docker-compose as a standalone binary in docker-compose recipe,
-			# which is installed as ${bindir}/docker-compose, but we'd also like to
-			# allow it to be run as a docker plugin 'docker compose', create the link
-			# to support that.
-			install -d ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins
-			ln -sf ${bindir}/docker-compose ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins/docker-compose
-		fi
-
-		if [ "${IMAGE_VARIANT}" = "Podman" ]; then
-			# Allow torizon user to execute podman without password
-			echo >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
-			echo "# torizon user can execute podman without password" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
-			echo "torizon ALL=(ALL) NOPASSWD:/usr/bin/podman" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
-		fi
 	else
 		bbwarn "IMAGE_VARIANT is missing, would be better to define it for a TorizonCore image recipe."
+	fi
+}
+
+ROOTFS_POSTPROCESS_COMMAND += "adjust_container_engines;"
+
+# Ajust rootfs for container engines
+adjust_container_engines () {
+	if [ -f ${IMAGE_ROOTFS}${bindir}/podman ]; then
+		# Allow torizon user to execute podman without password
+		echo >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+		echo "# torizon user can execute podman without password" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+		echo "torizon ALL=(ALL) NOPASSWD:/usr/bin/podman" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+	elif [ -f ${IMAGE_ROOTFS}${bindir}/docker ]; then
+		# We build docker-compose as a standalone binary in docker-compose recipe,
+		# which is installed as ${bindir}/docker-compose, but we'd also like to
+		# allow it to be run as a docker plugin 'docker compose', create the link
+		# to support that.
+		install -d ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins
+		ln -sf ${bindir}/docker-compose ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins/docker-compose
 	fi
 }
 

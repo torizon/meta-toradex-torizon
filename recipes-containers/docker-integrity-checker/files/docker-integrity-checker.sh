@@ -2,11 +2,10 @@
 
 echo "docker-compose service has failed."
 
-VARIANT=`sed -n 's/VARIANT=\"\(.*\)\"/\1/p' /etc/os-release`
-if [ "$VARIANT" = "Podman" ]; then
+if [ -f /usr/bin/podman ]; then
    # detect graphroot from /etc/containers/storage.conf
    GRAPH_ROOT=`sed -n "s/graphroot.*=.*\"\(.*\)\"/\1/p" /etc/containers/storage.conf`
-elif [ "$VARIANT" = "Docker" ]; then
+elif [ -f /usr/bin/docker ]; then
    GRAPH_ROOT="/var/lib/docker"
 else
    echo "No container engine is installed on this filesystem."
