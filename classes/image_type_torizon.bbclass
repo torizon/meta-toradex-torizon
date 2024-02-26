@@ -134,39 +134,6 @@ generate_diff_file () {
     fi
 }
 
-EXTRA_DO_IMAGE_OSTREECOMMIT_POSTFUNCS = " "
-EXTRA_DO_IMAGE_OSTREECOMMIT_POSTFUNCS:torizon-signed = "composefs_image_gen"
-EXTRA_DO_IMAGE_OSTREECOMMIT_DEPENDS = " "
-EXTRA_DO_IMAGE_OSTREECOMMIT_DEPENDS:torizon-signed = "composefs-tools-native:do_populate_sysroot fsverity-utils-native:do_populate_sysroot"
-do_image_ostreecommit[postfuncs] += "${EXTRA_DO_IMAGE_OSTREECOMMIT_POSTFUNCS}"
-do_image_ostreecommit[depends] += "${EXTRA_DO_IMAGE_OSTREECOMMIT_DEPENDS}"
-composefs_image_gen() {
-    OSTREE_COMMIT=$(cat ${WORKDIR}/ostree_manifest)
-    OSTREE_CFS_REPO=${WORKDIR}/composefs-ostree
-    CFS_JSON_FILE=${WORKDIR}/composefs-${OSTREE_COMMIT}.json
-    CFS_IMG_FILE=${WORKDIR}/composefs-${OSTREE_COMMIT}.img
-
-    rm -rf ${WORKDIR}/composefs-*
-    rm -rf ${OSTREE_CFS_REPO} && mkdir -p ${OSTREE_CFS_REPO}
-
-    ostree admin --sysroot=${OSTREE_CFS_REPO} init-fs --modern ${OSTREE_CFS_REPO}
-    ostree --repo=${OSTREE_CFS_REPO}/ostree/repo pull-local --remote=${OSTREE_OSNAME} ${OSTREE_REPO} ${OSTREE_COMMIT}
-
-    ostree-convert-commit.py ${OSTREE_CFS_REPO}/ostree/repo ${OSTREE_COMMIT} > ${CFS_JSON_FILE}
-    writer-json --out=${CFS_IMG_FILE} ${CFS_JSON_FILE}
-
-    fsverity digest --compact ${CFS_IMG_FILE} > ${WORKDIR}/composefs_digest
-}
-CONVERSION_CMD:tar:prepend:torizon-signed = "cp ${WORKDIR}/composefs-*.img ${OTA_SYSROOT}/ostree/deploy/torizon/deploy/ ; "
-
-EXTRA_DO_IMAGE_OTA_PREFUNCS = " "
-EXTRA_DO_IMAGE_OTA_PREFUNCS:torizon-signed = "composefs_image_digest_set"
-do_image_ota[prefuncs] += "${EXTRA_DO_IMAGE_OTA_PREFUNCS}"
-python composefs_image_digest_set() {
-    with open(d.getVar('WORKDIR') + "/composefs_digest") as f:
-        digest = f.read()
-    d.setVar('OSTREE_KERNEL_ARGS_EXTRA', "cfs_digest=" + digest.rstrip('\n'))
-}
 
 IMAGE_DATETIME_FILES ??= " \
     ${sysconfdir}/issue \
