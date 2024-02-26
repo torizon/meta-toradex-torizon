@@ -674,23 +674,26 @@ SRC_URI[zeroize_derive-1.3.3.sha256sum] = "44bf07cb3e50ea2003396695d58bf46bc9887
 SRCREV_FORMAT .= "russh"
 SRCREV_russh = "0.37.0-beta.1"
 SRCREV_FORMAT .= "tough"
-SRCREV_tough = "rac"
+SRCREV_tough = "28c2deb20a654426f09129bcd0938ad92de02f33"
 
 # There is a postfunc that runs after do_configure. This fixing logic needs to run after this postfunc.
 # It is because of this ordering this is do_compile:prepend instead of do_configure:append.
-do_compile:prepend() {
+cargo_add_rac_patch_paths() {
     # Need to fix config file due to the tough and russh repo having a virtual manifest.
     # Which is not supported by the cargo bbclasses currently,
     # see: https://github.com/openembedded/openembedded-core/commit/684a8af41c5bb70db68e75f72bdc4c9b09630810
     sed -i 's|tough =.*|tough = { path = "${WORKDIR}/tough/tough" }|g' ${CARGO_HOME}/config
+    sed -i '/olpc-cjson =.*/d' ${CARGO_HOME}/config
     sed -i '/^tough =.*/a olpc-cjson = { path = "${WORKDIR}/tough/olpc-cjson" }' ${CARGO_HOME}/config
 
     sed -i 's|russh =.*|russh = { path = "${WORKDIR}/russh/russh" }|g' ${CARGO_HOME}/config
-    sed -i '/^russh =.*/a \
-    russh-keys = { path = "${WORKDIR}/russh/russh-keys" } \
-    russh-cryptovec = { path = "${WORKDIR}/russh/cryptovec" }' ${CARGO_HOME}/config
-
+    sed -i '/russh-keys =.*/d' ${CARGO_HOME}/config
+    sed -i '/russh-cryptovec =.*/d' ${CARGO_HOME}/config
+    sed -i '/^russh =.*/a russh-cryptovec = { path = "${WORKDIR}/russh/cryptovec" }' ${CARGO_HOME}/config
+    sed -i '/^russh =.*/a russh-keys = { path = "${WORKDIR}/russh/russh-keys" }' ${CARGO_HOME}/config
 }
+
+do_configure[postfuncs] += "cargo_add_rac_patch_paths"
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
