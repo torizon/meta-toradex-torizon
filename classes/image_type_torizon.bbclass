@@ -134,6 +134,8 @@ generate_diff_file () {
     fi
 }
 
+# Enable composefs on the generated ostree repo (part of the Tezi image).
+OSTREE_OTA_REPO_CONFIG:append:cfs-support = " ex-integrity.composefs:true"
 
 IMAGE_DATETIME_FILES ??= " \
     ${sysconfdir}/issue \
