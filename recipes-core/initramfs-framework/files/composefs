@@ -13,54 +13,12 @@ composefs_error() {
 composefs_run() {
 	info "Running composefs script..."
 
-	if [ -z "$ROOTFS_DIR" ]; then
-		composefs_error "Cannot find rootfs location!"
+	if [ -d "$ROOTFS_DIR" ]; then
+		# When built with composefs support ostree-prepare-root will
+		# look for objects under /sysroot which is actually the rootfs
+		# directory in the ramdisk.
+		ln -sf "$ROOTFS_DIR" /sysroot
+	else
+		debug "No rootfs has been set"
 	fi
-
-	if [ -z $ostree ]; then
-		composefs_error "ostree variable is not set!"
-	fi
-
-	if [ -z $cfs_digest ]; then
-		composefs_error "cfs_digest variable is not set!"
-	fi
-
-	local OSTREE_COMMIT=$(readlink -f $ROOTFS_DIR/$ostree | cut -d "/" -f 8 | cut -d "." -f 1)
-	if [ -z $OSTREE_COMMIT ]; then
-		composefs_error "Could not find ostree commit!"
-	fi
-
-	local CFS_IMAGE=$ROOTFS_DIR/ostree/deploy/torizon/deploy/composefs-$OSTREE_COMMIT.img
-	local OSTREE_OBJECTS_DIR=$ROOTFS_DIR/sysroot/ostree/repo/objects
-
-	# enable fsverity
-	#TODO: we should do this at image generation or during image installation (via Easy Installer)
-	if ! fsverity measure $CFS_IMAGE 2>/dev/null; then
-		info "Enabling fsverity..."
-		for f in $(ls -1 $OSTREE_OBJECTS_DIR/*/* 2>/dev/null); do
-			fsverity enable $f 2>/dev/null
-		done
-		fsverity enable $CFS_IMAGE
-	fi
-
-	local CFS_MOUNT_DIR=$ROOTFS_DIR/sysroot/cfs
-	mkdir -p $CFS_MOUNT_DIR
-
-	info "Mounting composefs image..."
-	if ! mount -t composefs -o basedir=$OSTREE_OBJECTS_DIR,digest=$cfs_digest,verity_check=2 \
-		                   $CFS_IMAGE $CFS_MOUNT_DIR; then
-		composefs_error "Could not mount composefs image!"
-	fi
-
-	info "Bind mounting /usr..."
-	umount $ROOTFS_DIR/usr
-	if ! mount --bind $CFS_MOUNT_DIR/usr $ROOTFS_DIR/usr; then
-		composefs_error "Could not bind mount /usr!"
-	fi
-
-	# this seems to be necessary for the files to have root:root ownership after switch_root
-	# TODO: it requires some investigation
-	find $ROOTFS_DIR/usr/ >/dev/null 2>&1
-
-	return 0
 }
