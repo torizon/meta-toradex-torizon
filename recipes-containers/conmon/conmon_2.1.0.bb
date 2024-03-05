@@ -4,18 +4,23 @@ HOMEPAGE = "https://github.com/containers/conmon"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=61af0b6932ea7b12fb9142721043bc77"
 
-DEPENDS = "glib-2.0 go-md2man-native"
+inherit features_check
+REQUIRED_DISTRO_FEATURES ?= "seccomp"
 
-SRCREV = "bdb4f6e56cd193d40b75ffc9725d4b74a18cb33c"
+DEPENDS = "glib-2.0 go-md2man-native libseccomp"
+
+SRCREV = "6d88cb3672a3dceeb4b045a92dc4d4285c9f4efd"
 SRC_URI = "\
-    git://github.com/containers/conmon.git;protocol=https;branch=main \
+    git://github.com/containers/conmon.git;branch=main;protocol=https \
 "
 
-PV = "2.1.0+git${SRCPV}"
+PV = "2.1.8+git"
 
 S = "${WORKDIR}/git"
 
 inherit pkgconfig
+
+export GOCACHE = "${B}/.cache"
 
 EXTRA_OEMAKE = "PREFIX=${prefix} BINDIR=${bindir} LIBEXECDIR=${libexecdir}"
 

@@ -1,0 +1,32 @@
+From 6867fc1f6bd01596c2d3dc7bc07e26fa98965185 Mon Sep 17 00:00:00 2001
+From: Martin Jansa <Martin.Jansa@gmail.com>
+Date: Mon, 14 Aug 2023 16:41:42 +0200
+Subject: [PATCH] builder.go: avoid using strings.Cut from go-1.18
+
+* we're still using go-1.17
+
+Upstream-Status: Inapropriate
+---
+ builder/builder-next/builder.go | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/builder/builder-next/builder.go b/builder/builder-next/builder.go
+index ee6b9f0fb1..a9bda8c370 100644
+--- a/builder/builder-next/builder.go
++++ b/builder/builder-next/builder.go
+@@ -555,10 +555,13 @@ func toBuildkitExtraHosts(inp []string, hostGatewayIP net.IP) (string, error) {
+ 	}
+ 	hosts := make([]string, 0, len(inp))
+ 	for _, h := range inp {
+-		host, ip, ok := strings.Cut(h, ":")
+-		if !ok || host == "" || ip == "" {
++		parts := strings.Split(h, ":")
++
++		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+ 			return "", errors.Errorf("invalid host %s", h)
+ 		}
++		host := parts[0]
++		ip := parts[1]
+ 		// If the IP Address is a "host-gateway", replace this value with the
+ 		// IP address stored in the daemon level HostGatewayIP config variable.
+ 		if ip == opts.HostGatewayName {

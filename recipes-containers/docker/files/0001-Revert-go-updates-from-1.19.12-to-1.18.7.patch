@@ -1,0 +1,144 @@
+From 2cc349a336cd3cb4fa33554216a99dbce3879d29 Mon Sep 17 00:00:00 2001
+From: Martin Jansa <Martin.Jansa@gmail.com>
+Date: Mon, 14 Aug 2023 16:02:30 +0200
+Subject: [PATCH] Revert go updates from 1.19.12 to 1.18.7
+
+To continue using 1.17 version as implemented for some reason in:
+https://git.yoctoproject.org/meta-virtualization/commit/?h=kirkstone&id=927537108bcf2b98859512ce3eae59a73439994d
+with 0001-revert-go-1.8-update.patch
+
+Revert "update to go1.19.12"
+This reverts commit c42d7c7f6d0dccfe5d85f0126da2c8ec77573616.
+Revert "[20.10] update go to go1.19.11"
+This reverts commit 43fe787c232c54b53bda21301bbf3a463c4e4056.
+Revert "[20.10] update go to go1.19.10"
+This reverts commit 99f10dec91409c4f6ed2c4867638f4e5ea678f0a.
+Revert "Dockerfile: temporarily skip CRIU stage"
+This reverts commit af0477880cc8c0197517c0bc8de0cbd6cb9bd9a9.
+Revert "[20.10] update go to go1.19.9"
+This reverts commit 7f91a52b8969f5604fdca36ee30475cc9600be5b.
+Revert "[20.10] update go to go1.19.8"
+This reverts commit a09b3e9cf9de906438a6300760754fcb087f166a.
+Revert "update to go1.19.7"
+This reverts commit 9aa5d55a8ba8725133a6fbb5ac98d1fab341fdc7.
+Revert "update to go1.19.6"
+This reverts commit 98c9e3f43833bf87c21e02aca77c75c7a475ecd6.
+Revert "update to go1.19.5"
+This reverts commit 5b48f300dd0c6a2bbfc942408bc7e3fbc39609f0.
+Revert "update to go1.19.4"
+This reverts commit 82b0ac1166cc553e2757c5d490ce69078064ef6e.
+Revert "Update to Go 1.19.3 to address CVE-2022-41716"
+This reverts commit 4701ca9f719f5386d2ca2417b566b5950aa8a929.
+Revert "Update to go 1.19.2 to address CVE-2022-2879, CVE-2022-2880, CVE-2022-41715"
+This reverts commit 1c8c16524f94ae69eb33c5c9000e87615ce973a6.
+Revert "Update to go 1.19.1 to address CVE-2022-27664, CVE-2022-32190"
+This reverts commit 6cc1ef32a28e7e6e74383d4775bd178d36495181.
+Revert "update to golang 1.19"
+This reverts commit 5091f13a5d027b785084028aedb03beb5b0bd9a6.
+Revert "Dockerfile: configure code dir as "safe" directory"
+This reverts commit 0312e468da5c99267654d5c6b62785e29ffe6e0d.
+Revert "[20.10] update to go1.18.10"
+This reverts commit 625903f3fda862c69492256016b386628954b3a4.
+Revert "[20.10] update gotestsum to v1.8.2"
+This reverts commit edca413033cea5252f69bfc740e9450e5d0a0ef9.
+Revert "[20.10] update to go1.18.9"
+This reverts commit f8b0d77bfe109c5248ba6eb6c6db7f32e99a2e75.
+Revert "[20.10] update to Go 1.18.8 to address CVE-2022-41716"
+This reverts commit 0211f9e44dba888fa62dc2ba59ea573ad70e9708.
+
+Upstream-Status: Inapropriate
+---
+ Dockerfile                                  | 12 ++----------
+ Dockerfile.e2e                              |  2 +-
+ Dockerfile.simple                           |  2 +-
+ Dockerfile.windows                          |  4 ++--
+ hack/dockerfile/install/gotestsum.installer |  2 +-
+ 5 files changed, 7 insertions(+), 15 deletions(-)
+
+diff --git a/Dockerfile b/Dockerfile
+index 4ee4d8dd2c..9472c512a6 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -3,7 +3,7 @@
+ ARG CROSS="false"
+ ARG SYSTEMD="false"
+ # IMPORTANT: When updating this please note that stdlib archive/tar pkg is vendored
+-ARG GO_VERSION=1.19.12
++ARG GO_VERSION=1.18.7
+ ARG DEBIAN_FRONTEND=noninteractive
+ ARG VPNKIT_VERSION=0.5.0
+ ARG DOCKER_BUILDTAGS="apparmor seccomp"
+@@ -267,9 +267,6 @@ RUN ln -sfv /go/src/github.com/docker/docker/.bashrc ~/.bashrc
+ RUN echo "source /usr/share/bash-completion/bash_completion" >> /etc/bash.bashrc
+ RUN ln -s /usr/local/completion/bash/docker /etc/bash_completion.d/docker
+ RUN ldconfig
+-# Set dev environment as safe git directory to prevent "dubious ownership" errors
+-# when bind-mounting the source into the dev-container. See https://github.com/moby/moby/pull/44930
+-RUN git config --global --add safe.directory $GOPATH/src/github.com/docker/docker
+ # This should only install packages that are specifically needed for the dev environment and nothing else
+ # Do you really need to add another package here? Can it be done in a different build stage?
+ RUN --mount=type=cache,sharing=locked,id=moby-dev-aptlib,target=/var/lib/apt \
+@@ -316,12 +313,7 @@ COPY --from=swagger       /build/ /usr/local/bin/
+ COPY --from=tomlv         /build/ /usr/local/bin/
+ COPY --from=tini          /build/ /usr/local/bin/
+ COPY --from=registry      /build/ /usr/local/bin/
+-
+-# Skip the CRIU stage for now, as the opensuse package repository is sometimes
+-# unstable, and we're currently not using it in CI.
+-#
+-# FIXME(thaJeztah): re-enable this stage when https://github.com/moby/moby/issues/38963 is resolved (see https://github.com/moby/moby/pull/38984)
+-# COPY --from=criu          /build/ /usr/local/
++COPY --from=criu          /build/ /usr/local/
+ COPY --from=vndr          /build/ /usr/local/bin/
+ COPY --from=gotestsum     /build/ /usr/local/bin/
+ COPY --from=golangci_lint /build/ /usr/local/bin/
+diff --git a/Dockerfile.e2e b/Dockerfile.e2e
+index 31f836fc16..f92bec85b0 100644
+--- a/Dockerfile.e2e
++++ b/Dockerfile.e2e
+@@ -1,4 +1,4 @@
+-ARG GO_VERSION=1.19.12
++ARG GO_VERSION=1.18.7
+ 
+ FROM golang:${GO_VERSION}-alpine AS base
+ ENV GO111MODULE=off
+diff --git a/Dockerfile.simple b/Dockerfile.simple
+index af5fc13c25..8aa6d7ff94 100644
+--- a/Dockerfile.simple
++++ b/Dockerfile.simple
+@@ -5,7 +5,7 @@
+ 
+ # This represents the bare minimum required to build and test Docker.
+ 
+-ARG GO_VERSION=1.19.12
++ARG GO_VERSION=1.18.7
+ 
+ FROM golang:${GO_VERSION}-buster
+ ENV GO111MODULE=off
+diff --git a/Dockerfile.windows b/Dockerfile.windows
+index 7c2fe66389..6f8242decc 100644
+--- a/Dockerfile.windows
++++ b/Dockerfile.windows
+@@ -165,8 +165,8 @@ FROM microsoft/windowsservercore
+ # Use PowerShell as the default shell
+ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+ 
+-ARG GO_VERSION=1.19.12
+-ARG GOTESTSUM_VERSION=v1.8.2
++ARG GO_VERSION=1.18.7
++ARG GOTESTSUM_VERSION=v1.7.0
+ 
+ # Environment variable notes:
+ #  - GO_VERSION must be consistent with 'Dockerfile' used by Linux.
+diff --git a/hack/dockerfile/install/gotestsum.installer b/hack/dockerfile/install/gotestsum.installer
+index 8e88fec77b..5024179958 100755
+--- a/hack/dockerfile/install/gotestsum.installer
++++ b/hack/dockerfile/install/gotestsum.installer
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ 
+-: ${GOTESTSUM_VERSION:=v1.8.2}
++: ${GOTESTSUM_VERSION:=v1.7.0}
+ 
+ install_gotestsum() (
+ 	set -e
