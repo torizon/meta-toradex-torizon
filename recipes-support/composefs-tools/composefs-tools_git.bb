@@ -21,11 +21,10 @@ SRC_URI = "\
     git://github.com/containers/composefs.git;protocol=https;branch=main \
     file://0001-mount-Allow-building-when-macro-MOUNT_ATTR_IDMAP-is-.patch \
     file://0002-mount-Allow-building-when-macro-LOOP_CONFIGURE-is-no.patch \
-    file://0001-configure.ac-disable-Werror-unused-result-temporaril.patch \
 "
 
-SRCREV = "cca8be49843385ce556fccf51f75821f70fb7769"
-PV = "0.1.4+git${SRCPV}"
+SRCREV = "2d5cdcb9176cfe4ccf1761ef6d78e1c48de35649"
+PV = "1.0.3+git${SRCPV}"
 
 S = "${WORKDIR}/git"
 
