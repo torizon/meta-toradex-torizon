@@ -51,17 +51,7 @@ do_install:append() {
     install -m 0755 ${WORKDIR}/kmod ${D}/init.d/01-kmod
 }
 
-# Configuration that goes into prepare-root.conf (see ostree-prepare-root manual):
-# - PREP_ROOT_ETC_TRANSIENT: whether /etc is transient ("true" or "false")
-# - PREP_ROOT_CFS_ENABLED: enabling of composefs ("yes", "no", "maybe" or "signed")
-#
-# TODO: Set PREP_ROOT_ETC_TRANSIENT to true; at the time of writing this wasn't
-# working correctly: /etc does become transient but "ostree admin status" fails
-# to detect the current deployment (this may have been solved on newer versions
-# of ostree).
-PREP_ROOT_ETC_TRANSIENT ?= "false"
-PREP_ROOT_CFS_ENABLED ?= "maybe"
-PREP_ROOT_CFS_ENABLED:cfs-signed ?= "signed"
+require recipes-extended/ostree/ostree-prepare-root.inc
 
 do_install:append:cfs-support() {
     # Bundled into initramfs-module-kmod package:
@@ -72,13 +62,7 @@ do_install:append:cfs-support() {
     install -m 0755 ${WORKDIR}/composefs ${D}/init.d/94-composefs
     install -d ${D}${nonarch_libdir}/ostree/
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
-    cat >${D}${nonarch_libdir}/ostree/prepare-root.conf <<EOF
-[etc]
-transient = ${PREP_ROOT_ETC_TRANSIENT}
-
-[composefs]
-enabled = ${PREP_ROOT_CFS_ENABLED}
-EOF
+    write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
 }
 
 # Adding modules so plymouth can show the splash screen during boot
