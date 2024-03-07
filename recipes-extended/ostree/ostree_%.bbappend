@@ -65,3 +65,10 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/ostree-pending-reboot.service ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/ostree-pending-reboot.path ${D}${systemd_system_unitdir}
 }
+
+require ostree-prepare-root.inc
+
+do_install:append:cfs-support() {
+    install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
+    write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
+}
