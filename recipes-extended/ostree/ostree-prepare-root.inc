@@ -17,5 +17,8 @@ transient = ${PREP_ROOT_ETC_TRANSIENT}
 
 [composefs]
 enabled = ${PREP_ROOT_CFS_ENABLED}
+
+[sysroot]
+readonly = false
 EOF
 }

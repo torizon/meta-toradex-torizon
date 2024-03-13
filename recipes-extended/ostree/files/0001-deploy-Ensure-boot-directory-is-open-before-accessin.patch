@@ -1,0 +1,32 @@
+From 3f8dba21c5913b09e36f76215e77b7d6e7816453 Mon Sep 17 00:00:00 2001
+From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Date: Tue, 12 Mar 2024 17:02:58 -0300
+Subject: [PATCH] deploy: Ensure boot directory is open before accessing it
+
+This fixes a bug in the (early) deployment pruning function which before
+tried to access the boot directory without opening it first.
+
+Upstream-Status: Accepted
+
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ src/libostree/ostree-sysroot-deploy.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/libostree/ostree-sysroot-deploy.c b/src/libostree/ostree-sysroot-deploy.c
+index df1254df..0af76f86 100644
+--- a/src/libostree/ostree-sysroot-deploy.c
++++ b/src/libostree/ostree-sysroot-deploy.c
+@@ -2624,6 +2624,9 @@ auto_early_prune_old_deployments (OstreeSysroot *self, GPtrArray *new_deployment
+   if (self->booted_deployment == NULL)
+     return TRUE;
+ 
++  if (!_ostree_sysroot_ensure_boot_fd (self, error))
++    return FALSE;
++
+   {
+     struct stat stbuf;
+     if (!glnx_fstatat (self->boot_fd, ".", &stbuf, 0, error))
+-- 
+2.25.1
+
