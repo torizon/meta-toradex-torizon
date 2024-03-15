@@ -11,5 +11,3 @@ kernel_do_deploy:append() {
 	head=`git --git-dir=${S}/.git rev-parse --verify --short HEAD 2> /dev/null`
 	printf "%s" $head > ${DEPLOYDIR}/.kernel_scmversion
 }
-
-KERNEL_FEATURES:append:cfs-support = " features/erofs/erofs.scc"
