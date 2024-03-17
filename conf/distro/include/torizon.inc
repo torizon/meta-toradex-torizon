@@ -69,7 +69,6 @@ USERADD_ERROR_DYNAMIC = "skip"
 # Compatibility with toradex layers
 BBMASK += " \
     /meta-toradex-bsp-common/recipes-core/systemd/systemd_%.bbappend \
-    /meta-freescale/recipes-graphics/cairo \
     /openembedded-core/meta/recipes-devtools/cargo \
     /openembedded-core/meta/recipes-devtools/rust \
 "
