@@ -34,6 +34,9 @@ PACKAGECONFIG:remove = "static"
 # Build ostree with composefs support only if override "cfs-support" is set.
 PACKAGECONFIG:append:cfs-support = " composefs"
 
+# Ensure ed25519 is available for signing commits.
+PACKAGECONFIG:append:cfs-signed = " ed25519-libsodium"
+
 SYSTEMD_SERVICE:${PN} += "ostree-pending-reboot.path ostree-pending-reboot.service"
 
 def is_ti(d):
