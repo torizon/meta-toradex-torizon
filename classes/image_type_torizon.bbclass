@@ -118,6 +118,36 @@ EXTRA_OSTREE_COMMIT = " \
 
 IMAGE_CMD:ostreecommit[vardepsexclude] += "EXTRA_OSTREE_COMMIT OSTREE_COMMIT_SUBJECT"
 
+require recipes-extended/ostree/gen-cfs-keys.inc
+
+generate_cfs_keys[lockfiles] += "${DEPLOY_DIR_IMAGE}/cfskeys.lock"
+generate_cfs_keys() {
+    gen_cfs_keys
+}
+
+CFS_OSTREECOMMIT_PREFUNCS_COND ?= " generate_cfs_keys"
+CFS_OSTREECOMMIT_PREFUNCS ?= \
+    "${@d.getVar('CFS_OSTREECOMMIT_PREFUNCS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+
+CFS_OSTREECOMMIT_DEPENDS_COND ?= "\
+    coreutils-native:do_populate_sysroot \
+    openssl-native:do_populate_sysroot \
+"
+CFS_OSTREECOMMIT_DEPENDS ?= \
+    "${@d.getVar('CFS_OSTREECOMMIT_DEPENDS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+
+CFS_OSTREECOMMIT_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
+
+do_image_ostreecommit[prefuncs] += "${CFS_OSTREECOMMIT_PREFUNCS}"
+do_image_ostreecommit[depends] += "${CFS_OSTREECOMMIT_DEPENDS}"
+do_image_ostreecommit[file-checksums] += "${CFS_OSTREECOMMIT_FILE_CHECKSUMS}"
+
+EXTRA_OSTREE_COMMIT:append:cfs-signed = "\
+    --generate-composefs-metadata \
+    --sign-from-file=${CFS_SIGN_KEYDIR}/${CFS_SIGN_KEYNAME}.sec \
+    --sign-type=ed25519 \
+"
+
 do_image_ostreecommit[postfuncs] += " generate_diff_file"
 generate_diff_file[lockfiles] += "${OSTREE_REPO}/ostree.lock"
 
