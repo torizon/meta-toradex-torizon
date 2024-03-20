@@ -37,6 +37,9 @@ FILES:initramfs-module-composefs = "\
     /init.d/94-composefs \
     ${nonarch_libdir}/ostree/prepare-root.conf \
 "
+FILES:initramfs-module-composefs:append:cfs-signed = "\
+    ${sysconfdir}/ostree/initramfs-root-binding.key \
+"
 
 SUMMARY:initramfs-module-kmod = "initramfs support for loading kernel modules"
 RDEPENDS:initramfs-module-kmod = "${PN}-base"
@@ -63,6 +66,36 @@ do_install:append:cfs-support() {
     install -d ${D}${nonarch_libdir}/ostree/
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
+}
+
+require recipes-extended/ostree/gen-cfs-keys.inc
+
+generate_cfs_keys[lockfiles] += "${DEPLOY_DIR_IMAGE}/cfskeys.lock"
+generate_cfs_keys() {
+    gen_cfs_keys
+}
+
+CFS_INSTALL_PREFUNCS_COND ?= " generate_cfs_keys"
+CFS_INSTALL_PREFUNCS ?= \
+    "${@d.getVar('CFS_INSTALL_PREFUNCS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+CFS_INSTALL_DEPENDS_COND ?= "\
+    coreutils-native:do_populate_sysroot \
+    openssl-native:do_populate_sysroot \
+"
+CFS_INSTALL_DEPENDS ?= \
+    "${@d.getVar('CFS_INSTALL_DEPENDS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+
+CFS_INSTALL_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
+
+do_install[prefuncs] += "${CFS_INSTALL_PREFUNCS}"
+do_install[depends] += "${CFS_INSTALL_DEPENDS}"
+do_install[file-checksums] += "${CFS_INSTALL_FILE_CHECKSUMS}"
+
+do_install:append:cfs-signed() {
+    # Bundled into initramfs-module-composefs package:
+    install -d ${D}${sysconfdir}/ostree/
+    install -m 0644 ${CFS_SIGN_KEYDIR}/${CFS_SIGN_KEYNAME}.pub \
+    	            ${D}${sysconfdir}/ostree/initramfs-root-binding.key
 }
 
 # Adding modules so plymouth can show the splash screen during boot
