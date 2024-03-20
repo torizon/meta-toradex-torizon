@@ -14,7 +14,11 @@ python() {
         d.setVar('TEZI_CONFIG_FORMAT', torizon_tezi)
 }
 
-TEZI_ROOT_FSOPTS:append:torizon-signed = " -O verity"
+# TODO: Consider always enabling verity.
+#       This would facilitate upgrades from "tdx-signed" to "torizon-signed";
+#       If not done beforehand, the upgrade process would require running
+#       "tune2fs -O verity" on the device.
+TEZI_ROOT_FSOPTS:append:cfs-signed = " -O verity"
 
 python adjust_tezi_artifacts() {
     artifacts = d.getVar('TEZI_ARTIFACTS').replace(d.getVar('KERNEL_IMAGETYPE'), '').replace(d.getVar('KERNEL_DEVICETREE'), '')
