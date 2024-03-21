@@ -25,3 +25,6 @@ MACHINE_EXTRA_RRECOMMENDS:remove:imx = "imx-alsa-plugins"
 # or else it might lead to mismatch paths when installing
 # target packages and host packages.
 SDK_VERSION = "${TDX_RELEASE}"
+
+# Needed by inputting sudo password on build machine
+HOSTTOOLS:cfs-signed = " zenity"

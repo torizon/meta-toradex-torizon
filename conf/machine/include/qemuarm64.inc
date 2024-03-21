@@ -14,6 +14,8 @@ QB_MEM:qemuarm64 = "-m 1057"
 QB_OPT_APPEND:qemuarm64 = "-device qemu-xhci -device usb-tablet -device usb-kbd -no-acpi -bios ${DEPLOY_DIR_IMAGE}/u-boot.bin -d unimp -semihosting-config enable=on,target=native"
 
 IMAGE_FSTYPES_REMOVE = "tar.bz2 ext4 teziimg"
+IMAGE_FSTYPES_REMOVE:append:cfs-signed = " ota-ext4"
+IMAGE_FSTYPES:append:cfs-signed = " ota"
 IMAGE_FSTYPES:append = " wic"
 
 PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
@@ -29,3 +31,6 @@ PREFERRED_PROVIDER_virtual/kernel:qemuarm64 = "linux-yocto"
 PREFERRED_PROVIDER_virtual/kernel:qemuarm64:preempt-rt = "linux-yocto-rt"
 
 PREFERRED_PROVIDER_u-boot-default-script:qemuarm64 = "u-boot-distro-boot"
+
+PREFERRED_VERSION_linux-yocto:cfs-signed = "6.6%"
+PREFERRED_VERSION_linux-yocto-rt:cfs-signed = "6.6%"
