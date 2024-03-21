@@ -11,6 +11,7 @@ SRC_URI += "\
 SRC_URI:append:cfs-support = "\
     file://composefs \
     file://80-composefs.conf \
+    file://initramfs-root-binding.key \
 "
 
 PACKAGES:append = " \
@@ -36,6 +37,7 @@ RDEPENDS:initramfs-module-composefs = "${PN}-base kernel-module-erofs kernel-mod
 FILES:initramfs-module-composefs = "\
     /init.d/94-composefs \
     ${nonarch_libdir}/ostree/prepare-root.conf \
+    ${sysconfdir}/ostree/initramfs-root-binding.key \
 "
 
 SUMMARY:initramfs-module-kmod = "initramfs support for loading kernel modules"
@@ -63,6 +65,11 @@ do_install:append:cfs-support() {
     install -d ${D}${nonarch_libdir}/ostree/
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
+}
+
+do_install:append:cfs-signed() {
+    install -d ${D}${sysconfdir}/ostree
+    install -m 0644 ${WORKDIR}/initramfs-root-binding.key ${D}${sysconfdir}/ostree
 }
 
 # Adding modules so plymouth can show the splash screen during boot
