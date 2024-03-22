@@ -21,6 +21,9 @@ PACKAGECONFIG:remove = "gpgme"
 PACKAGECONFIG:append:cfs-support = " composefs"
 PACKAGECONFIG:remove:cfs-support = "static"
 
+PACKAGECONFIG:append:cfs-signed = " ed25519-openssl"
+PACKAGECONFIG:append:class-native:cfs-signed = " ed25519-openssl"
+
 SYSTEMD_SERVICE:${PN} += "ostree-pending-reboot.path ostree-pending-reboot.service"
 
 def is_ti(d):
