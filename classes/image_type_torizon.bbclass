@@ -168,6 +168,16 @@ generate_diff_file () {
     fi
 }
 
+# Enable composefs and fsverity on the deployed ostree repo; setting
+# "ex-integrity.fsverity" to "maybe" rather than "true" is important here
+# because it allows the build to succeed on a host not having fsverity support
+# while causing ostree to enable fsverity upon deployments on the device (which
+# would have the support).
+#
+# TODO: Review this on bumping ostree (this is very likely to change).
+OSTREE_OTA_REPO_CONFIG:append:cfs-support = " ex-integrity.composefs:true"
+OSTREE_OTA_REPO_CONFIG:append:cfs-signed = " ex-integrity.fsverity:maybe"
+
 IMAGE_DATETIME_FILES ??= " \
     ${sysconfdir}/issue \
     ${sysconfdir}/issue.net \
