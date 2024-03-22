@@ -8,3 +8,5 @@ KMETAREPOSITORY="github.com/toradex/toradex-kernel-cache.git"
 KMETAPROTOCOL="https"
 
 SRC_URI += "git://${KMETAREPOSITORY};protocol=${KMETAPROTOCOL};type=kmeta;name=meta;branch=${KMETABRANCH};destsuffix=${KMETA}"
+
+KERNEL_FEATURES:append:cfs-support = " features/erofs/erofs.scc"
