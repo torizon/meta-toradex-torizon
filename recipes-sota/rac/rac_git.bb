@@ -6,13 +6,26 @@ inherit cargo systemd
 
 # Main source respository
 SRC_URI = " \
-    git://github.com/toradex/torizon-rac.git;protocol=https;branch=main; \
+    git://github.com/toradex/torizon-rac.git;protocol=https;branch=main;name=rac \
+    git://github.com/toradex/tough;protocol=https;branch=rac;name=tough;destsuffix=tough \
+    git://github.com/warp-tech/russh.git;protocol=https;branch=main;name=russh;destsuffix=russh \
     file://remote-access.service \
     file://client.toml \
 "
 
-SRCREV = "dd2c885984f9ab19b522cb4cff22e46ae4095e3d"
-SRCREV:use-head-next = "${AUTOREV}"
+SRCREV_FORMAT = "rac_tough_russh"
+
+SRCREV_rac = "dd2c885984f9ab19b522cb4cff22e46ae4095e3d"
+SRCREV_tough = "28c2deb20a654426f09129bcd0938ad92de02f33"
+SRCREV_russh = "0.37.0-beta.1"
+
+# Disable AUTOREV, it does not guarantee work, since the below crate
+# dependencies might also need to be updated.
+# If you want to enable AUTOREV, uncomment the following lines, and you might
+# need update crate dependencies as well, which depends on Cargo.toml in rac.
+# SRCREV_rac:use-head-next = "${AUTOREV}"
+# SRCREV_tough:use-head-next = "${AUTOREV}"
+# SRCREV_russh:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
 
@@ -346,14 +359,7 @@ SRC_URI += " \
     crate://crates.io/yasna/0.5.1 \
     crate://crates.io/zeroize/1.5.7 \
     crate://crates.io/zeroize_derive/1.3.3 \
-    git://github.com/toradex/tough;protocol=https;nobranch=1;name=tough;destsuffix=tough \
-    git://github.com/warp-tech/russh.git;protocol=https;nobranch=1;name=russh;destsuffix=russh \
 "
-
-SRCREV_FORMAT .= "russh"
-SRCREV_russh = "0.37.0-beta.1"
-SRCREV_FORMAT .= "tough"
-SRCREV_tough = "28c2deb20a654426f09129bcd0938ad92de02f33"
 
 # There is a postfunc that runs after do_configure. This fixing logic needs to run after this postfunc.
 # It is because of this ordering this is do_compile:prepend instead of do_configure:append.
