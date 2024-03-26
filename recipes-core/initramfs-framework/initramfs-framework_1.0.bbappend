@@ -33,6 +33,7 @@ FILES:initramfs-module-ostree = "/init.d/95-ostree"
 
 SUMMARY:initramfs-module-composefs = "initramfs support for booting composefs images"
 RDEPENDS:initramfs-module-composefs = "${PN}-base kernel-module-erofs kernel-module-overlay"
+RDEPENDS:initramfs-module-composefs:append:cfs-signed = " fsverity-utils"
 FILES:initramfs-module-composefs = "\
     /init.d/94-composefs \
     ${nonarch_libdir}/ostree/prepare-root.conf \
