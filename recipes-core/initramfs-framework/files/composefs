@@ -2,6 +2,10 @@
 # Copyright (C) 2023 Toradex AG.
 # Licensed on MIT
 
+SYSROOT_DIR="/sysroot"
+COMPOSEFS_NAME=".ostree.cfs"
+PREPARE_ROOT_CFG="/usr/lib/ostree/prepare-root.conf"
+
 composefs_enabled() {
 	return 0
 }
@@ -10,14 +14,105 @@ composefs_error() {
 	fatal "$@"
 }
 
-composefs_run() {
-	info "Running composefs script..."
+# We could replace this whole function by:
+#
+# $ ostree admin post-copy --sysroot="${SYSROOT_DIR}"
+#
+# However this would bring in the dependency of ostree to the ramdisk
+# which doesn't look like a good idea. Instead, here we depend only on
+# "findutils" and "fsverity-utils".
+#
+composefs_enable_fsverity_all() {
+	# Enable verity in all repository objects.
+	find "${SYSROOT_DIR}/ostree/repo/objects" -exec fsverity enable '{}' \; 2>/dev/null
 
-	if [ -d "$ROOTFS_DIR" ]; then
+	# And also on the composefs file of every deployment.
+	for cfsfile_ in "${SYSROOT_DIR}/ostree/deploy"/*/deploy/*/"${COMPOSEFS_NAME}"; do
+		fsverity enable "${cfsfile_}" 2>/dev/null
+	done
+}
+
+composefs_ensure_fsverity() {
+	# Do we need fsverity?
+	if [ ! -f "${PREPARE_ROOT_CFG}" ]; then
+		debug "No ${PREPARE_ROOT_CFG} found - assuming fsverity is not needed"
+		return 0
+	fi
+
+	# Allow setting composefs.enabled config via kernel cmdline;
+	# "cfs.enabled" could be set to false|true|signed or any other value accepted
+	# by "ostree-prepare-root".
+	if [ "${bootparam_cfs_enabled}" ]; then
+		debug "Overriding composefs.enabled: setting to ${bootparam_cfs_enabled}"
+		sed -i -e "/^\[composefs\]/,/^\[.*\]/ {s/^enabled[[:space:]]*=.*\$/enabled = ${bootparam_cfs_enabled}/}" "${PREPARE_ROOT_CFG}"
+	fi
+
+	# Check configuration key composefs.enabled; this could be set to true|false|signed.
+	enabled="$(sed -n -e '/^\[composefs\]/,/^\[.*\]/ {s/^enabled[[:space:]]*=[[:space:]]*\([^[:space:]]*\)/\1/p}' "${PREPARE_ROOT_CFG}")"
+	debug "composefs.enabled=${enabled}"
+	if [ "${enabled}" != "signed" ]; then
+		debug "composefs signing is not enabled in ${PREPARE_ROOT_CFG}"
+		return 0
+	fi
+
+	if [ -z "${bootparam_ostree}" ]; then
+		debug "ostree= parameter not passed in kernel cmdline"
+		return 0
+	fi
+
+	# Determine deployment being booted from kernel cmdline:
+	deployment="$(realpath -e "${SYSROOT_DIR}${bootparam_ostree}" 2>/dev/null)"
+	cfsfile="${deployment}/${COMPOSEFS_NAME}"
+	lockfile="${cfsfile}.rdlock"
+
+	if [ -z "${deployment}" ]; then
+		debug "Could not determine current deployment (ostree=${bootparam_ostree})"
+		return 1
+	fi
+
+	# We want to enable fsverity in two cases:
+	#
+	# - If the lockfile exists (fsverity enabling operation may have been interrupted).
+	# - If fsverity is not enabled on the .cfs file.
+	#
+	if [ ! -f "${lockfile}" ] && fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
+		debug "fsverity is already enabled in storage"
+		return 0
+	fi
+
+	# Stretch protected by a lockfile.
+	# ---
+	touch "${lockfile}" || return 1
+
+	msg "Enabling fsverity on ostree repository (this may take a while)..."
+
+	t0="$(date '+%s')"
+	composefs_enable_fsverity_all
+	t1="$(date '+%s')"
+
+	# ---
+	rm "${lockfile}"
+
+	# Final result comes from measuring the composefs file (again):
+	if fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
+		msg "Enabling fsverity succeeded (after $((t1 - t0)) seconds)."
+	else
+		msg "Enabling fsverity failed (system will not boot)."
+		return 1
+	fi
+
+	return 0
+}
+
+composefs_run() {
+	debug "Running composefs script..."
+
+	if [ -d "${ROOTFS_DIR}" ]; then
 		# When built with composefs support ostree-prepare-root will
 		# look for objects under /sysroot which is actually the rootfs
 		# directory in the ramdisk.
-		ln -sf "$ROOTFS_DIR" /sysroot
+		ln -sf "${ROOTFS_DIR}" "${SYSROOT_DIR}"
+		composefs_ensure_fsverity
 	else
 		debug "No rootfs has been set"
 	fi
