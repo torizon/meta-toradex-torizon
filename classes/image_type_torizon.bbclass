@@ -12,9 +12,30 @@ python() {
     torizon_tezi = d.getVar('MINIMUM_TORIZON_TEZI_CONFIG_FORMAT')
     if int(bsp_tezi) < int(torizon_tezi):
         d.setVar('TEZI_CONFIG_FORMAT', torizon_tezi)
+
+    # When composefs fsverity is enabled, ota-ext4 must be created
+    # before do_image_ota, so 'ostree pull-local' can enable fsverity
+    # on it.
+    #
+    # Also enable network varflag for do_image_ota, otherwise it could
+    # not support sudo running inside it. This is introduced by:
+    # https://github.com/openembedded/bitbake/commit/9d6341df611a1725090444f6f8eb0244aed08213
+    if oe.types.boolean(d.getVar('OSTREE_COMPOSEFS_FSVERITY')):
+        d.setVarFlag('do_image_ota', 'network', '1')
+        wic_deps = d.getVarFlag('do_image_wic', 'depends')
+        wic_deps = wic_deps.replace('%s:do_image_ota_ext4' % d.getVar('PN'), '%s:do_image_ota' % d.getVar('PN'))
+        d.setVarFlag('do_image_wic', 'depends', wic_deps)
 }
 
-TEZI_ROOT_FSOPTS:append:torizon-signed = " -O verity"
+TEZI_ROOT_FSOPTS:append:cfs-signed = " -O verity"
+
+OSTREE_COMPOSEFS_FSVERITY ?= "0"
+OSTREE_COMPOSEFS_FSVERITY:cfs-signed = "1"
+
+# When cfs-signed is enabled, ${OTA_SYSROOT} is a mountpoint of ota-ext4. so it
+# wouldn't be tracked by pseudo database, we have to drop ${PN} from RM_WORK_EXCLUDE
+# to avoid running into pseudo problems for multiple builds.
+RM_WORK_EXCLUDE:remove:cfs-signed = "${PN}"
 
 python adjust_tezi_artifacts() {
     artifacts = d.getVar('TEZI_ARTIFACTS').replace(d.getVar('KERNEL_IMAGETYPE'), '').replace(d.getVar('KERNEL_DEVICETREE'), '')
@@ -27,11 +48,43 @@ TEZI_IMAGE_TEZIIMG_PREFUNCS:append = " adjust_tezi_artifacts"
 EXTRA_IMAGECMD:ota-ext4:qemuarm64 = "-O ^64bit,^metadata_csum -L otaroot -i 4096 -t ext4"
 
 IMAGE_CMD:ota:prepend() {
+	if "${@'true' if oe.types.boolean(d.getVar('OSTREE_COMPOSEFS_FSVERITY')) else 'false'}"; then
+		# If generating an empty image the size of the sparse block should be large
+		# enough to allocate an ext4 filesystem using 4096 bytes per inode, this is
+		# about 60K, so dd needs a minimum count of 60, with bs=1024 (bytes per IO)
+		eval local COUNT=\"0\"
+		eval local MIN_COUNT=\"60\"
+		if [ $ROOTFS_SIZE -lt $MIN_COUNT ]; then
+			eval COUNT=\"$MIN_COUNT\"
+		fi
+
+		dd if=/dev/zero of=${IMGDEPLOYDIR}/${IMAGE_NAME}${IMAGE_NAME_SUFFIX}.ota-ext4 seek=$ROOTFS_SIZE count=$COUNT bs=1024
+		mkfs.ext4 -F -O verity -O ^64bit,^metadata_csum -L otaroot -i 4096 -t ext4 ${IMGDEPLOYDIR}/${IMAGE_NAME}${IMAGE_NAME_SUFFIX}.ota-ext4
+		fsck.ext4 -pvfD ${IMGDEPLOYDIR}/${IMAGE_NAME}${IMAGE_NAME_SUFFIX}.ota-ext4 || [ $? -le 3 ]
+		ln -sf ${IMAGE_NAME}${IMAGE_NAME_SUFFIX}.ota-ext4 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.ota-ext4
+		if [ -n "${HOST_SUDO_PASSWORD}" ]; then
+			echo "${HOST_SUDO_PASSWORD}" | PSEUDO_UNLOAD=1 sudo -S mount ${IMGDEPLOYDIR}/${IMAGE_NAME}${IMAGE_NAME_SUFFIX}.ota-ext4 ${OTA_SYSROOT}
+		else
+			PSEUDO_UNLOAD=1 DISPLAY=:0 zenity --title="Authentication required" --password | PSEUDO_UNLOAD=1 sudo -S mount ${IMGDEPLOYDIR}/${IMAGE_NAME}${IMAGE_NAME_SUFFIX}.ota-ext4 ${OTA_SYSROOT}
+		fi
+		PSEUDO_UNLOAD=1 sudo chmod 0777 ${OTA_SYSROOT}
+	fi
+
 	if [ "${OSTREE_BOOTLOADER}" = "u-boot" ]; then
 		cp -a ${DEPLOY_DIR_IMAGE}/boot.scr-${MACHINE} ${OTA_SYSROOT}/boot.scr
 	fi
 }
+
+IMAGE_CMD:ota:append() {
+	if "${@'true' if oe.types.boolean(d.getVar('OSTREE_COMPOSEFS_FSVERITY')) else 'false'}"; then
+		PSEUDO_UNLOAD=1 sudo chown 0:0 -R ${OTA_SYSROOT}
+		PSEUDO_UNLOAD=1 sudo chown 1000:1000 -R ${OTA_SYSROOT}/ostree/deploy/torizon/var/rootdirs/home/torizon
+		PSEUDO_UNLOAD=1 sudo umount ${OTA_SYSROOT}
+	fi
+}
+
 do_image_ota[depends] += "${@'u-boot-default-script:do_deploy' if d.getVar('OSTREE_BOOTLOADER') == 'u-boot' else ''}"
+do_image_ota[depends] += "${@'e2fsprogs-native:do_populate_sysroot' if oe.types.boolean(d.getVar('OSTREE_COMPOSEFS_FSVERITY')) else ''}"
 
 def get_tdx_ostree_purpose(purpose):
     return purpose.lower()
@@ -114,11 +167,14 @@ EXTRA_OSTREE_COMMIT = " \
     --add-metadata-string=oe.sota-hardware-id="${SOTA_HARDWARE_ID}" \
     --add-metadata=oe.layers="${@get_layer_revision_information(d)} " \
 "
+EXTRA_OSTREE_COMMIT:append:cfs-signed = " --generate-composefs-metadata"
 
 IMAGE_CMD:ostreecommit[vardepsexclude] += "EXTRA_OSTREE_COMMIT OSTREE_COMMIT_SUBJECT"
 
-do_image_ostreecommit[postfuncs] += " generate_diff_file"
-generate_diff_file[lockfiles] += "${OSTREE_REPO}/ostree.lock"
+OSTREE_COMMIT_POST_FUNCS = "generate_diff_file"
+OSTREE_COMMIT_POST_FUNCS:append:cfs-signed = " ostree_sign_commit"
+
+do_image_ostreecommit[postfuncs] += "${OSTREE_COMMIT_POST_FUNCS}"
 
 generate_diff_file () {
     if [ "${OSTREE_CREATE_DIFF}" = "1"  ]; then
@@ -132,6 +188,22 @@ generate_diff_file () {
         fi
     fi
 }
+generate_diff_file[lockfiles] += "${OSTREE_REPO}/ostree.lock"
+
+ostree_sign_commit () {
+    target_hash="$(ostree --repo=${OSTREE_REPO} rev-parse ${OSTREE_BRANCHNAME})"
+    for bbpath in $(echo ${BBPATH} | sed "s/:/ /g"); do
+        if [ -f $bbpath/files/composefs-fsverity-keys/key.priv ]; then
+            keyfile=$bbpath/files/composefs-fsverity-keys/key.priv
+            break
+        fi
+    done
+    ostree --repo=${OSTREE_REPO} sign -s ed25519 --keys-file $keyfile $target_hash
+}
+ostree_sign_commit[lockfiles] += "${OSTREE_REPO}/ostree.lock"
+
+# Enable composefs on the generated ostree repo (part of the Tezi image).
+OSTREE_OTA_REPO_CONFIG:append:cfs-support = " ex-integrity.composefs:true"
 
 IMAGE_DATETIME_FILES ??= " \
     ${sysconfdir}/issue \
