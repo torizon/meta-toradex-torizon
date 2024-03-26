@@ -17,7 +17,8 @@ inherit tdx-signed
 #   addition of the composefs digest into the commit metadata) and the signature
 #   verification at runtime.
 #
-DISTROOVERRIDES:append = ":cfs-support:cfs-signed"
+# TODO: DISTROOVERRIDES:append = ":cfs-support:cfs-signed"
+DISTROOVERRIDES:append = ":cfs-support"
 
 # Variables a user will likely want to set up:
 #
