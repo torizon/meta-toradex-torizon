@@ -14,6 +14,37 @@ composefs_error() {
 	fatal "$@"
 }
 
+# $1: number of currently processed items
+# $2: total number of items to process
+# $3: (optional) when set to "1", a newline is added at the end
+composefs_progress() {
+	bar_cur="${1}"
+	bar_tot="${2}"
+	bar_end="${3}"
+
+	bar_curtm="$(date '+%s')"
+	bar_updtm="${bar_updtm:-0}"
+	bar_difftm="$((bar_curtm - bar_updtm))"
+	if [ "${bar_difftm}" -lt 1 ] && [ "${bar_end}" != "1" ]; then
+		# Update only once every second
+		return
+	fi
+	bar_updtm="$(date '+%s')"
+
+	bar_len="50"
+	bar_done="$((bar_len * bar_cur / bar_tot))"
+	bar_todo="$((bar_len - bar_done))"
+	bar_str1="$(printf "%*s" ${bar_done} | tr ' ' '=')"
+	bar_str2="$(printf "%*s" ${bar_todo} | tr ' ' '.')"
+	bar_str3="$(printf "%d" ${bar_cur})"
+	bar_str4="$(printf "%d" ${bar_tot})"
+
+	bar_str="$(printf "\rProgress: [%s%s] (%5s/%5s)" "${bar_str1}" "${bar_str2}" "${bar_str3}" "${bar_str4}")"
+
+	msg -n "${bar_str}"
+	[ "${bar_end}" = "1" ] && msg ""
+}
+
 # We could replace this whole function by:
 #
 # $ ostree admin post-copy --sysroot="${SYSROOT_DIR}"
@@ -23,8 +54,17 @@ composefs_error() {
 # "findutils" and "fsverity-utils".
 #
 composefs_enable_fsverity_all() {
+	nfiles="$(find "${SYSROOT_DIR}/ostree/repo/objects" \! -type d | wc -l)"
+	count="0"
+
 	# Enable verity in all repository objects.
-	find "${SYSROOT_DIR}/ostree/repo/objects" -exec fsverity enable '{}' \; 2>/dev/null
+	find "${SYSROOT_DIR}/ostree/repo/objects" \! -type d | while read fname; do
+		composefs_progress "${count}" "${nfiles}"
+		fsverity enable "${fname}" 2>/dev/null
+		count=$((count + 1))
+	done
+
+	composefs_progress "${nfiles}" "${nfiles}" "1"
 
 	# And also on the composefs file of every deployment.
 	for cfsfile_ in "${SYSROOT_DIR}/ostree/deploy"/*/deploy/*/"${COMPOSEFS_NAME}"; do
@@ -70,7 +110,7 @@ composefs_ensure_fsverity() {
 		return 1
 	fi
 
-	# We want to enable fsverity in two cases:
+	# We want to enable fsverity in the following cases:
 	#
 	# - If the lockfile exists (fsverity enabling operation may have been interrupted).
 	# - If fsverity is not enabled on the .cfs file.
@@ -84,7 +124,9 @@ composefs_ensure_fsverity() {
 	# ---
 	touch "${lockfile}" || return 1
 
-	msg "Enabling fsverity on ostree repository (this may take a while)..."
+	msg ""
+	msg "Enabling fsverity on the ostree repository - this may take a few minutes."
+	msg ""
 
 	t0="$(date '+%s')"
 	composefs_enable_fsverity_all
@@ -95,8 +137,10 @@ composefs_ensure_fsverity() {
 
 	# Final result comes from measuring the composefs file (again):
 	if fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
+		msg ""
 		msg "Enabling fsverity succeeded (after $((t1 - t0)) seconds)."
 	else
+		msg ""
 		msg "Enabling fsverity failed (system will not boot)."
 		return 1
 	fi
