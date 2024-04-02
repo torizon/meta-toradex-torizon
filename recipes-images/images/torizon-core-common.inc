@@ -76,6 +76,10 @@ CORE_IMAGE_BASE_INSTALL:append:mx8-nxp-bsp = " \
     kernel-module-imx-gpu-viv \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:verdin-am62 = " \
+    ti-img-rogue-driver \
+"
+
 nss_altfiles_set_users_groups () {
 	# Make a temporary directory to be used by pseudo to find the real /etc/passwd,/etc/group
 	pseudo_dir=${WORKDIR}/pseudo-rootfs${sysconfdir}
