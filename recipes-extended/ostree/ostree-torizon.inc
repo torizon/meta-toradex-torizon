@@ -21,6 +21,9 @@ PACKAGECONFIG:remove = "gpgme"
 PACKAGECONFIG:append:cfs-support = " composefs"
 PACKAGECONFIG:remove:cfs-support = "static"
 
+# Ensure ed25519 is available for signing commits.
+PACKAGECONFIG:append:cfs-signed = " ed25519-libsodium"
+
 SYSTEMD_SERVICE:${PN} += "ostree-pending-reboot.path ostree-pending-reboot.service"
 
 def is_ti(d):
