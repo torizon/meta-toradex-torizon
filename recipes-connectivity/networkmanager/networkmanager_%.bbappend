@@ -4,6 +4,7 @@ SRC_URI += "\
     file://0001-85-nm-unmanaged.rules-do-not-manage-docker-bridges.patch \
     file://toradex-nmconnection.conf \
     file://network.nmconnection.in \
+    file://99-disable-uap.conf \
 "
 
 # Depend on libedit as it has a more friendly license than readline (GPLv3)
@@ -26,4 +27,6 @@ do_install:append() {
     done
 
     chmod 0600 ${D}${sysconfdir}/NetworkManager/system-connections/network?.nmconnection
+
+    install -m 0600 ${WORKDIR}/99-disable-uap.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-disable-uap.conf
 }
