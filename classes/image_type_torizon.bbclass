@@ -94,6 +94,10 @@ def get_layer_revision_information(d):
         e = sys.exc_info()[0]
         bb.warn("Failed to get layers information. Exception: {}".format(e))
 
+# Use immediate expansion here to avoid calling a somewhat costly function whenever
+# EXTRA_OSTREE_COMMIT is expanded.
+OSTREE_LAYER_REVISION_INFO := "${@get_layer_revision_information(d)}"
+
 EXTRA_OSTREE_COMMIT[vardepsexclude] = "OSTREE_KERNEL_SOURCE_META_DATA"
 EXTRA_OSTREE_COMMIT = " \
     --add-metadata-string=oe.machine="${MACHINE}" \
@@ -109,7 +113,7 @@ EXTRA_OSTREE_COMMIT = " \
     --add-metadata-string=oe.garage-target-name="${GARAGE_TARGET_NAME}" \
     --add-metadata-string=oe.garage-target-version="${GARAGE_TARGET_VERSION}" \
     --add-metadata-string=oe.sota-hardware-id="${SOTA_HARDWARE_ID}" \
-    --add-metadata=oe.layers="${@get_layer_revision_information(d)} " \
+    --add-metadata=oe.layers="${OSTREE_LAYER_REVISION_INFO}" \
 "
 
 IMAGE_CMD:ostreecommit[vardepsexclude] += "EXTRA_OSTREE_COMMIT OSTREE_COMMIT_SUBJECT"
