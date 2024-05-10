@@ -10,6 +10,14 @@ SRC_URI:append = " \
     file://ostree-pending-reboot.path \
 "
 
+# TODO: Upstream this addition.
+PACKAGECONFIG[composefs] = "--with-composefs, --without-composefs"
+
+# TODO: Upstream this addition.
+do_configure:prepend() {
+    cp ${S}/composefs/libcomposefs/Makefile-lib.am ${S}/composefs/libcomposefs/Makefile-lib.am.inc
+}
+
 # Disable PTEST for ostree as it requires options that are not enabled when
 # building with meta-updater
 PTEST_ENABLED = "0"
