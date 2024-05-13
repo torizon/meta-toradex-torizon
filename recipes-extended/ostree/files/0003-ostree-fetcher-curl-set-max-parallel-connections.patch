@@ -1,7 +1,7 @@
-From fd1327e45ee04b2e6e267d4e844a588966bfea54 Mon Sep 17 00:00:00 2001
+From b4d9d03fab62cbd7ac78bc003eda830dc519b6f0 Mon Sep 17 00:00:00 2001
 From: Lucas Morishita <lucas.morishita@toradex.com>
 Date: Mon, 31 Jul 2023 09:30:15 -0300
-Subject: [PATCH] ostree-fetcher-curl: set max parallel connections
+Subject: [PATCH 3/3] ostree-fetcher-curl: set max parallel connections
 
 Allow the maximum number of parallel downloads to
 be set by an environment variable. The code was
@@ -17,10 +17,10 @@ Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/src/libostree/ostree-fetcher-curl.c b/src/libostree/ostree-fetcher-curl.c
-index fdf8a2ef..7144f3ef 100644
+index e9b9672b..88e37d4e 100644
 --- a/src/libostree/ostree-fetcher-curl.c
 +++ b/src/libostree/ostree-fetcher-curl.c
-@@ -230,8 +230,14 @@ _ostree_fetcher_init (OstreeFetcher *self)
+@@ -236,8 +236,14 @@ _ostree_fetcher_init (OstreeFetcher *self)
    curl_multi_setopt (self->multi, CURLMOPT_TIMERFUNCTION, update_timeout_cb);
    curl_multi_setopt (self->multi, CURLMOPT_TIMERDATA, self);
  #if CURL_AT_LEAST_VERSION(7, 30, 0)
@@ -37,4 +37,5 @@ index fdf8a2ef..7144f3ef 100644
    /* This version mirrors the version at which we're enabling HTTP2 support.
     * See also https://github.com/curl/curl/blob/curl-7_53_0/docs/examples/http2-download.c
 -- 
-2.41.0
+2.25.1
+
