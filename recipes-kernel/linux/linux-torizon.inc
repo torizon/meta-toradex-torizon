@@ -1,3 +1,13 @@
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
+SRC_URI:append:cfs-support = "\
+    file://composefs.scc \
+"
+
+SRC_URI:append:cfs-signed = "\
+    file://composefs-fsverity.scc \
+"
+
 KBUILD_BUILD_VERSION .= "-TorizonCore"
 
 # Print kernel URL and BRANCH to files to be used by ostree commit as metadata
