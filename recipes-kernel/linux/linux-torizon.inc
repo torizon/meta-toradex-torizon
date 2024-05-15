@@ -1,16 +1,11 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-PATCHES_NXP_BSP = " "
-PATCHES_NXP_BSP:torizon-signed = "\
-    file://0001-fs-verity-define-a-function-to-return-the-integrity-.patch \
+SRC_URI:append:cfs-support = "\
+    file://composefs.scc \
 "
 
-SRC_URI:append:use-nxp-bsp = "\
-    ${PATCHES_NXP_BSP} \
-"
-
-SRC_URI:append:torizon-signed = "\
-    file://0001-fsverity-Export-fsverity_get_digest.patch \
+SRC_URI:append:cfs-signed = "\
+    file://composefs-fsverity.scc \
 "
 
 KBUILD_BUILD_VERSION .= "-TorizonCore"

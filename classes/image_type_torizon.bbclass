@@ -14,7 +14,11 @@ python() {
         d.setVar('TEZI_CONFIG_FORMAT', torizon_tezi)
 }
 
-TEZI_ROOT_FSOPTS:append:torizon-signed = " -O verity"
+# TODO: Consider always enabling verity.
+#       This would facilitate upgrades from "tdx-signed" to "torizon-signed";
+#       If not done beforehand, the upgrade process would require running
+#       "tune2fs -O verity" on the device.
+TEZI_ROOT_FSOPTS:append:cfs-signed = " -O verity"
 
 python adjust_tezi_artifacts() {
     artifacts = d.getVar('TEZI_ARTIFACTS').replace(d.getVar('KERNEL_IMAGETYPE'), '').replace(d.getVar('KERNEL_DEVICETREE'), '')
@@ -118,6 +122,36 @@ EXTRA_OSTREE_COMMIT = " \
 
 IMAGE_CMD:ostreecommit[vardepsexclude] += "EXTRA_OSTREE_COMMIT OSTREE_COMMIT_SUBJECT"
 
+require recipes-extended/ostree/gen-cfs-keys.inc
+
+generate_cfs_keys[lockfiles] += "${DEPLOY_DIR_IMAGE}/cfskeys.lock"
+generate_cfs_keys() {
+    gen_cfs_keys
+}
+
+CFS_OSTREECOMMIT_PREFUNCS_COND ?= " generate_cfs_keys"
+CFS_OSTREECOMMIT_PREFUNCS ?= \
+    "${@d.getVar('CFS_OSTREECOMMIT_PREFUNCS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+
+CFS_OSTREECOMMIT_DEPENDS_COND ?= "\
+    coreutils-native:do_populate_sysroot \
+    openssl-native:do_populate_sysroot \
+"
+CFS_OSTREECOMMIT_DEPENDS ?= \
+    "${@d.getVar('CFS_OSTREECOMMIT_DEPENDS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+
+CFS_OSTREECOMMIT_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
+
+do_image_ostreecommit[prefuncs] += "${CFS_OSTREECOMMIT_PREFUNCS}"
+do_image_ostreecommit[depends] += "${CFS_OSTREECOMMIT_DEPENDS}"
+do_image_ostreecommit[file-checksums] += "${CFS_OSTREECOMMIT_FILE_CHECKSUMS}"
+
+EXTRA_OSTREE_COMMIT:append:cfs-signed = "\
+    --generate-composefs-metadata \
+    --sign-from-file=${CFS_SIGN_KEYDIR}/${CFS_SIGN_KEYNAME}.sec \
+    --sign-type=ed25519 \
+"
+
 do_image_ostreecommit[postfuncs] += " generate_diff_file"
 generate_diff_file[lockfiles] += "${OSTREE_REPO}/ostree.lock"
 
@@ -134,39 +168,15 @@ generate_diff_file () {
     fi
 }
 
-EXTRA_DO_IMAGE_OSTREECOMMIT_POSTFUNCS = " "
-EXTRA_DO_IMAGE_OSTREECOMMIT_POSTFUNCS:torizon-signed = "composefs_image_gen"
-EXTRA_DO_IMAGE_OSTREECOMMIT_DEPENDS = " "
-EXTRA_DO_IMAGE_OSTREECOMMIT_DEPENDS:torizon-signed = "composefs-tools-native:do_populate_sysroot fsverity-utils-native:do_populate_sysroot"
-do_image_ostreecommit[postfuncs] += "${EXTRA_DO_IMAGE_OSTREECOMMIT_POSTFUNCS}"
-do_image_ostreecommit[depends] += "${EXTRA_DO_IMAGE_OSTREECOMMIT_DEPENDS}"
-composefs_image_gen() {
-    OSTREE_COMMIT=$(cat ${WORKDIR}/ostree_manifest)
-    OSTREE_CFS_REPO=${WORKDIR}/composefs-ostree
-    CFS_JSON_FILE=${WORKDIR}/composefs-${OSTREE_COMMIT}.json
-    CFS_IMG_FILE=${WORKDIR}/composefs-${OSTREE_COMMIT}.img
-
-    rm -rf ${WORKDIR}/composefs-*
-    rm -rf ${OSTREE_CFS_REPO} && mkdir -p ${OSTREE_CFS_REPO}
-
-    ostree admin --sysroot=${OSTREE_CFS_REPO} init-fs --modern ${OSTREE_CFS_REPO}
-    ostree --repo=${OSTREE_CFS_REPO}/ostree/repo pull-local --remote=${OSTREE_OSNAME} ${OSTREE_REPO} ${OSTREE_COMMIT}
-
-    ostree-convert-commit.py ${OSTREE_CFS_REPO}/ostree/repo ${OSTREE_COMMIT} > ${CFS_JSON_FILE}
-    writer-json --out=${CFS_IMG_FILE} ${CFS_JSON_FILE}
-
-    fsverity digest --compact ${CFS_IMG_FILE} > ${WORKDIR}/composefs_digest
-}
-CONVERSION_CMD:tar:prepend:torizon-signed = "cp ${WORKDIR}/composefs-*.img ${OTA_SYSROOT}/ostree/deploy/torizon/deploy/ ; "
-
-EXTRA_DO_IMAGE_OTA_PREFUNCS = " "
-EXTRA_DO_IMAGE_OTA_PREFUNCS:torizon-signed = "composefs_image_digest_set"
-do_image_ota[prefuncs] += "${EXTRA_DO_IMAGE_OTA_PREFUNCS}"
-python composefs_image_digest_set() {
-    with open(d.getVar('WORKDIR') + "/composefs_digest") as f:
-        digest = f.read()
-    d.setVar('OSTREE_KERNEL_ARGS_EXTRA', "cfs_digest=" + digest.rstrip('\n'))
-}
+# Enable composefs and fsverity on the deployed ostree repo; setting
+# "ex-integrity.fsverity" to "maybe" rather than "true" is important here
+# because it allows the build to succeed on a host not having fsverity support
+# while causing ostree to enable fsverity upon deployments on the device (which
+# would have the support).
+#
+# TODO: Review this on bumping ostree (this is very likely to change).
+OSTREE_OTA_REPO_CONFIG:append:cfs-support = " ex-integrity.composefs:true"
+OSTREE_OTA_REPO_CONFIG:append:cfs-signed = " ex-integrity.fsverity:maybe"
 
 IMAGE_DATETIME_FILES ??= " \
     ${sysconfdir}/issue \

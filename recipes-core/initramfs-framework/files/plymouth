@@ -25,7 +25,7 @@ plymouth_run() {
 	if [ "$bootparam_plymouth_debug" = "true" ]; then
 		PLYMOUTH_ARGS="--debug"
 	fi
-	PLYMOUTH_ARGS="${PLYMOUTH_ARGS} --mode=boot --pid-file=/run/plymouth/pid --attach-to-session"
+	PLYMOUTH_ARGS="${PLYMOUTH_ARGS} --mode=boot --pid-file=/run/plymouth/pid"
 	mkdir /dev/pts
 	mount -t devpts devpts /dev/pts
 	/usr/sbin/plymouthd ${PLYMOUTH_ARGS}

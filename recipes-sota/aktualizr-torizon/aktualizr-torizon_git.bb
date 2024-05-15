@@ -2,9 +2,9 @@ SUMMARY = "Toradex implementation of the Aktualizr SOTA client"
 LICENSE = "MPL-2.0"
 LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=815ca599c9df247a0c7f619bab123dad"
 
-GARAGE_SIGN_PV = "0.7.4-25-g7cfca74"
-SRC_URI[garagesign.md5sum] = "584cd16aa7824e34b593dae63796466b"
-SRC_URI[garagesign.sha256sum] = "c7d5fdceef3e815363e3aa398c38643ca213f9b7f66d50f55c76a66cb74565d2"
+GARAGE_SIGN_PV = "0.7.7-6-g629e11e"
+SRC_URI[garagesign.md5sum] = "cc39193d63db9783903f80428ef980ba"
+SRC_URI[garagesign.sha256sum] = "4a8772caca32c727f74c7c8274e411bcfe5bcc41737627e346ef2a8680a47aff"
 
 SRC_URI = " \
   gitsm://github.com/toradex/aktualizr.git;protocol=https;branch=toradex-master \

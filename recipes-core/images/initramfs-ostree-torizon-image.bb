@@ -5,7 +5,7 @@ PACKAGE_INSTALL = "initramfs-framework-base initramfs-module-udev \
     initramfs-module-plymouth ${VIRTUAL-RUNTIME_base-utils} base-passwd \
     initramfs-module-kmod"
 
-PACKAGE_INSTALL:append:torizon-signed = "\
+PACKAGE_INSTALL:append:cfs-support = "\
     initramfs-module-composefs \
 "
 
