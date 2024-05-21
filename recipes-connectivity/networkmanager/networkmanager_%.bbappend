@@ -4,7 +4,6 @@ SRC_URI += "\
     file://0001-85-nm-unmanaged.rules-do-not-manage-docker-bridges.patch \
     file://toradex-nmconnection.conf \
     file://network.nmconnection.in \
-    file://99-disable-uap.conf \
 "
 
 # Depend on libedit as it has a more friendly license than readline (GPLv3)
