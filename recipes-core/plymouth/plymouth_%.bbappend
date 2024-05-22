@@ -2,14 +2,12 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += " \
     file://0001-disable-boot-splash-later.patch \
-    file://0001-themes-only-install-spinner.patch \
     file://torizonlogo-white.png \
     file://spinner.plymouth \
 "
 
-PACKAGECONFIG = "drm udev"
-
-EXTRA_OECONF += "--with-runtimedir=/run"
+PLYMOUTH_THEMES = "spinner"
+PACKAGECONFIG = "drm udev ${PLYMOUTH_THEMES} ${@bb.utils.filter('DISTRO_FEATURES', 'systemd', d)}"
 
 do_install:append () {
     install -m 0644 ${WORKDIR}/torizonlogo-white.png ${D}${datadir}/plymouth/themes/spinner/watermark.png
