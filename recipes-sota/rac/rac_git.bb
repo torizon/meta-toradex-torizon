@@ -408,6 +408,17 @@ SRC_URI += " \
     crate://crates.io/zeroize_derive/1.3.3 \
 "
 
+# Use --offline rather than --frozen mode with "cargo build".
+#
+# Due to the changes we needed to do in RAC Yocto recipe in order to use our toradex/tough registry,
+# the tough repository got sort of aliased, so the upstream Git URL was in fact referencing our
+# toradex/tough fork. Since this is a hack on top of Cargo, it got somewhat lost while parsing
+# Cargo.lock and thought that the repository there needed to change to the upstream one to reflect
+# the state of things.
+#
+CARGO_BUILD_FLAGS:remove = "--frozen"
+CARGO_BUILD_FLAGS:append = " --offline"
+
 # There is a postfunc that runs after do_configure. This fixing logic needs to run after this postfunc.
 # It is because of this ordering this is do_compile:prepend instead of do_configure:append.
 cargo_add_rac_patch_paths() {
