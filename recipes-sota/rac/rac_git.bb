@@ -779,6 +779,17 @@ SRC_URI[yasna-0.5.1.sha256sum] = "aed2e7a52e3744ab4d0c05c20aa065258e84c49fd4226f
 SRC_URI[zeroize-1.7.0.sha256sum] = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
 SRC_URI[zeroize_derive-1.3.3.sha256sum] = "44bf07cb3e50ea2003396695d58bf46bc9887a1f362260446fad6bc4e79bd36c"
 
+# Use --offline rather than --frozen mode with "cargo build".
+#
+# Due to the changes we needed to do in RAC Yocto recipe in order to use our toradex/tough registry,
+# the tough repository got sort of aliased, so the upstream Git URL was in fact referencing our
+# toradex/tough fork. Since this is a hack on top of Cargo, it got somewhat lost while parsing
+# Cargo.lock and thought that the repository there needed to change to the upstream one to reflect
+# the state of things.
+#
+CARGO_BUILD_FLAGS:remove = "--frozen"
+CARGO_BUILD_FLAGS:append = " --offline"
+
 # There is a postfunc that runs after do_configure. This fixing logic needs to run after this postfunc.
 # It is because of this ordering this is do_compile:prepend instead of do_configure:append.
 cargo_add_rac_patch_paths() {
