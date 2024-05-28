@@ -2,18 +2,9 @@ SUMMARY = "TorizonCore"
 DESCRIPTION = "TorizonCore Linux with no containers pre-provisioned."
 
 require torizon-core-common.inc
+require torizon-core-container.inc
 
-IMAGE_FEATURES += "bash-completion-pkgs"
-
-CORE_IMAGE_BASE_INSTALL:append = " \
-    docker \
-    docker-compose \
-    docker-compose-up \
-    docker-integrity-checker \
-    docker-watchdog \
-    docker-auto-prune \
-"
-
+VIRTUAL-RUNTIME_container_engine = "docker"
 IMAGE_VARIANT = "Docker"
 
 inherit extrausers

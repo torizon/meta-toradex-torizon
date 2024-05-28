@@ -6,8 +6,6 @@ SRC_URI:append = " \
     file://daemon.json \
     file://docker.service \
     file://chrome.json \
-    file://20-docker.conf \
-    file://docker.sh \
 "
 
 # Prefer docker.service instead of docker.socket as this is a critical service
@@ -30,14 +28,6 @@ do_install:append() {
     COMPLETION_DIR=${D}${datadir}/bash-completion/completions
     install -d ${COMPLETION_DIR}
     install -m 0644 ${S}/cli/contrib/completion/bash/docker ${COMPLETION_DIR}
-
-    # install systemd configuration snippet for Docker
-    install -d ${D}${systemd_unitdir}/system.conf.d/
-    install -m 0644 ${WORKDIR}/20-docker.conf ${D}${systemd_unitdir}/system.conf.d/
-
-    # install shell profile for Docker
-    install -d ${D}${sysconfdir}/profile.d
-    install -m 0755 ${WORKDIR}/docker.sh ${D}${sysconfdir}/profile.d/
 }
 
-FILES:${PN} += "${libdir}/docker ${systemd_unitdir}/system.conf.d/*"
+FILES:${PN} += "${libdir}/docker"

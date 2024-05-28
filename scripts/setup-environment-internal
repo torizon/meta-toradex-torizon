@@ -365,7 +365,7 @@ For more information about OpenEmbedded see their website:
 
     http://www.openembedded.org/
 
-Your build environemnt has been configured with:
+Your build environment has been configured with:
 
     MACHINE = ${MACHINE}
     SDKMACHINE = ${SDKMACHINE}
@@ -383,16 +383,19 @@ EOF
 
 if [ "${MACHINE}" = "qemuarm64" ]; then
     cat <<EOF
-You can also run generated qemuarm64 image with runqemu by:
+You can run generated qemuarm64 image with runqemu by:
 
     runqemu qemuarm64
-    xtightvncviewer 127.0.0.1
 
 EOF
 fi
 
 if [ "${MACHINE}" = "genericx86-64" ]; then
     cat <<EOF
+You can run generated genericx86-64 image with runqemu by:
+
+    runqemu genericx86-64 ovmf
+
 You can also run generated genericx86-64 image in VirtualBox by:
 
     Create a new machine by choosing 'Other Linux (64-bits)' type

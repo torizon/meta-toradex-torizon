@@ -20,7 +20,7 @@ SRC_URI = "\
 
 S = "${WORKDIR}/git"
 
-SRCREV = "5df8872c9cb7d19edec3e6c2bcbf1a660290a293"
+SRCREV = "15c09320786165853de446b3b351e436ab252486"
 PV = "0.15.4+git${SRCPV}"
 
 RDEPENDS:${PN} = "bash"

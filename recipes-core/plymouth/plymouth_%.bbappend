@@ -6,8 +6,8 @@ SRC_URI += " \
     file://spinner.plymouth \
 "
 
-PACKAGECONFIG:remove = "initrd"
-PACKAGECONFIG:append = " drm"
+PLYMOUTH_THEMES = "spinner"
+PACKAGECONFIG = "drm udev ${PLYMOUTH_THEMES} ${@bb.utils.filter('DISTRO_FEATURES', 'systemd', d)}"
 
 do_install:append () {
     install -m 0644 ${WORKDIR}/torizonlogo-white.png ${D}${datadir}/plymouth/themes/spinner/watermark.png

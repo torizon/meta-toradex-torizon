@@ -1,0 +1,29 @@
+From 2a28043f82f781a5fdf988123f2309442964918d Mon Sep 17 00:00:00 2001
+From: Ming Liu <ming.liu@toradex.com>
+Date: Thu, 21 Mar 2024 14:01:12 +0100
+Subject: [PATCH] rpcbind.service: run after systemd-tmpfiles-setup.service
+
+This ensures /var/run present when rpcbind runs.
+
+Upstream-Status: Inappropriate [OE specific]
+
+Signed-off-by: Ming Liu <ming.liu@toradex.com>
+---
+ systemd/rpcbind.service.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/systemd/rpcbind.service.in b/systemd/rpcbind.service.in
+index f45ee1e..a707fc4 100644
+--- a/systemd/rpcbind.service.in
++++ b/systemd/rpcbind.service.in
+@@ -8,6 +8,7 @@ RequiresMountsFor=@statedir@
+ # rpcbind.socket, no matter how this unit is started.
+ Requires=rpcbind.socket
+ Wants=rpcbind.target
++After=systemd-tmpfiles-setup.service
+ 
+ [Service]
+ Type=notify
+-- 
+2.34.1
+

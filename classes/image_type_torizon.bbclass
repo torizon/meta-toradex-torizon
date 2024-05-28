@@ -27,6 +27,9 @@ python adjust_tezi_artifacts() {
 
 TEZI_IMAGE_TEZIIMG_PREFUNCS:append = " adjust_tezi_artifacts"
 
+# '^metadata_csum' is needed to allow uboot save env to ext4 filesystem
+EXTRA_IMAGECMD:ota-ext4:qemuarm64 = "-O ^64bit,^metadata_csum -L otaroot -i 4096 -t ext4"
+
 IMAGE_CMD:ota:prepend() {
 	if [ "${OSTREE_BOOTLOADER}" = "u-boot" ]; then
 		cp -a ${DEPLOY_DIR_IMAGE}/boot.scr-${MACHINE} ${OTA_SYSROOT}/boot.scr
@@ -195,6 +198,25 @@ tweak_os_release_variant () {
 		sed -i -e "s/^VARIANT=.*$/VARIANT=\"${IMAGE_VARIANT}\"/g" ${IMAGE_ROOTFS}${sysconfdir}/os-release
 	else
 		bbwarn "IMAGE_VARIANT is missing, would be better to define it for a TorizonCore image recipe."
+	fi
+}
+
+ROOTFS_POSTPROCESS_COMMAND += "adjust_container_engines;"
+
+# Ajust rootfs for container engines
+adjust_container_engines () {
+	if [ -f ${IMAGE_ROOTFS}${bindir}/podman ]; then
+		# Allow torizon user to execute podman without password
+		echo >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+		echo "# torizon user can execute podman without password" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+		echo "torizon ALL=(ALL) NOPASSWD:/usr/bin/podman" >> ${IMAGE_ROOTFS}${sysconfdir}/sudoers.d/50-torizon
+	elif [ -f ${IMAGE_ROOTFS}${bindir}/docker ]; then
+		# We build docker-compose as a standalone binary in docker-compose recipe,
+		# which is installed as ${bindir}/docker-compose, but we'd also like to
+		# allow it to be run as a docker plugin 'docker compose', create the link
+		# to support that.
+		install -d ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins
+		ln -sf ${bindir}/docker-compose ${IMAGE_ROOTFS}${nonarch_libdir}/docker/cli-plugins/docker-compose
 	fi
 }
 
@@ -412,3 +434,211 @@ adjust_rootfs_datetime () {
     done
 }
 adjust_rootfs_datetime[vardepsexclude] = "DATETIME"
+
+TORIZON_SOTA_PROV_MODE ?= ""
+TORIZON_SOTA_PROV_CREDENTIALS ?= \
+    "${@d.getVar('SOTA_PACKED_CREDENTIALS') if d.getVar('SOTA_PACKED_CREDENTIALS') else ''}"
+TORIZON_SOTA_PROV_SHARED_DATA ?= ""
+TORIZON_SOTA_PROV_ONLINE_DATA ?= ""
+
+TORIZON_SOTA_PROV_DATA_TARBALL = "provisioning-data.tar.gz"
+TORIZON_SOTA_PROV_FILELIST ?= "\
+    ${TORIZON_SOTA_PROV_DATA_TARBALL}:/ostree/deploy/torizon/var/sota/:true \
+"
+TEZI_ROOT_FILELIST:append = \
+    "${@d.getVar('TORIZON_SOTA_PROV_FILELIST') \
+       if d.getVar('TORIZON_SOTA_PROV_MODE') in ['online', 'offline'] else ''}"
+
+require torizon_ota_helpers.inc
+
+# Get provisioning data when user provides a credentials file.
+get_torizon_prov_data1() {
+    if [ ! -f "${TORIZON_SOTA_PROV_CREDENTIALS}" ]; then
+        bbfatal "Could not find credentials file '${TORIZON_SOTA_PROV_CREDENTIALS}'."
+    fi
+
+    local destdir="${WORKDIR}/prov-data"
+    local src dst tmp
+
+    mkdir "${destdir}" 2>/dev/null || rm -fr "${destdir}"/*
+    mkdir -m 0750 "${destdir}/tmp"
+    mkdir -m 0750 "${destdir}/import"
+    mkdir -m 0750 "${destdir}/import/repo"
+    mkdir -m 0750 "${destdir}/import/director"
+
+    # Image-repository root.json: shared between online and offline provisioning.
+    src="root.json"
+    tmp="${destdir}/tmp/repo-root.json"
+    dst="${destdir}/import/repo/root.json"
+    if ! unzip -p "${TORIZON_SOTA_PROV_CREDENTIALS}" "${src}" > "${tmp}" 2>/dev/null; then
+        bbnote "Could not get '${src}' file from credentials file '${TORIZON_SOTA_PROV_CREDENTIALS}'; please update your credentials file."
+        bbnote "Fetching image-repository root metadata from OTA server."
+        ota_get_token_from_creds "${TORIZON_SOTA_PROV_CREDENTIALS}"
+        ota_get_root_metadata "repo" > "${tmp}" \
+            || bbfatal "Could not get image-repository root metadata from OTA server"
+    fi
+    mv "${tmp}" "${dst}" && chmod 0644 "${dst}"
+
+    # Director-repository root.json: shared between online and offline provisioning.
+    src="director.root.json"
+    tmp="${destdir}/tmp/director.root.json"
+    dst="${destdir}/import/director/root.json"
+    if ! unzip -p "${TORIZON_SOTA_PROV_CREDENTIALS}" "${src}" > "${tmp}" 2>/dev/null; then
+        bbnote "Could not get '${src}' file from credentials file '${TORIZON_SOTA_PROV_CREDENTIALS}'; please update your credentials file."
+        bbnote "Fetching director-repository root metadata from OTA server."
+        ota_get_token_from_creds "${TORIZON_SOTA_PROV_CREDENTIALS}"
+        ota_get_root_metadata "director" > "${tmp}" \
+            || bbfatal "Could not get director-repository root metadata from OTA server"
+    fi
+    mv "${tmp}" "${dst}" && chmod 0644 "${dst}"
+
+    if [ "${TORIZON_SOTA_PROV_MODE}" = "online" ]; then
+        src="provision.json"
+        tmp="${destdir}/tmp/provision.json"
+        dst="${destdir}/auto-provisioning.json"
+        if ! unzip -p "${TORIZON_SOTA_PROV_CREDENTIALS}" "${src}" > "${tmp}" 2>/dev/null; then
+            bbfatal "Could not get 'provision.json' file from credentials file '${TORIZON_SOTA_PROV_CREDENTIALS}'; please update your credentials file."
+        fi
+        mv "${tmp}" "${dst}" && chmod 0640 "${dst}"
+    fi
+
+    ota_clear_token
+
+    rm -fr "${destdir}/tmp"
+}
+
+# Get provisioning data when user provides shared and (optional) online data.
+get_torizon_prov_data2() {
+    if [ ! -f "${TORIZON_SOTA_PROV_SHARED_DATA}" ]; then
+        bbfatal "Could not find shared-data file '${TORIZON_SOTA_PROV_SHARED_DATA}'."
+    fi
+
+    local destdir="${WORKDIR}/prov-data"
+    local dst tmp
+
+    mkdir "${destdir}" 2>/dev/null || rm -fr "${destdir}"/*
+    mkdir -m 0750 "${destdir}/tmp"
+    mkdir -m 0750 "${destdir}/import"
+
+    tar --preserve-permissions \
+        -xvf "${TORIZON_SOTA_PROV_SHARED_DATA}" \
+        -C "${destdir}/import"
+    # Following directories/files are expected to exist inside the tarball
+    # but may have different permissions; make sure they are correct.
+    chmod 0750 "${destdir}/import/repo" || true
+    chmod 0750 "${destdir}/import/director" || true
+    
+    if [ "${TORIZON_SOTA_PROV_MODE}" = "online" ]; then
+        tmp="${destdir}/tmp/provision.json"
+        dst="${destdir}/auto-provisioning.json"
+        # Ignore base64 decoding errors; validate JSON instead.
+        echo "${TORIZON_SOTA_PROV_ONLINE_DATA}" | base64 -di >"${tmp}" || true
+        jq < "${tmp}" >/dev/null || bbfatal "Could not decode online provisioning data"
+        mv "${tmp}" "${dst}" && chmod 0640 "${dst}"
+    fi
+
+    rm -fr "${destdir}/tmp"
+}
+
+gen_torizon_prov_data_tarball() {
+    # Pass entries explicitly rather than passing '.'; this avoids including '.'  in the
+    # tarball. Below we also remove the './' prefix to make the tarball similar to what
+    # TorizonCore Builder produces.
+    local entries
+    entries="$(cd "${WORKDIR}/prov-data" && echo ./*)"
+    [ -n "${entries}" ] && [ "${entries}" != "./*" ] || return 1
+
+    # shellcheck disable=SC2086
+    tar --preserve-permissions \
+        --numeric-owner --owner=0 --group=0 \
+        --transform='s#^./##' \
+        -C "${WORKDIR}/prov-data" \
+        -czf "${WORKDIR}/${TORIZON_SOTA_PROV_DATA_TARBALL}" ${entries}
+
+    cp "${WORKDIR}/${TORIZON_SOTA_PROV_DATA_TARBALL}" \
+       "${IMGDEPLOYDIR}/${TORIZON_SOTA_PROV_DATA_TARBALL}"
+}
+
+gen_torizon_prov_data_sanity_checks() {
+    if [ "${TORIZON_SOTA_PROV_MODE}" != "offline" ] && \
+       [ "${TORIZON_SOTA_PROV_MODE}" != "online" ]; then
+        bbfatal "Unsupported provisioning mode: ${TORIZON_SOTA_PROV_MODE}"
+    fi
+
+    if [ -z "${TORIZON_SOTA_PROV_CREDENTIALS}" ] && \
+       [ -z "${TORIZON_SOTA_PROV_SHARED_DATA}${TORIZON_SOTA_PROV_ONLINE_DATA}"]; then
+        # Some credentials must be passed.
+        bbfatal "Credentials required; either set TORIZON_SOTA_PROV_CREDENTIALS or" \
+                "TORIZON_SOTA_PROV_SHARED_DATA (along with TORIZON_SOTA_PROV_ONLINE_DATA" \
+                "when needed)"
+    elif [ -n "${TORIZON_SOTA_PROV_CREDENTIALS}" ]; then
+        # Passing the credentials works for both offline and online provisioning.
+        if [ -n "${TORIZON_SOTA_PROV_SHARED_DATA}${TORIZON_SOTA_PROV_ONLINE_DATA}" ]; then
+            bbfatal "Either set TORIZON_SOTA_PROV_CREDENTIALS or TORIZON_SOTA_PROV_SHARED_DATA" \
+                    "(along with TORIZON_SOTA_PROV_ONLINE_DATA when needed)"
+        fi
+    elif [ "${TORIZON_SOTA_PROV_MODE}" = "offline" ]; then
+        if [ -z "${TORIZON_SOTA_PROV_SHARED_DATA}" ]; then
+            bbfatal "TORIZON_SOTA_PROV_SHARED_DATA must be set with offline provisioning"
+        fi
+    elif [ "${TORIZON_SOTA_PROV_MODE}" = "online" ]; then
+        if [ -z "${TORIZON_SOTA_PROV_SHARED_DATA}" ] || \
+           [ -z "${TORIZON_SOTA_PROV_ONLINE_DATA}" ]; then
+            bbfatal "Both TORIZON_SOTA_PROV_SHARED_DATA and TORIZON_SOTA_PROV_ONLINE_DATA must" \
+                    "be set with online provisioning"
+        fi
+    else
+        bbfatal "Unhandled configuration in gen_torizon_prov_data()"
+    fi
+}
+
+gen_torizon_prov_data() {
+    if [ -z "${TORIZON_SOTA_PROV_MODE}" ]; then
+        # Scale-provisining is not enabled.
+        return 0
+    fi
+    gen_torizon_prov_data_sanity_checks
+
+    bbnote "Adding provisioning data to Toradex Easy Installer image."
+
+    if [ -n "${TORIZON_SOTA_PROV_CREDENTIALS}" ]; then
+        # method 1: use credentials file.
+        get_torizon_prov_data1
+    else
+        # method 1: use shared and online provisioning data.
+        get_torizon_prov_data2
+    fi
+
+    gen_torizon_prov_data_tarball
+}
+TEZI_IMAGE_TEZIIMG_PREFUNCS:prepend = "gen_torizon_prov_data "
+
+# Below we modify the varflags of 'do_image_teziimg' to ensure it gets called if
+# some key variables are modified or if the contents of the credentials file change.
+TORIZON_TEZIIMG_VARDEPS ?= \
+    "TORIZON_SOTA_PROV_MODE TORIZON_SOTA_PROV_SHARED_DATA TORIZON_SOTA_PROV_ONLINE_DATA"
+
+TORIZON_TEZIIMG_FILE_CHECKSUMS_COND ?= "\
+    ${@(d.getVar('TORIZON_SOTA_PROV_CREDENTIALS') + ':True') \
+      if d.getVar('TORIZON_SOTA_PROV_CREDENTIALS') else ''} \
+"
+TORIZON_TEZIIMG_FILE_CHECKSUMS ?= \
+    "${@d.getVar('TORIZON_TEZIIMG_FILE_CHECKSUMS_COND') \
+       if d.getVar('TORIZON_SOTA_PROV_MODE') in ['online', 'offline'] else ''}"
+
+TORIZON_TEZIIMG_DEPENDS_COND ?= "\
+    coreutils-native:do_populate_sysroot \
+    curl-native:do_populate_sysroot \
+    ca-certificates-native:do_populate_sysroot \
+    tar-native:do_populate_sysroot \
+    jq-native:do_populate_sysroot \
+    unzip-native:do_populate_sysroot \
+"
+TORIZON_TEZIIMG_DEPENDS ?= \
+    "${@d.getVar('TORIZON_TEZIIMG_DEPENDS_COND') \
+       if d.getVar('TORIZON_SOTA_PROV_MODE') in ['online', 'offline'] else ''}"
+
+do_image_teziimg[cleandirs] += "${WORKDIR}/prov-data"
+do_image_teziimg[vardeps] += "${TORIZON_TEZIIMG_VARDEPS}"
+do_image_teziimg[file-checksums] += "${TORIZON_TEZIIMG_FILE_CHECKSUMS}"
+do_image_teziimg[depends] += "${TORIZON_TEZIIMG_DEPENDS}"

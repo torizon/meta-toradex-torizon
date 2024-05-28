@@ -1,7 +1,0 @@
-[Match]
-@MATCH_DIRECTIVE@
-
-[Network]
-Address=192.168.7.2
-Netmask=255.255.255.0
-Gateway=192.168.7.1

@@ -53,4 +53,7 @@ do_install:append() {
     # Workaround for https://github.com/systemd/systemd/issues/11329
     install -m 0644 ${WORKDIR}/systemd-timesyncd-update.service ${D}${systemd_system_unitdir}
     ln -sf ../systemd-timesyncd-update.service ${D}${systemd_system_unitdir}/sysinit.target.wants/systemd-timesyncd-update.service
+
+    # The default SaveIntervalSec (60 secs) is too frequent, change to 1 hour
+    sed -i -e "s/^.*SaveIntervalSec.*$/SaveIntervalSec=3600/" ${D}${sysconfdir}/systemd/timesyncd.conf
 }

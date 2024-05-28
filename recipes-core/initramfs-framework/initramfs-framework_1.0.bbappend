@@ -113,3 +113,24 @@ do_install:append:mx8-nxp-bsp() {
     install -d ${D}/etc/modules-load.d/
     install -m 0755 ${WORKDIR}/50-imx8-graphics.conf ${D}/etc/modules-load.d/50-imx8-graphics.conf
 }
+
+SRC_URI:append:ti-soc = " file://50-am62-graphics.conf"
+RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
+    kernel-module-pwm-tiehrpwm \
+    kernel-module-fb-sys-fops \
+    kernel-module-sysimgblt \
+    kernel-module-sysfillrect \
+    kernel-module-syscopyarea \
+    kernel-module-drm-kms-helper \
+    kernel-module-drm-dma-helper \
+    kernel-module-tidss \
+    kernel-module-display-connector \
+    kernel-module-tc358768 \
+    kernel-module-ti-sn65dsi83 \
+    kernel-module-lontium-lt8912b \
+"
+
+do_install:append:ti-soc() {
+    install -d ${D}/etc/modules-load.d/
+    install -m 0755 ${WORKDIR}/50-am62-graphics.conf ${D}/etc/modules-load.d/50-am62-graphics.conf
+}

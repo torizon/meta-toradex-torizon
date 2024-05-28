@@ -24,6 +24,7 @@ SPLASH = "plymouth"
 
 # Base packages
 CORE_IMAGE_BASE_INSTALL:append = " \
+    alsa-ucm-conf-tdx \
     cpufrequtils \
     curl \
     ethtool \
@@ -42,7 +43,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     mmc-utils \
     nano \
     neofetch \
-    network-configuration \
+    networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
     ostree-devicetree-overlays \
@@ -74,6 +75,10 @@ CORE_IMAGE_BASE_INSTALL:append:sota = " \
 
 CORE_IMAGE_BASE_INSTALL:append:mx8-nxp-bsp = " \
     kernel-module-imx-gpu-viv \
+"
+
+CORE_IMAGE_BASE_INSTALL:append:verdin-am62 = " \
+    ti-img-rogue-driver \
 "
 
 nss_altfiles_set_users_groups () {

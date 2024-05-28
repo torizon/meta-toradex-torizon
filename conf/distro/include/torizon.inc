@@ -31,9 +31,6 @@ PACKAGECONFIG:append:pn-${PREFERRED_PROVIDER_virtual/runc} = " seccomp"
 PACKAGECONFIG:append:pn-${PREFERRED_PROVIDER_virtual/docker} = " seccomp"
 PACKAGECONFIG:append:pn-systemd = " seccomp"
 
-# Set default network configuration
-PREFERRED_RPROVIDER_network-configuration = "networkmanager"
-
 # SOTA
 OSTREE_OSNAME = "torizon"
 OSTREE_MULTI_DEVICETREE_SUPPORT = "1"
@@ -93,12 +90,3 @@ SKIP_META_SECURITY_SANITY_CHECK = "1"
 
 # Rust toolchain preferred versions:
 RUSTVERSION ?= "1.70%"
-
-PREFERRED_VERSION_cargo ?= "${RUSTVERSION}"
-PREFERRED_VERSION_cargo-native ?= "${RUSTVERSION}"
-PREFERRED_VERSION_libstd-rs ?= "${RUSTVERSION}"
-PREFERRED_VERSION_rust ?= "${RUSTVERSION}"
-PREFERRED_VERSION_rust-cross-${TARGET_ARCH} ?= "${RUSTVERSION}"
-PREFERRED_VERSION_rust-llvm ?= "${RUSTVERSION}"
-PREFERRED_VERSION_rust-llvm-native ?= "${RUSTVERSION}"
-PREFERRED_VERSION_rust-native ?= "${RUSTVERSION}"

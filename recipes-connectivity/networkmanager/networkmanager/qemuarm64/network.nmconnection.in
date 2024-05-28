@@ -1,0 +1,17 @@
+[connection]
+id=network@NET_NUM@
+type=ethernet
+interface-name=@NET_NAME@@NET_NUM@s1
+
+[ethernet]
+
+[ipv4]
+address1=192.168.7.2/32,192.168.7.1
+dns=1.1.1.1;8.8.8.8;
+method=manual
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]

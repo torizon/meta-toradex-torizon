@@ -15,9 +15,10 @@ SRC_URI = "\
            git://github.com/fluent/fluent-bit.git;protocol=https;nobranch=1 \
            file://fluent-bit.service \
            file://fluent-bit.conf \
+           file://emmc-health \
            "
-SRCREV = "2983b235a37243b91562cda29501d388b13cb7e8"
-PV = "2.1.8+git${SRCPV}"
+SRCREV = "18e5eda4b644723fcfbe6a46524de8430f856fe5"
+PV = "2.2.3+git${SRCPV}"
 
 S = "${WORKDIR}/git"
 
@@ -63,4 +64,5 @@ do_install:append() {
     install -m 0644 ${WORKDIR}/fluent-bit.service ${D}${systemd_unitdir}/system/fluent-bit.service
     install -d ${D}${sysconfdir}/fluent-bit/
     install -m 0755 ${WORKDIR}/fluent-bit.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.conf
+    install -m 0755 ${WORKDIR}/emmc-health ${D}${bindir}
 }
