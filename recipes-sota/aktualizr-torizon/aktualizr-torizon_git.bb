@@ -14,7 +14,7 @@ SRC_URI = " \
   https://tuf-cli-releases.ota.here.com/cli-${GARAGE_SIGN_PV}.tgz;unpack=0;name=garagesign \
 "
 
-SRCREV = "1523e48df0c0ef68c8c05c519ef4c834ece7b46c"
+SRCREV = "d4ddfbe594a6cdf68290686959fc6798c779467a"
 SRCREV:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
