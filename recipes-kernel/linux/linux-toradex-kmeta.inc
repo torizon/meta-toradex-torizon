@@ -1,4 +1,4 @@
-SRCREV_meta = "4ac003331c3ba431dbe946afe3745ff7e66bae5e"
+SRCREV_meta = "494078b8b4c9cd65bfff94fd3179ecff58a21a6d"
 SRCREV_meta:use-head-next = "${AUTOREV}"
 
 KMETABRANCH = "kirkstone-6.x.y"
