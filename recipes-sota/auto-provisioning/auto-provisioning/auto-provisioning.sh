@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o pipefail
+
 SOTA_BASE_DIR="/var/sota"
 SOTA_CRED_DIR="$SOTA_BASE_DIR/import"
 
@@ -13,88 +15,81 @@ PROV_ACCESS_TOKEN=""
 
 PROV_REGISTER_ENDPOINT=${PROV_REGISTER_ENDPOINT:-"https://app.torizon.io/api/accounts/devices"}
 
-function log()
-{
+log() {
     echo "$@"
 }
 
-function log_error()
-{
-    echo "ERROR: $@"
+log_error() {
+    echo "ERROR:" "$@"
 }
 
-function exit_error()
-{
+exit_error() {
     log_error "$@"
     exit 1
 }
 
-function exit_ok()
-{
+exit_ok() {
     log "$@"
     exit 0
 }
 
-function check_provisioning_status()
-{
+check_provisioning_status() {
     log "Checking provisioning status"
 
     if [ ! -f "$CONFIG_FILE" ]; then
         exit_ok "Auto-provisioning configuration file not found [$CONFIG_FILE]"
     fi
-
     if [ -f "$PROVISIONED_FILE" ]; then
         exit_ok "Device seems to be already provisioned (provisioning file exists [$PROVISIONED_FILE])"
     fi
 }
 
-function read_json_property()
-{
+read_json_property() {
     local property=$1
     local config=$2
     local value=""
 
     value=$(echo "$config" | jq -r "$property" 2>&-)
-    if [ -z "$value" -o "$value" == "null" ]; then
+    if [ -z "$value" ] || [ "$value" = "null" ]; then
         echo "Could not read [$property] property from the JSON data"
         exit 1
     else
-        echo $value
+        echo "$value"
         exit 0
     fi
 }
 
-function read_config_file()
-{
-    local config=$(cat $CONFIG_FILE)
+read_config_file() {
+    local config
+
+    config=$(cat $CONFIG_FILE)
 
     if ! PROV_CLIENT_ID=$(read_json_property ".client_id" "$config"); then
-        exit_error $PROV_CLIENT_ID
+        exit_error "$PROV_CLIENT_ID"
     fi
-
     if ! PROV_SECRET=$(read_json_property ".secret" "$config"); then
-        exit_error $PROV_SECRET
+        exit_error "$PROV_SECRET"
     fi
-
     if ! PROV_TOKEN_ENDPOINT=$(read_json_property ".token_endpoint" "$config"); then
-        exit_error $PROV_TOKEN_ENDPOINT
+        exit_error "$PROV_TOKEN_ENDPOINT"
     fi
 }
 
-function get_provisioning_token()
-{
+get_provisioning_token() {
     local http_response=""
 
-    http_response=$(curl -s -u ${PROV_CLIENT_ID}:${PROV_SECRET} ${PROV_TOKEN_ENDPOINT} -d grant_type=client_credentials)
+    http_response=$(curl -s \
+                         -u "${PROV_CLIENT_ID}:${PROV_SECRET}" \
+                         -d "grant_type=client_credentials" \
+                         "${PROV_TOKEN_ENDPOINT}")
 
     if ! PROV_ACCESS_TOKEN=$(read_json_property ".access_token" "$http_response"); then
         log_error "HTTP response: $http_response"
-        exit_error $PROV_ACCESS_TOKEN
+        exit_error "$PROV_ACCESS_TOKEN"
     fi
 }
 
-function register_device()
-{
+register_device() {
     local device_id=""
     local device_name=""
     local http_code=""
@@ -116,8 +111,7 @@ function register_device()
     fi
 }
 
-function write_credentials()
-{
+write_credentials() {
     log "Updating device credentials"
 
     rm -Rf $SOTA_CRED_DIR && mkdir -p $SOTA_CRED_DIR
@@ -130,8 +124,7 @@ function write_credentials()
     rm -rf $CONFIG_FILE
 }
 
-function restart_services()
-{
+restart_services() {
     log "Restarting aktualizr-torizon"
     systemctl restart aktualizr-torizon
 
@@ -145,8 +138,7 @@ function restart_services()
     fi
 }
 
-function main()
-{
+main() {
     log "Starting auto-provisioning script"
     check_provisioning_status
     read_config_file
