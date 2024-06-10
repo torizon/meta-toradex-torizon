@@ -92,18 +92,37 @@ get_provisioning_token() {
 register_device() {
     local device_id=""
     local device_name=""
-    local http_code=""
+    local http_code post_data
 
-    device_id=$(cat /etc/hostname)
+    # get_device_id() can be optionally defined in a user-defined overrides script.
+    if [ "$(type -t get_device_id)" = "function" ]; then
+        if ! device_id=$(get_device_id); then
+            exit_error "get_device_id returned an error ($?); aborting device registration"
+        fi
+    else
+        device_id="$(cat /etc/hostname)"
+    fi
 
-    log "Provisioning device with deviceID [$device_id] and downloading credentials"
+    # get_device_name() can be optionally defined in a user-defined overrides script.
+    if [ "$(type -t get_device_name)" = "function" ]; then
+        if ! device_name=$(get_device_name); then
+            exit_error "get_device_name returned an error ($?); aborting device registration"
+        fi
+    fi
+
+    log "Provisioning device with deviceID=\"${device_id}\", deviceName=\"${device_name}\" and downloading credentials"
 
     cd "$(mktemp -d)" || exit_error "Could not create temporary directory to download credentials"
 
+    post_data=$(jq -n \
+                   --arg devid "${device_id}" \
+                   --arg devnm "${device_name}" \
+                   '{"device_id": $devid, "device_name": $devnm}')
     http_code=$(curl -s -w '%{http_code}' --max-time 30 -X POST \
-              -H "Authorization: Bearer $PROV_ACCESS_TOKEN" "$PROV_REGISTER_ENDPOINT" \
-              -d "{\"device_id\": \"${device_id}\", \"device_name\": \"${device_name}\"}" \
-              -o device.zip)
+                     -H "Authorization: Bearer ${PROV_ACCESS_TOKEN}" \
+                     -d "${post_data}" \
+                     -o "device.zip" \
+                     "$PROV_REGISTER_ENDPOINT")
 
     if [ "$http_code" != "200" ]; then
         http_message=$(cat device.zip)
@@ -148,5 +167,31 @@ main() {
     restart_services
     log "Device successfully provisioned"
 }
+
+# Source the overrides script.
+#
+# Currently the script is expected to expose two functions, namely:
+#
+# - get_device_id: if defined, it should output the "device ID" to be used when
+#   registering the device to the platform.
+# - get_device_name: if defined, it should output the "device name" to be used
+#   when registering the device to the platform.
+#
+for ovrdir in /etc/sota /usr/lib/sota; do
+    ovrscript="${ovrdir}/auto-provisioning-overrides.sh"
+    if [ -f "${ovrscript}" ]; then
+        if [[ "$(stat -c '%U' "${ovrscript}")" == "root" ]] && \
+           [[ "$(stat -c '%A' "${ovrscript}")" =~ ^-....-..-.$ ]]; then
+            log "Sourcing ${ovrscript}"
+            # shellcheck disable=SC1090
+            source "${ovrscript}"
+        else
+            log_error "Refusing to source ${ovrscript}:" \
+                      "script is writable by users other than root or is not owned by root."
+        fi
+        # Stop at the first script found (whether it's a valid one or not).
+        break
+    fi
+done
 
 main "$@"
