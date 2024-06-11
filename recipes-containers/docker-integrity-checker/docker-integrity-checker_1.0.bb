@@ -8,7 +8,8 @@ SRC_URI = " \
     file://docker-integrity-checker.sh \
 "
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 inherit systemd
 
@@ -19,7 +20,7 @@ SYSTEMD_AUTO_ENABLE = "disable"
 
 do_install() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/docker-integrity-checker.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/docker-integrity-checker.service ${D}${systemd_unitdir}/system
     install -d ${D}${bindir}    
-    install -m 0755 ${WORKDIR}/docker-integrity-checker.sh ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/docker-integrity-checker.sh ${D}${bindir}
 }

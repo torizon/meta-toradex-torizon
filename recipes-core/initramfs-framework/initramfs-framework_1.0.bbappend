@@ -50,9 +50,9 @@ FILES:initramfs-module-kmod = "\
 "
 
 do_install:append() {
-    install -m 0755 ${WORKDIR}/plymouth ${D}/init.d/02-plymouth
-    install -m 0755 ${WORKDIR}/ostree ${D}/init.d/95-ostree
-    install -m 0755 ${WORKDIR}/kmod ${D}/init.d/01-kmod
+    install -m 0755 ${UNPACKDIR}/plymouth ${D}/init.d/02-plymouth
+    install -m 0755 ${UNPACKDIR}/ostree ${D}/init.d/95-ostree
+    install -m 0755 ${UNPACKDIR}/kmod ${D}/init.d/01-kmod
 }
 
 require recipes-extended/ostree/ostree-prepare-root.inc
@@ -60,10 +60,10 @@ require recipes-extended/ostree/ostree-prepare-root.inc
 do_install:append:cfs-support() {
     # Bundled into initramfs-module-kmod package:
     install -d ${D}/etc/modules-load.d/
-    install -m 0755 ${WORKDIR}/80-composefs.conf ${D}/etc/modules-load.d/80-composefs.conf
+    install -m 0755 ${UNPACKDIR}/80-composefs.conf ${D}/etc/modules-load.d/80-composefs.conf
 
     # Bundled into initramfs-module-composefs package:
-    install -m 0755 ${WORKDIR}/composefs ${D}/init.d/94-composefs
+    install -m 0755 ${UNPACKDIR}/composefs ${D}/init.d/94-composefs
     install -d ${D}${nonarch_libdir}/ostree/
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
@@ -111,7 +111,7 @@ RDEPENDS:initramfs-module-kmod:append:mx8-nxp-bsp = " \
 
 do_install:append:mx8-nxp-bsp() {
     install -d ${D}/etc/modules-load.d/
-    install -m 0755 ${WORKDIR}/50-imx8-graphics.conf ${D}/etc/modules-load.d/50-imx8-graphics.conf
+    install -m 0755 ${UNPACKDIR}/50-imx8-graphics.conf ${D}/etc/modules-load.d/50-imx8-graphics.conf
 }
 
 SRC_URI:append:ti-soc = " file://50-am62-graphics.conf"
@@ -132,5 +132,5 @@ RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
 
 do_install:append:ti-soc() {
     install -d ${D}/etc/modules-load.d/
-    install -m 0755 ${WORKDIR}/50-am62-graphics.conf ${D}/etc/modules-load.d/50-am62-graphics.conf
+    install -m 0755 ${UNPACKDIR}/50-am62-graphics.conf ${D}/etc/modules-load.d/50-am62-graphics.conf
 }

@@ -15,7 +15,7 @@ do_compile:append () {
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
         -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
         -e 's/@@DISTRO_BOOT_PREDEF_FITCONF@@/${DISTRO_BOOT_PREDEF_FITCONF}/' \
-        ${WORKDIR}/uEnv.txt.in > uEnv.txt
+        ${S}/uEnv.txt.in > uEnv.txt
 }
 
 do_install () {

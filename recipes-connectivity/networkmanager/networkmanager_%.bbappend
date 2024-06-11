@@ -18,11 +18,11 @@ NET_NAME = "ethernet"
 NET_NUMS = "0 1"
 
 do_install:append() {
-    install -m 0600 ${WORKDIR}/toradex-nmconnection.conf ${D}${nonarch_libdir}/NetworkManager/conf.d
+    install -m 0600 ${UNPACKDIR}/toradex-nmconnection.conf ${D}${nonarch_libdir}/NetworkManager/conf.d
 
     for netnum in ${NET_NUMS}; do
         sed -e "s/@NET_NAME@/${NET_NAME}/g" -e "s/@NET_NUM@/$netnum/g" \
-            ${WORKDIR}/network.nmconnection.in \
+            ${UNPACKDIR}/network.nmconnection.in \
             >  ${D}${sysconfdir}/NetworkManager/system-connections/network"$netnum".nmconnection
     done
 
@@ -30,5 +30,5 @@ do_install:append() {
 }
 
 do_install:append() {
-    install -m 0600 ${WORKDIR}/99-disable-uap.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-disable-uap.conf
+    install -m 0600 ${UNPACKDIR}/99-disable-uap.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-disable-uap.conf
 }

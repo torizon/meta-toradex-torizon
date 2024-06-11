@@ -67,8 +67,8 @@ RDEPENDS:${PN}:append:class-target = " ${@get_rdeps(d)}"
 
 do_install:append () {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/ostree-pending-reboot.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/ostree-pending-reboot.path ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ostree-pending-reboot.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ostree-pending-reboot.path ${D}${systemd_system_unitdir}
 }
 
 require ostree-prepare-root.inc

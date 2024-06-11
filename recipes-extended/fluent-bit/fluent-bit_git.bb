@@ -69,8 +69,8 @@ do_install:append() {
     rm -Rf ${D}/lib ${D}/etc/init
 
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/fluent-bit.service ${D}${systemd_unitdir}/system/fluent-bit.service
+    install -m 0644 ${UNPACKDIR}/fluent-bit.service ${D}${systemd_unitdir}/system/fluent-bit.service
     install -d ${D}${sysconfdir}/fluent-bit/
-    install -m 0755 ${WORKDIR}/fluent-bit.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.conf
-    install -m 0755 ${WORKDIR}/emmc-health ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/fluent-bit.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.conf
+    install -m 0755 ${UNPACKDIR}/emmc-health ${D}${bindir}
 }

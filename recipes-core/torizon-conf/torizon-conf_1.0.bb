@@ -8,14 +8,17 @@ SRC_URI = " \
     file://containers-tags.sh \
 "
 
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
+
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 EXCLUDE_FROM_WORLD = "1"
 INHIBIT_DEFAULT_DEPS = "1"
 
 do_install () {
     install -d ${D}${sysconfdir}/profile.d
-    install -m 0755 ${WORKDIR}/docker.sh ${D}${sysconfdir}/profile.d/
-    install -m 0755 ${WORKDIR}/machine.sh ${D}${sysconfdir}/profile.d/
+    install -m 0755 ${UNPACKDIR}/docker.sh ${D}${sysconfdir}/profile.d/
+    install -m 0755 ${UNPACKDIR}/machine.sh ${D}${sysconfdir}/profile.d/
     sed -i "s/@@MACHINE@@/${MACHINE}/g" ${D}${sysconfdir}/profile.d/machine.sh
-    install -m 0755 ${WORKDIR}/containers-tags.sh ${D}${sysconfdir}/profile.d/
+    install -m 0755 ${UNPACKDIR}/containers-tags.sh ${D}${sysconfdir}/profile.d/
 }
