@@ -67,8 +67,6 @@ USERADD_ERROR_DYNAMIC = "skip"
 BBMASK += " \
     /meta-toradex-bsp-common/recipes-core/systemd/systemd_%.bbappend \
     /meta-freescale/recipes-graphics/cairo \
-    /openembedded-core/meta/recipes-devtools/cargo \
-    /openembedded-core/meta/recipes-devtools/rust \
 "
 
 # machines where TorizonCore is experimental
@@ -87,6 +85,3 @@ PREFERRED_RPROVIDER_aktualizr-shared-prov = "aktualizr-torizon"
 
 # disable warning message from meta-security
 SKIP_META_SECURITY_SANITY_CHECK = "1"
-
-# Rust toolchain preferred versions:
-RUSTVERSION ?= "1.70%"
