@@ -2,16 +2,16 @@ SUMMARY = "Toradex implementation of the Aktualizr SOTA client"
 LICENSE = "MPL-2.0"
 LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=815ca599c9df247a0c7f619bab123dad"
 
-GARAGE_SIGN_PV = "0.7.7-6-g629e11e"
-SRC_URI[garagesign.md5sum] = "cc39193d63db9783903f80428ef980ba"
-SRC_URI[garagesign.sha256sum] = "4a8772caca32c727f74c7c8274e411bcfe5bcc41737627e346ef2a8680a47aff"
+GARAGE_SIGN_PV = "0.8.0"
+SRC_URI[garagesign.md5sum] = "40017561a4fe9ffcf57f2112ae4ea420"
+SRC_URI[garagesign.sha256sum] = "2bac2d50b551b7a6b1949fdb25424bc0bc457b2a9b119bd808fd22d922bb2324"
 
 SRC_URI = " \
   gitsm://github.com/toradex/aktualizr.git;protocol=https;branch=toradex-master \
   file://aktualizr-torizon.service \
   file://gateway.url \
   file://root.crt \
-  https://tuf-cli-releases.ota.here.com/cli-${GARAGE_SIGN_PV}.tgz;unpack=0;name=garagesign \
+  https://github.com/uptane/ota-tuf/releases/download/v${GARAGE_SIGN_PV}/cli-${GARAGE_SIGN_PV}.tgz;unpack=0;name=garagesign \
 "
 
 SRCREV = "0377fb86459855689365f173769e3b78c050f8c8"
