@@ -29,6 +29,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     curl \
     ethtool \
     evtest \
+    fastfetch \
     fluent-bit \
     htop \
     i2c-tools \
