@@ -42,7 +42,6 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     libpwquality \
     mmc-utils \
     nano \
-    neofetch \
     networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
