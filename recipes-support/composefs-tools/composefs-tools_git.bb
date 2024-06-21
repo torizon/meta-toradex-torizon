@@ -1,8 +1,10 @@
 SUMMARY = "composefs tools"
-DESCRIPTION = "The composefs project combines several underlying Linux \
-features to provide a very flexible mechanism to support read-only \
-mountable filesystem trees, stacking on top of an underlying \"lower\" \
-Linux filesystem."
+DESCRIPTION = "\
+    The composefs project combines several underlying Linux \
+    features to provide a very flexible mechanism to support read-only \
+    mountable filesystem trees, stacking on top of an underlying \"lower\" \
+    Linux filesystem. \
+"
 
 # TODO: REVIEW
 # NOTE: multiple licenses have been detected; they have been separated with &
@@ -12,10 +14,21 @@ Linux filesystem."
 # instead of &. If there is any doubt, check the accompanying documentation
 # to determine which situation is applicable.
 LICENSE = "GPL-2.0-only & GPL-3.0-only & LGPL-2.1-only"
-LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
-                    file://COPYING.LIB;md5=4fbd65380cdd255951079008b364516c \
-                    file://tools/COPYING;md5=d32239bcb673463ab874e80d47fae504"
+LIC_FILES_CHKSUM = "\
+    file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
+    file://COPYING.LIB;md5=4fbd65380cdd255951079008b364516c \
+    file://tools/COPYING;md5=d32239bcb673463ab874e80d47fae504 \
+"
 
+DEPENDS = "\
+    fuse3 \
+    openssl \
+"
+# NOTE: We are currently removing the dependency on fuse3 on the native build
+# just to avoid having to solve a dependecy chain.
+DEPENDS:remove:class-native = "fuse3"
+
+PV = "1.0.4+git${SRCPV}"
 # TODO: Consider removing the following patches on the next upgrade.
 SRC_URI = "\
     git://github.com/containers/composefs.git;protocol=https;branch=main \
@@ -23,15 +36,9 @@ SRC_URI = "\
     file://0002-mount-Allow-building-when-macro-LOOP_CONFIGURE-is-no.patch \
 "
 
-SRCREV = "2d5cdcb9176cfe4ccf1761ef6d78e1c48de35649"
-PV = "1.0.3+git${SRCPV}"
+SRCREV = "7623e4dc89f62ada5724d4e41d0a16d2671312f5"
 
 S = "${WORKDIR}/git"
-
-DEPENDS = "openssl fuse3"
-# NOTE: We are currently removing the dependency on fuse3 on the native build
-# just to avoid having to solve a dependecy chain.
-DEPENDS:remove:class-native = "fuse3"
 
 inherit autotools pkgconfig
 

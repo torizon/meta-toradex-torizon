@@ -1,0 +1,37 @@
+From 4b296e087e40bbe76ea3f118d7f88a219bb3d3fe Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Thu, 20 Jun 2024 09:15:52 -0300
+Subject: [PATCH] daemon: use default system config when none is  available
+
+This allows the system image to provide a default daemon.json file while
+still allowing the user to overwrite via /etc/docker/daemon.json.
+
+Upstream-Status: Inappropriate [embedded specific]
+
+Signed-off-by: Ricardo Salveti <ricardo@foundries.io>
+Signed-off-by: Sergio Prado <sergio.prado@toradex.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ src/import/cmd/dockerd/daemon.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/import/cmd/dockerd/daemon.go b/src/import/cmd/dockerd/daemon.go
+index 3704042f4f..9fe2814832 100644
+--- a/src/import/cmd/dockerd/daemon.go
++++ b/src/import/cmd/dockerd/daemon.go
+@@ -524,6 +524,12 @@ func loadDaemonCliConfig(opts *daemonOptions) (*config.Config, error) {
+ 	}
+ 	opts.setDefaultOptions()
+ 
++  // UNIX: use default system daemon config file if provided is not available
++  defaultSystemDaemonConfigFile := "/usr/lib/docker/daemon.json"
++  if _, err := os.Stat(opts.configFile); os.IsNotExist(err) {
++    opts.configFile = defaultSystemDaemonConfigFile
++  }
++
+ 	conf := opts.daemonConfig
+ 	flags := opts.flags
+ 	conf.Debug = opts.Debug
+-- 
+2.34.1
+

@@ -1,15 +1,27 @@
 SUMMARY = "Fast Log processor and Forwarder"
-DESCRIPTION = "Fluent Bit is a data collector, processor and  \
-forwarder for Linux. It supports several input sources and \
-backends (destinations) for your data. \
+DESCRIPTION = "\
+    Fluent Bit is a data collector, processor and \
+    forwarder for Linux. It supports several input sources and \
+    backends (destinations) for your data. \
 "
 
 HOMEPAGE = "http://fluentbit.io"
 BUGTRACKER = "https://github.com/fluent/fluent-bit/issues"
+SECTION = "net"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=2ee41112a44fe7014dce33e26468ba93"
-SECTION = "net"
+
+DEPENDS = "\
+    bison-native \
+    flex-native \
+    libyaml \
+    openssl \
+    systemd \
+    zlib \
+"
+
+PV = "3.0.7+git${SRCPV}"
 
 SRC_URI = "\
            git://github.com/fluent/fluent-bit.git;protocol=https;nobranch=1 \
@@ -17,12 +29,9 @@ SRC_URI = "\
            file://fluent-bit.conf \
            file://emmc-health \
            "
-SRCREV = "18e5eda4b644723fcfbe6a46524de8430f856fe5"
-PV = "2.2.3+git${SRCPV}"
+SRCREV = "73e72bdf9af542602255f1df9fde680346a36490"
 
 S = "${WORKDIR}/git"
-
-DEPENDS = "zlib openssl libyaml bison-native flex-native"
 
 # Use CMake 'Unix Makefiles' generator
 OECMAKE_GENERATOR ?= "Unix Makefiles"
@@ -46,7 +55,6 @@ EXTRA_OECMAKE += "-DFLB_WASM=Off "
 EXTRA_OECMAKE += "-DFLB_SHARED_LIB=Off -DFLB_EXAMPLES=Off "
 
 # Systemd support
-DEPENDS += "systemd"
 EXTRA_OECMAKE += "-DFLB_IN_SYSTEMD=On "
 
 # Enable Kafka Output plugin

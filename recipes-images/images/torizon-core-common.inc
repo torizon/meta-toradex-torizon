@@ -29,6 +29,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     curl \
     ethtool \
     evtest \
+    fastfetch \
     fluent-bit \
     htop \
     i2c-tools \
@@ -42,7 +43,6 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     libpwquality \
     mmc-utils \
     nano \
-    neofetch \
     networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
@@ -71,6 +71,7 @@ CORE_IMAGE_BASE_INSTALL:append:tdx = " \
 # SOTA related packages
 CORE_IMAGE_BASE_INSTALL:append:sota = " \
     auto-provisioning \
+    rac \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:mx8-nxp-bsp = " \

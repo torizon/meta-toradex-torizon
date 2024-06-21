@@ -1,12 +1,13 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-
-inherit bash-completion
+FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRC_URI:append = " \
+    file://0001-dockerd-daemon-use-default-system-config-when-none-i.patch \
     file://daemon.json \
     file://docker.service \
     file://chrome.json \
 "
+
+inherit bash-completion
 
 # Prefer docker.service instead of docker.socket as this is a critical service
 SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('DISTRO_FEATURES','systemd','docker.service','',d)}"
@@ -31,3 +32,4 @@ do_install:append() {
 }
 
 FILES:${PN} += "${libdir}/docker"
+
