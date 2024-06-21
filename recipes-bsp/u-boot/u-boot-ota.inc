@@ -7,7 +7,7 @@ SRC_URI:append = " \
 "
 
 # Produce files required for generating file "u-boot-ota.json" during
-# TorizonCore image generation, namely:
+# Torizon image generation, namely:
 #
 # - u-boot-version.json: contains information about the version of u-boot.
 # - u-boot-initial-env.raw: the normal u-boot-initial-env file without sorting;

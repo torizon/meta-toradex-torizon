@@ -1,17 +1,17 @@
-OpenEmbedded/Yocto DISTRO Layer for TorizonCore
-===============================================
+OpenEmbedded/Yocto DISTRO Layer for Torizon
+===========================================
 
-TorizonCore is an embedded Linux distribution for the Torizon platform. It
+Torizon OS is an embedded Linux distribution for the Torizon platform. It
 features, among other essential services, a container runtime and components
 for secure remote over-the-air (OTA) updates.
 
-This layer provides the necessary metadata to build the TorizonCore Linux
+This layer provides the necessary metadata to build the Torizon OS Linux
 distribution on top of Toradex's BSP Linux reference image.
 
 Building
 ========
 
-To build TorizonCore, see the following article:
+To build Torizon OS, see the following article:
 
 https://developer.toradex.com/knowledge-base/build-torizoncore
 

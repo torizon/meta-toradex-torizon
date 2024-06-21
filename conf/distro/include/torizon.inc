@@ -1,6 +1,6 @@
 require conf/distro/include/tdx-base.inc
 
-MAINTAINER = "Toradex TorizonCore Team <torizoncore@toradex.com>"
+MAINTAINER = "Toradex Torizon OS Team <torizon.os@toradex.com>"
 
 TCLIBCAPPEND = ""
 
@@ -18,7 +18,7 @@ IMX_DEFAULT_BSP:upstream = "mainline"
 SDK_NAME_PREFIX = "${DISTRO}"
 SDK_VERSION = "${DISTRO_VERSION}"
 
-# TorizonCore machine specific overrides
+# Torizon machine specific overrides
 INHERIT += "torizon"
 
 # Toradex specific classes
@@ -69,9 +69,9 @@ BBMASK += " \
     /meta-freescale/recipes-graphics/cairo \
 "
 
-# machines where TorizonCore is experimental
+# machines where Torizon is experimental
 EXPERIMENTALOVERRIDES = ""
-# Currently TorizonCore does not support any experimental machines, in future such machines can be added like below:
+# Currently Torizon does not support any experimental machines, in future such machines can be added like below:
 #EXPERIMENTALOVERRIDES:colibri-imx6ull = ":experimental"
 DISTROOVERRIDES .= "${EXPERIMENTALOVERRIDES}"
 

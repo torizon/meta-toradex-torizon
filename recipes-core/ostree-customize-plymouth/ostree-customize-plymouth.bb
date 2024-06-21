@@ -1,4 +1,4 @@
-SUMMARY = "Initramfs plymouth customization script for TorizonCore"
+SUMMARY = "Initramfs plymouth customization script for Torizon OS"
 DESCRIPTION = "Script which allows to customize the Plymouth splash screen in \
 the initramfs. Appends the changes to an existing initramfs and stores the \
 updated initramfs in a new OSTree commit."

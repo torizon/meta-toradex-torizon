@@ -8,7 +8,7 @@ SRC_URI:append:cfs-signed = "\
     file://composefs-fsverity.scc \
 "
 
-KBUILD_BUILD_VERSION .= "-TorizonCore"
+KBUILD_BUILD_VERSION .= "-Torizon"
 
 # Print kernel URL and BRANCH to files to be used by ostree commit as metadata
 kernel_do_deploy:append() {
