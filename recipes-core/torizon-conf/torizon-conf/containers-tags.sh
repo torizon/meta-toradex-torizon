@@ -1,4 +1,4 @@
-# List of containers tags TorizonCore is compatible with
+# List of containers tags Torizon is compatible with
 
 export CT_TAG_DEBIAN="3-bookworm"
 export CT_TAG_ASPDOTNET_6="3-6.0"

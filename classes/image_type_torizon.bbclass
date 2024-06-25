@@ -197,7 +197,7 @@ tweak_os_release_variant () {
 	if [ -n "${IMAGE_VARIANT}" ]; then
 		sed -i -e "s/^VARIANT=.*$/VARIANT=\"${IMAGE_VARIANT}\"/g" ${IMAGE_ROOTFS}${sysconfdir}/os-release
 	else
-		bbwarn "IMAGE_VARIANT is missing, would be better to define it for a TorizonCore image recipe."
+		bbwarn "IMAGE_VARIANT is missing, would be better to define it for a Torizon image recipe."
 	fi
 }
 

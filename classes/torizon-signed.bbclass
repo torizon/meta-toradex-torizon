@@ -1,4 +1,4 @@
-# TorizonCore configuration for signed images
+# Torizon configuration for signed images
 
 # Inherit class to sign BSP related images (bootloader, kernel FIT image).
 inherit tdx-signed

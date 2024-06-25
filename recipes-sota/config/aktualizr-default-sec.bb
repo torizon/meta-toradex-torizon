@@ -1,5 +1,5 @@
 SUMMARY = "Default aktualizr-torizon secondaries"
-DESCRIPTION = "Configuration files to enable the secondaries pre-bundled with TorizonCore by default"
+DESCRIPTION = "Configuration files to enable the secondaries pre-bundled with Torizon OS by default"
 SECTION = "base"
 LICENSE = "MPL-2.0"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MPL-2.0;md5=815ca599c9df247a0c7f619bab123dad"

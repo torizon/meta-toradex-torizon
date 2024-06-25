@@ -4,7 +4,7 @@ REQUIRED_DISTRO_FEATURES:remove = " polkit"
 DEPENDS:remove = "mozjs"
 
 do_install:append() {
-    # remove from the package polkitd and other files not required by TorizonCore
+    # remove from the package polkitd and other files not required by Torizon
     rm -rf ${D}/etc/polkit-1/
     rm -rf ${D}/usr/lib/polkit-1/polkitd
     rm -rf ${D}/usr/share/polkit-1/rules.d

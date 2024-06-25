@@ -3,7 +3,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 require linux-torizon.inc
 
 SRC_URI += "\
-    file://torizoncore.scc \
+    file://torizon.scc \
 "
 
 inherit toradex-kernel-localversion

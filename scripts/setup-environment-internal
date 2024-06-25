@@ -90,7 +90,7 @@ variable_validation() {
 trap env_cleanup RETURN
 
 if [ "$(whoami)" = "root" ]; then
-    echo "ERROR: do not build TorizonCore as root. Exiting..." >&2
+    echo "ERROR: do not build Torizon OS as root. Exiting..." >&2
     return 1
 fi
 
@@ -110,7 +110,7 @@ fi
 
 #
 # Create a common list of "<machine>(<layer>)", sorted by <machine>
-# Blacklist unsupported machines of TorizonCore
+# Blacklist unsupported machines of Torizon
 MACHLAYERS=$(find layers/ -print | grep "conf/machine/.*\.conf" |
             grep -E '(apalis.*\.conf|colibri.*\.conf|verdin.*\.conf|qemuarm64\.conf|genericx86-64\.conf)' |
             grep -E -v '(imx7-nand|colibri-vf|tk1|colibri-imx7|colibri-imx6ull|verdin-am62-k3r5)\.conf' |
@@ -128,7 +128,7 @@ variable_validation "$MACHLAYERS" "MACHINE" || return 1
 DISTRO_DEFAULT="torizon-upstream" && echo "$MACHINE" | grep -E -q '(imx8|am62|qemuarm64|genericx86-64)' && DISTRO_DEFAULT="torizon"
 DISTRO=${DISTRO:-$DISTRO_DEFAULT}
 
-# Create a common list of "<distro>(<layer>)" supported by TorizonCore, sorted by <distro>
+# Create a common list of "<distro>(<layer>)" supported by Torizon, sorted by <distro>
 DISTLAYERS=$(find layers/meta-toradex-torizon -print | grep "conf/distro/.*\.conf" |
             sed -e 's/\.conf//g' -e 's/layers\///' |
             awk -F'/conf/distro/' '{print $NF "(" $1 ")"}' | LC_ALL=C sort)
@@ -359,7 +359,7 @@ fi
 
 cat <<EOF
 
-Welcome to Toradex TorizonCore
+Welcome to Toradex Torizon OS
 
 For more information about OpenEmbedded see their website:
 
@@ -375,9 +375,9 @@ You can now run 'bitbake <target>'
 
 Some of common targets are:
 
-    torizon-core-docker
+    torizon-docker
     torizon-minimal
-    torizon-core-podman
+    torizon-podman
 
 EOF
 
@@ -399,7 +399,7 @@ You can run generated genericx86-64 image with runqemu by:
 You can also run generated genericx86-64 image in VirtualBox by:
 
     Create a new machine by choosing 'Other Linux (64-bits)' type
-    Choose an existing virtual hard disk file: deploy/images/genericx86-64/torizon-core-docker-genericx86-64.wic.vmdk
+    Choose an existing virtual hard disk file: deploy/images/genericx86-64/torizon-docker-genericx86-64.wic.vmdk
     Enable EFI boot mode through: Settings -> System -> Extended Features -> Enable EFI
     Start the machine
 

@@ -1,0 +1,3 @@
+define KFEATURE_DESCRIPTION "Kernel features required for Torizon"
+
+kconf non-hardware torizon.cfg
