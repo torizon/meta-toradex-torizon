@@ -1,0 +1,36 @@
+From bf8f061e514468dc0b65f34431e52b0f78799456 Mon Sep 17 00:00:00 2001
+From: Leonardo Held <leonardo.held@toradex.com>
+Date: Mon, 1 Jul 2024 08:09:10 -0700
+Subject: [PATCH] Disable race condition in signal handler from sshsigdie()
+
+Fixes CVE-2024-6387.
+
+Upstream-Status: Pending
+
+Signed-off-by: Leonardo Held <leonardo.held@toradex.com>
+---
+ log.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/log.c b/log.c
+index 9fc1a2e2e..436c75630 100644
+--- a/log.c
++++ b/log.c
+@@ -451,12 +451,14 @@ void
+ sshsigdie(const char *file, const char *func, int line, int showfunc,
+     LogLevel level, const char *suffix, const char *fmt, ...)
+ {
++#if 0
+ 	va_list args;
+ 
+ 	va_start(args, fmt);
+ 	sshlogv(file, func, line, showfunc, SYSLOG_LEVEL_FATAL,
+ 	    suffix, fmt, args);
+ 	va_end(args);
++#endif
+ 	_exit(1);
+ }
+ 
+-- 
+2.30.2
+
