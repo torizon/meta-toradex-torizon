@@ -216,11 +216,12 @@ MANIFEST_FILE="${MANIFESTS}"/../manifest.xml
 INTEGRATION_BUILD=0
 
 if [ -L "$MANIFEST_FILE" ]; then
-    if [ "$(basename `readlink -f "$MANIFEST_FILE"`)" != "default.xml" ]; then
+    if [ "$(basename `readlink -f "$MANIFEST_FILE"`)" == "integration.xml" ] ||
+       [ "$(basename `readlink -f "$MANIFEST_FILE"`)" == "next.xml" ]; then
         INTEGRATION_BUILD=1
     fi
 else
-    if ! cat $MANIFEST_FILE | grep -q "torizoncore/default.xml"; then
+    if cat $MANIFEST_FILE | grep -q "torizoncore/integration.xml\|torizoncore/next.xml"; then
         INTEGRATION_BUILD=1
     fi
 fi
