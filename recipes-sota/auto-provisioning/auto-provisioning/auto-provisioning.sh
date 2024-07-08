@@ -12,6 +12,7 @@ PROV_CLIENT_ID=""
 PROV_SECRET=""
 PROV_TOKEN_ENDPOINT=""
 PROV_ACCESS_TOKEN=""
+PROV_HIBERNATED=""
 
 PROV_REGISTER_ENDPOINT=${PROV_REGISTER_ENDPOINT:-"https://app.torizon.io/api/accounts/devices"}
 
@@ -73,6 +74,9 @@ read_config_file() {
     if ! PROV_TOKEN_ENDPOINT=$(read_json_property ".token_endpoint" "$config"); then
         exit_error "$PROV_TOKEN_ENDPOINT"
     fi
+    if ! PROV_HIBERNATED=$(read_json_property ".hibernated" "$config"); then
+        PROV_HIBERNATED="false"
+    fi
 }
 
 get_provisioning_token() {
@@ -117,7 +121,8 @@ register_device() {
     post_data=$(jq -n \
                    --arg devid "${device_id}" \
                    --arg devnm "${device_name}" \
-                   '{"device_id": $devid, "device_name": $devnm}')
+                   --arg hbrnt "${PROV_HIBERNATED}" \
+                   '{"device_id": $devid, "device_name": $devnm, "hibernated": $hbrnt | test("true")}')
     http_code=$(curl -s -w '%{http_code}' --max-time 30 -X POST \
                      -H "Authorization: Bearer ${PROV_ACCESS_TOKEN}" \
                      -d "${post_data}" \
