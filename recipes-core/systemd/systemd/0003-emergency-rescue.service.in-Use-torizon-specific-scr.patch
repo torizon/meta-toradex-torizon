@@ -1,0 +1,49 @@
+From 173e1fb5b196439dedbac85d01445e739193c558 Mon Sep 17 00:00:00 2001
+From: Jeremias Cordoba <jeremias.cordoba@toradex.com>
+Date: Wed, 10 Jul 2024 17:19:55 -0700
+Subject: [PATCH] emergency/rescue.service.in: Use torizon specific script
+ instead
+
+Torizon OS systems will be doing unattended updates in the field. If a
+failed update puts the device into emergency/rescue mode then it will
+require manual intervention instead of rolling back to a good state.
+
+Instead Use a script that can recover the device and rollback a bad update.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
+---
+ units/emergency.service.in | 2 +-
+ units/rescue.service.in    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/units/emergency.service.in b/units/emergency.service.in
+index a126ad9bb1..da4a5e13d2 100644
+--- a/units/emergency.service.in
++++ b/units/emergency.service.in
+@@ -20,7 +20,7 @@ Before=rescue.service
+ Environment=HOME=/root
+ WorkingDirectory=-/root
+ ExecStartPre=-{{ROOTBINDIR}}/plymouth --wait quit
+-ExecStart=-{{ROOTLIBEXECDIR}}/systemd-sulogin-shell emergency
++ExecStart=-{{ROOTLIBEXECDIR}}/torizon-recover emergency
+ Type=idle
+ StandardInput=tty-force
+ StandardOutput=inherit
+diff --git a/units/rescue.service.in b/units/rescue.service.in
+index 74b933726e..94fb6bc5a4 100644
+--- a/units/rescue.service.in
++++ b/units/rescue.service.in
+@@ -19,7 +19,7 @@ Before=shutdown.target
+ Environment=HOME=/root
+ WorkingDirectory=-/root
+ ExecStartPre=-{{ROOTBINDIR}}/plymouth --wait quit
+-ExecStart=-{{ROOTLIBEXECDIR}}/systemd-sulogin-shell rescue
++ExecStart=-{{ROOTLIBEXECDIR}}/torizon-recover rescue
+ Type=idle
+ StandardInput=tty-force
+ StandardOutput=inherit
+-- 
+2.30.2
+
