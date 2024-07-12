@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# make sure links for storage devices are available for a proper fw_printenv usage
+udevadm settle -t 30
+
+UPGRADE_AVAILABLE=$(fw_printenv upgrade_available | cut -d '=' -f 2)
+
+# Trigger reboot if it appears the system is doing an update
+if [ "$UPGRADE_AVAILABLE" = "1" ]; then
+    reboot
+    exit 0
+fi
+
+# Otherwise execute default command
+/usr/lib/systemd/systemd-sulogin-shell $1
