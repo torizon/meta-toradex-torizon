@@ -21,7 +21,7 @@ DEPENDS = "\
     zlib \
 "
 
-PV = "3.0.7+git${SRCPV}"
+PV = "3.1.2+git${SRCPV}"
 
 SRC_URI = "\
            git://github.com/fluent/fluent-bit.git;protocol=https;nobranch=1 \
@@ -29,7 +29,7 @@ SRC_URI = "\
            file://fluent-bit.conf \
            file://emmc-health \
            "
-SRCREV = "73e72bdf9af542602255f1df9fde680346a36490"
+SRCREV = "a6feacd6e92e08c0e5290f255864e70b12301fa8"
 
 S = "${WORKDIR}/git"
 
