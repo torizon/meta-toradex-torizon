@@ -12,13 +12,16 @@ SRC_URI = " \
     file://mwifiex-delay.sh \
 "
 
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
+
 SYSTEMD_SERVICE:${PN} = "mwifiex-delay.service"
 
 do_install () {
     install -d ${D}${sysconfdir}/modprobe.d/
-    install -m 0755 ${WORKDIR}/mwifiex-blacklist.conf ${D}${sysconfdir}/modprobe.d/
+    install -m 0755 ${UNPACKDIR}/mwifiex-blacklist.conf ${D}${sysconfdir}/modprobe.d/
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/mwifiex-delay.service ${D}${systemd_unitdir}/system/
+    install -m 0644 ${UNPACKDIR}/mwifiex-delay.service ${D}${systemd_unitdir}/system/
     install -d ${D}${sbindir}
-    install -m 0755 ${WORKDIR}/mwifiex-delay.sh ${D}${sbindir}/
+    install -m 0755 ${UNPACKDIR}/mwifiex-delay.sh ${D}${sbindir}/
 }

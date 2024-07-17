@@ -7,7 +7,8 @@ SRC_URI = " \
     file://docker-compose.service \
 "
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 inherit systemd
 
@@ -17,5 +18,5 @@ SYSTEMD_SERVICE:${PN} = " docker-compose.service"
 
 do_install() {
 	install -d ${D}${nonarch_base_libdir}/systemd/system
-	install -m 0644 ${WORKDIR}/docker-compose.service ${D}${nonarch_base_libdir}/systemd/system
+	install -m 0644 ${UNPACKDIR}/docker-compose.service ${D}${nonarch_base_libdir}/systemd/system
 }

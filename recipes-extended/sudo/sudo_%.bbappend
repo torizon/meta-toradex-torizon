@@ -11,6 +11,6 @@ REQUIRED_DISTRO_FEATURES = "pam"
 
 do_install:append () {
     install -m 0755 -d ${D}${sysconfdir}/sudoers.d
-    install -m 0440 ${WORKDIR}/sudoers.torizon ${D}${sysconfdir}/sudoers.d/50-torizon
+    install -m 0440 ${UNPACKDIR}/sudoers.torizon ${D}${sysconfdir}/sudoers.d/50-torizon
     chmod 4755 ${D}${bindir}/sudo
 }

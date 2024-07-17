@@ -37,21 +37,21 @@ PACKAGECONFIG[ostree] = "-DBUILD_OSTREE=ON,-DBUILD_OSTREE=OFF,ostree,"
 PACKAGECONFIG[ubootenv] = ",,u-boot-fw-utils,u-boot-fw-utils"
 PACKAGECONFIG:remove:class-native = "ubootenv"
 PACKAGECONFIG:class-native = "sota-tools"
-PACKAGECONFIG[sota-tools] = "-DBUILD_SOTA_TOOLS=ON -DGARAGE_SIGN_ARCHIVE=${WORKDIR}/cli-${GARAGE_SIGN_PV}.tgz, -DBUILD_SOTA_TOOLS=OFF,glib-2.0,"
+PACKAGECONFIG[sota-tools] = "-DBUILD_SOTA_TOOLS=ON -DGARAGE_SIGN_ARCHIVE=${UNPACKDIR}/cli-${GARAGE_SIGN_PV}.tgz, -DBUILD_SOTA_TOOLS=OFF,glib-2.0,"
 
 PROVIDES += "aktualizr"
 RPROVIDES:${PN} += "aktualizr aktualizr-info aktualizr-shared-prov"
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/aktualizr-torizon.service ${D}${systemd_unitdir}/system/aktualizr-torizon.service
+    install -m 0644 ${UNPACKDIR}/aktualizr-torizon.service ${D}${systemd_unitdir}/system/aktualizr-torizon.service
 
     install -m 0700 -d ${D}${libdir}/sota/conf.d 
     install -m 0644 ${S}/config/sota-device-cred.toml ${D}/${libdir}/sota/conf.d/20-sota-device-cred.toml
     install -m 0644 ${S}/config/sota-uboot-env.toml ${D}/${libdir}/sota/conf.d/30-rollback.toml
     
-    install -m 0644 ${WORKDIR}/gateway.url ${D}/${libdir}/sota/gateway.url
-    install -m 0644 ${WORKDIR}/root.crt ${D}/${libdir}/sota/root.crt
+    install -m 0644 ${UNPACKDIR}/gateway.url ${D}/${libdir}/sota/gateway.url
+    install -m 0644 ${UNPACKDIR}/root.crt ${D}/${libdir}/sota/root.crt
 }
 
 PACKAGES =+ "${PN}-misc"

@@ -33,9 +33,9 @@ SYSTEMD_SERVICE:${PN} = "usermount.service"
 do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${S}/usermount ${D}${bindir}
-    install -m 0755 ${WORKDIR}/usermount-mounter ${D}${bindir}
-    install -m 0755 ${WORKDIR}/mount-docker-dataroot ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/usermount-mounter ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/mount-docker-dataroot ${D}${bindir}
 
     install -d ${D}${systemd_system_unitdir}
-    install -m 644 ${WORKDIR}/usermount.service ${D}/${systemd_system_unitdir}
+    install -m 644 ${UNPACKDIR}/usermount.service ${D}/${systemd_system_unitdir}
 }

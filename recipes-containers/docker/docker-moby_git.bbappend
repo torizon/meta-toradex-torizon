@@ -14,16 +14,16 @@ SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('DISTRO_FEATURES','systemd','docke
 
 do_install:append() {
     install -d ${D}${libdir}/docker
-    install -m 0644 ${WORKDIR}/daemon.json ${D}${libdir}/docker/
+    install -m 0644 ${UNPACKDIR}/daemon.json ${D}${libdir}/docker/
 
     # Replace default docker.service with the one provided by this recipe
     if ${@bb.utils.contains('DISTRO_FEATURES','systemd','true','false',d)}; then
-        install -m 644 ${WORKDIR}/docker.service ${D}/${systemd_unitdir}/system
+        install -m 644 ${UNPACKDIR}/docker.service ${D}/${systemd_unitdir}/system
     fi
 
     if ${@bb.utils.contains('PACKAGECONFIG', 'seccomp', 'true', 'false', d)}; then
         install -d ${D}${sysconfdir}/docker/seccomp
-        install -m 0644 ${WORKDIR}/chrome.json ${D}${sysconfdir}/docker/seccomp/chrome.json
+        install -m 0644 ${UNPACKDIR}/chrome.json ${D}${sysconfdir}/docker/seccomp/chrome.json
     fi
 
     COMPLETION_DIR=${D}${datadir}/bash-completion/completions

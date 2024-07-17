@@ -6,7 +6,7 @@ SRC_URI += "\
 
 do_install:append() {
     install -d ${D}/${datadir}/vim
-    install -m 0644 ${WORKDIR}/defaults.vim ${D}/${datadir}/vim/
+    install -m 0644 ${UNPACKDIR}/defaults.vim ${D}/${datadir}/vim/
 }
 
 FILES:${PN} += "${datadir}/vim/*"

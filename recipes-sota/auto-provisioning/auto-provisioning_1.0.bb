@@ -9,7 +9,8 @@ SRC_URI = " \
     file://auto-provisioning.sh \
 "
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 RDEPENDS:${PN} = "bash jq"
 
@@ -19,7 +20,7 @@ SYSTEMD_SERVICE:${PN} = "auto-provisioning.service"
 
 do_install() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/auto-provisioning.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/auto-provisioning.service ${D}${systemd_unitdir}/system
     install -d ${D}${sbindir}
-    install -m 0755 ${WORKDIR}/auto-provisioning.sh ${D}${sbindir}
+    install -m 0755 ${UNPACKDIR}/auto-provisioning.sh ${D}${sbindir}
 }

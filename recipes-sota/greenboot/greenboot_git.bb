@@ -47,14 +47,14 @@ do_install() {
     install -m 644 ${S}/usr/lib/systemd/system/redboot-task-runner.service ${D}/${systemd_system_unitdir}
     install -m 644 ${S}/usr/lib/systemd/system/redboot-auto-reboot.service ${D}/${systemd_system_unitdir}
     install -m 644 ${S}/usr/lib/systemd/system/redboot.target ${D}/${systemd_system_unitdir}
-    install -m 644 ${WORKDIR}/greenboot.target ${D}/${systemd_system_unitdir}
+    install -m 644 ${UNPACKDIR}/greenboot.target ${D}/${systemd_system_unitdir}
 
     # helper scripts
     install -d ${D}${libexecdir}/greenboot
     install -m 755 ${S}/usr/libexec/greenboot/greenboot ${D}${libexecdir}/greenboot
-    install -m 755 ${WORKDIR}/greenboot-status ${D}${libexecdir}/greenboot
-    install -m 755 ${WORKDIR}/greenboot-logs ${D}${libexecdir}/greenboot
-    install -m 755 ${WORKDIR}/redboot-auto-reboot ${D}${libexecdir}/greenboot
+    install -m 755 ${UNPACKDIR}/greenboot-status ${D}${libexecdir}/greenboot
+    install -m 755 ${UNPACKDIR}/greenboot-logs ${D}${libexecdir}/greenboot
+    install -m 755 ${UNPACKDIR}/redboot-auto-reboot ${D}${libexecdir}/greenboot
 
     # required scripts for success boot
     install -d ${D}${sysconfdir}/greenboot/check/required.d
@@ -64,8 +64,8 @@ do_install() {
 
     # scripts to run in GREEN boot state
     install -d ${D}${sysconfdir}/greenboot/green.d
-    install -m 755 ${WORKDIR}/00_cleanup_uboot_vars.sh ${D}${sysconfdir}/greenboot/green.d
-    install -m 755 ${WORKDIR}/01_log_rollback_info.sh ${D}${sysconfdir}/greenboot/green.d
+    install -m 755 ${UNPACKDIR}/00_cleanup_uboot_vars.sh ${D}${sysconfdir}/greenboot/green.d
+    install -m 755 ${UNPACKDIR}/01_log_rollback_info.sh ${D}${sysconfdir}/greenboot/green.d
 
     # scripts to run in RED boot state
     install -d ${D}${sysconfdir}/greenboot/red.d

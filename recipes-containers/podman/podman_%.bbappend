@@ -33,13 +33,13 @@ do_install:append () {
 
 	if ${@bb.utils.contains('PACKAGECONFIG', 'completion', 'true', 'false', d)}; then
 		qemu_binary="${@qemu_wrapper_cmdline(d, '${STAGING_DIR_TARGET}', ['${B}', '${STAGING_DIR_TARGET}/${base_libdir}'])}"
-		cat > ${WORKDIR}/podman-qemuwrapper << EOF
+		cat > ${S}/podman-qemuwrapper << EOF
 #!/bin/sh
 
 $qemu_binary "\$@"
 EOF
-		chmod +x ${WORKDIR}/podman-qemuwrapper
-		${WORKDIR}/podman-qemuwrapper ./bin/podman completion bash > ${B}/podman-bash-completion
+		chmod +x ${S}/podman-qemuwrapper
+		${S}/podman-qemuwrapper ./bin/podman completion bash > ${B}/podman-bash-completion
 		install -d ${D}${datadir}/bash-completion/completions
 		install -m 0644 ${B}/podman-bash-completion ${D}${datadir}/bash-completion/completions/podman
 		if ${@bb.utils.contains('PACKAGECONFIG', 'docker', 'true', 'false', d)}; then

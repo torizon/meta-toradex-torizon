@@ -14,8 +14,8 @@ do_install:append() {
 
 	# Install systemd configuration snippet for Torizon
 	install -d ${D}${systemd_unitdir}/system.conf.d/
-	install -m 0644 ${WORKDIR}/system.conf-torizon ${D}${systemd_unitdir}/system.conf.d/10-${BPN}.conf
-	install -m 0644 ${WORKDIR}/system.conf-docker ${D}${systemd_unitdir}/system.conf.d/20-docker.conf
+	install -m 0644 ${S}/system.conf-torizon ${D}${systemd_unitdir}/system.conf.d/10-${BPN}.conf
+	install -m 0644 ${S}/system.conf-docker ${D}${systemd_unitdir}/system.conf.d/20-docker.conf
 
 	sed -i "s/@@MACHINE@@/${MACHINE}/g" ${D}${systemd_unitdir}/system.conf.d/10-${BPN}.conf
 }

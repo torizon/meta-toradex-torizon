@@ -6,19 +6,9 @@ SRC_URI:append = " \
     file://0001-update-default-grub-cfg-header.patch \
     file://0002-Add-support-for-the-fdtfile-variable-in-uEnv.txt.patch \
     file://0003-ostree-fetcher-curl-set-max-parallel-connections.patch \
-    file://0001-mount-Allow-building-when-macro-MOUNT_ATTR_IDMAP-is-.patch \
-    file://0002-mount-Allow-building-when-macro-LOOP_CONFIGURE-is-no.patch \
     file://ostree-pending-reboot.service \
     file://ostree-pending-reboot.path \
 "
-
-# TODO: Upstream this addition.
-PACKAGECONFIG[composefs] = "--with-composefs, --without-composefs"
-
-# TODO: Upstream this addition.
-do_configure:prepend() {
-    cp ${S}/composefs/libcomposefs/Makefile-lib.am ${S}/composefs/libcomposefs/Makefile-lib.am.inc
-}
 
 # Disable PTEST for ostree as it requires options that are not enabled when
 # building with meta-updater
@@ -67,8 +57,8 @@ RDEPENDS:${PN}:append:class-target = " ${@get_rdeps(d)}"
 
 do_install:append () {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/ostree-pending-reboot.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/ostree-pending-reboot.path ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ostree-pending-reboot.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ostree-pending-reboot.path ${D}${systemd_system_unitdir}
 }
 
 require ostree-prepare-root.inc

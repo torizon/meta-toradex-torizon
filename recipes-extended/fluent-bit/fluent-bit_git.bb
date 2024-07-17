@@ -21,7 +21,7 @@ DEPENDS = "\
     zlib \
 "
 
-PV = "3.0.7+git${SRCPV}"
+PV = "3.1.2+git${SRCPV}"
 
 SRC_URI = "\
            git://github.com/fluent/fluent-bit.git;protocol=https;nobranch=1 \
@@ -29,7 +29,7 @@ SRC_URI = "\
            file://fluent-bit.conf \
            file://emmc-health \
            "
-SRCREV = "73e72bdf9af542602255f1df9fde680346a36490"
+SRCREV = "a6feacd6e92e08c0e5290f255864e70b12301fa8"
 
 S = "${WORKDIR}/git"
 
@@ -69,8 +69,8 @@ do_install:append() {
     rm -Rf ${D}/lib ${D}/etc/init
 
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/fluent-bit.service ${D}${systemd_unitdir}/system/fluent-bit.service
+    install -m 0644 ${UNPACKDIR}/fluent-bit.service ${D}${systemd_unitdir}/system/fluent-bit.service
     install -d ${D}${sysconfdir}/fluent-bit/
-    install -m 0755 ${WORKDIR}/fluent-bit.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.conf
-    install -m 0755 ${WORKDIR}/emmc-health ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/fluent-bit.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.conf
+    install -m 0755 ${UNPACKDIR}/emmc-health ${D}${bindir}
 }

@@ -12,17 +12,20 @@ SRC_URI = " \
             file://bl_actions.sh \
             "
 
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
+
 RDEPENDS:${PN} += "bash coreutils jq util-linux mmc-utils sed u-boot-fw-utils"
 RDEPENDS:${PN}:remove:genericx86-64 = "u-boot-fw-utils"
 
 do_install:append () {
     install -m 0700 -d ${D}${libdir}/sota/conf.d
-    install -m 0644 ${WORKDIR}/50-secondaries.toml ${D}${libdir}/sota/conf.d/50-secondaries.toml
-    install -m 0644 ${WORKDIR}/secondaries.json ${D}${libdir}/sota/secondaries.json
+    install -m 0644 ${UNPACKDIR}/50-secondaries.toml ${D}${libdir}/sota/conf.d/50-secondaries.toml
+    install -m 0644 ${UNPACKDIR}/secondaries.json ${D}${libdir}/sota/secondaries.json
     sed -i "s/@@MACHINE@@/${MACHINE}/g" ${D}${libdir}/sota/secondaries.json
 
     install -d ${D}${bindir}
-    install -m 0744 ${WORKDIR}/bl_actions.sh ${D}${bindir}/bl_actions.sh
+    install -m 0744 ${UNPACKDIR}/bl_actions.sh ${D}${bindir}/bl_actions.sh
 }
 
 FILES:${PN} = " \
