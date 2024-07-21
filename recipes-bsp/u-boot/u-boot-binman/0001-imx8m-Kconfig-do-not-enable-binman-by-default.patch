@@ -1,0 +1,33 @@
+From ff12c8b2bcb49fcb88c6205dc34b341461ea463d Mon Sep 17 00:00:00 2001
+From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Date: Sun, 21 Jul 2024 17:39:25 -0300
+Subject: [PATCH] imx8m/Kconfig: do not enable binman by default
+
+Since we want to use imx-boot for generating the bootloader container,
+selecting BINMAN is unnecessary and is frequently causing errors during
+build. Here we simply remove it from the Kconfig. Notice that disabling
+BINMAN via a config fragment was not possible because of the use of
+"select" in the original Kconfig.
+
+Upstream-Status: Inappropriate [TorizonCore specific]
+
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ arch/arm/mach-imx/imx8m/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index 23d9217fcc..eccd7d3a65 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -2,7 +2,6 @@ if ARCH_IMX8M
+ 
+ config IMX8M
+ 	bool
+-	select BINMAN
+ 	select GICV3 if ARMV8_PSCI
+ 	select HAS_CAAM
+ 	select LTO
+-- 
+2.25.1
+
