@@ -29,12 +29,7 @@ DEPENDS = "\
 DEPENDS:remove:class-native = "fuse3"
 
 PV = "1.0.4+git${SRCPV}"
-# TODO: Consider removing the following patches on the next upgrade.
-SRC_URI = "\
-    git://github.com/containers/composefs.git;protocol=https;branch=main \
-    file://0001-mount-Allow-building-when-macro-MOUNT_ATTR_IDMAP-is-.patch \
-    file://0002-mount-Allow-building-when-macro-LOOP_CONFIGURE-is-no.patch \
-"
+SRC_URI = "git://github.com/containers/composefs.git;protocol=https;branch=main"
 
 SRCREV = "7623e4dc89f62ada5724d4e41d0a16d2671312f5"
 
