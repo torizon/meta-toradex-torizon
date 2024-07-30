@@ -32,6 +32,7 @@ PACKAGECONFIG:append:pn-${PREFERRED_PROVIDER_virtual/docker} = " seccomp"
 PACKAGECONFIG:append:pn-systemd = " seccomp"
 
 # SOTA
+GARAGE_SIGN_TOOL = "uptane-sign"
 OSTREE_OSNAME = "torizon"
 OSTREE_MULTI_DEVICETREE_SUPPORT = "1"
 SOTA_CLIENT_FEATURES:append = " ubootenv"
