@@ -221,7 +221,7 @@ if [ -L "$MANIFEST_FILE" ]; then
         INTEGRATION_BUILD=1
     fi
 else
-    if cat $MANIFEST_FILE | grep -q "torizoncore/integration.xml\|torizoncore/next.xml"; then
+    if cat $MANIFEST_FILE | grep -q "torizon/integration.xml\|torizon/next.xml"; then
         INTEGRATION_BUILD=1
     fi
 fi
