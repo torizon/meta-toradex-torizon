@@ -12,6 +12,8 @@ Original description:
 
   Related-to: TOR-2247
 
+Upstream-Status: Inappropriate [embedded specific]
+
   Signed-off-by: Sergio Prado <sergio.prado@toradex.com>
 ---
  src/boot/grub2/ostree-grub-generator | 4 ++--
