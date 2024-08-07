@@ -14,7 +14,7 @@ SRC_URI = " \
 
 SRCREV_FORMAT = "rac_tough"
 
-SRCREV_rac = "2b0f1189e344f8205b0df7e54e114666da31732e"
+SRCREV_rac = "15845bcaad19b9cbb79816b84184547df559e6b5"
 SRCREV_tough = "9316c096b32196df75ba17a8a5502b19baffe24e"
 
 # Disable AUTOREV, it does not guarantee work, since the below crate
