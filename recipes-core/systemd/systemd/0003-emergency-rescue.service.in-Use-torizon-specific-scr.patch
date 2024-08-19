@@ -1,4 +1,4 @@
-From 173e1fb5b196439dedbac85d01445e739193c558 Mon Sep 17 00:00:00 2001
+From acb4f77fed14e591106dd4228be6acbdcf432340 Mon Sep 17 00:00:00 2001
 From: Jeremias Cordoba <jeremias.cordoba@toradex.com>
 Date: Wed, 10 Jul 2024 17:19:55 -0700
 Subject: [PATCH] emergency/rescue.service.in: Use torizon specific script
@@ -19,31 +19,31 @@ Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/units/emergency.service.in b/units/emergency.service.in
-index a126ad9bb1..da4a5e13d2 100644
+index 25aa8ec510..1f7093933d 100644
 --- a/units/emergency.service.in
 +++ b/units/emergency.service.in
 @@ -20,7 +20,7 @@ Before=rescue.service
  Environment=HOME=/root
  WorkingDirectory=-/root
- ExecStartPre=-{{BINDIR}}/plymouth --wait quit
+ ExecStartPre=-plymouth --wait quit
 -ExecStart=-{{LIBEXECDIR}}/systemd-sulogin-shell emergency
 +ExecStart=-{{LIBEXECDIR}}/torizon-recover emergency
  Type=idle
  StandardInput=tty-force
  StandardOutput=inherit
 diff --git a/units/rescue.service.in b/units/rescue.service.in
-index 74b933726e..94fb6bc5a4 100644
+index add604724a..5a7726094c 100644
 --- a/units/rescue.service.in
 +++ b/units/rescue.service.in
 @@ -19,7 +19,7 @@ Before=shutdown.target
  Environment=HOME=/root
  WorkingDirectory=-/root
- ExecStartPre=-{{BINDIR}}/plymouth --wait quit
+ ExecStartPre=-plymouth --wait quit
 -ExecStart=-{{LIBEXECDIR}}/systemd-sulogin-shell rescue
 +ExecStart=-{{LIBEXECDIR}}/torizon-recover rescue
  Type=idle
  StandardInput=tty-force
  StandardOutput=inherit
 -- 
-2.30.2
+2.34.1
 
