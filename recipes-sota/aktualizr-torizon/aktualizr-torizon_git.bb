@@ -2,16 +2,16 @@ SUMMARY = "Toradex implementation of the Aktualizr SOTA client"
 LICENSE = "MPL-2.0"
 LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=815ca599c9df247a0c7f619bab123dad"
 
-GARAGE_SIGN_PV = "0.8.0"
-SRC_URI[garagesign.md5sum] = "40017561a4fe9ffcf57f2112ae4ea420"
-SRC_URI[garagesign.sha256sum] = "2bac2d50b551b7a6b1949fdb25424bc0bc457b2a9b119bd808fd22d922bb2324"
+UPTANE_SIGN_PV = "3.2.6"
+SRC_URI[uptanesign.md5sum] = "e8bc3dc4fd816cfa8aab16de7d56afdd"
+SRC_URI[uptanesign.sha256sum] = "cf97ea2bda7dd251cb18786b80741ee485ce2104d57329de2a3d8a4a8384f146"
 
 SRC_URI = " \
   gitsm://github.com/toradex/aktualizr.git;protocol=https;branch=toradex-master \
   file://aktualizr-torizon.service \
   file://gateway.url \
   file://root.crt \
-  https://github.com/uptane/ota-tuf/releases/download/v${GARAGE_SIGN_PV}/cli-${GARAGE_SIGN_PV}.tgz;unpack=0;name=garagesign \
+  https://github.com/uptane/ota-tuf/releases/download/v${UPTANE_SIGN_PV}/cli-${UPTANE_SIGN_PV}.tgz;unpack=0;name=uptanesign \
 "
 
 SRCREV = "0377fb86459855689365f173769e3b78c050f8c8"
@@ -37,7 +37,7 @@ PACKAGECONFIG[ostree] = "-DBUILD_OSTREE=ON,-DBUILD_OSTREE=OFF,ostree,"
 PACKAGECONFIG[ubootenv] = ",,u-boot-fw-utils,u-boot-fw-utils"
 PACKAGECONFIG:remove:class-native = "ubootenv"
 PACKAGECONFIG:class-native = "sota-tools"
-PACKAGECONFIG[sota-tools] = "-DBUILD_SOTA_TOOLS=ON -DGARAGE_SIGN_ARCHIVE=${UNPACKDIR}/cli-${GARAGE_SIGN_PV}.tgz, -DBUILD_SOTA_TOOLS=OFF,glib-2.0,"
+PACKAGECONFIG[sota-tools] = "-DBUILD_SOTA_TOOLS=ON -DGARAGE_SIGN_ARCHIVE=${UNPACKDIR}/cli-${UPTANE_SIGN_PV}.tgz -DGARAGE_SIGN_TOOL=${GARAGE_SIGN_TOOL}, -DBUILD_SOTA_TOOLS=OFF,glib-2.0,"
 
 PROVIDES += "aktualizr"
 RPROVIDES:${PN} += "aktualizr aktualizr-info aktualizr-shared-prov"
