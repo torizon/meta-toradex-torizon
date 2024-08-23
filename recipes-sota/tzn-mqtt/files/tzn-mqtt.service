@@ -1,0 +1,15 @@
+[Unit]
+Description=Torizon MQTT to Dbus bridge
+After=network-online.target nss-lookup.target boot-complete.target
+Requires=boot-complete.target
+Wants=network-online.target
+ConditionPathExists=|/var/sota/import/pkey.pem
+ConditionPathExists=|/var/sota/import/client.pem
+
+[Service]
+RestartSec=10
+Restart=always
+ExecStart=/usr/bin/tzn-mqtt
+
+[Install]
+WantedBy=multi-user.target
