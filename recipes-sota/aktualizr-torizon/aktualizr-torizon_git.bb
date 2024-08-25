@@ -24,7 +24,7 @@ PV = "1.0+git${SRCPV}"
 DEPENDS = "boost curl openssl libarchive libsodium sqlite3 asn1c-native ostree"
 RDEPENDS:${PN}:class-target = "aktualizr-hwid lshw bash aktualizr-default-sec aktualizr-polling-interval aktualizr-reboot greenboot"
 
-inherit cmake pkgconfig systemd
+inherit cmake pkgconfig systemd python3native
 
 SYSTEMD_SERVICE:${PN} = "aktualizr-torizon.service"
 
@@ -37,7 +37,11 @@ PACKAGECONFIG[ostree] = "-DBUILD_OSTREE=ON,-DBUILD_OSTREE=OFF,ostree,"
 PACKAGECONFIG[ubootenv] = ",,u-boot-fw-utils,u-boot-fw-utils"
 PACKAGECONFIG:remove:class-native = "ubootenv"
 PACKAGECONFIG:class-native = "sota-tools"
-PACKAGECONFIG[sota-tools] = "-DBUILD_SOTA_TOOLS=ON -DGARAGE_SIGN_ARCHIVE=${UNPACKDIR}/cli-${UPTANE_SIGN_PV}.tgz -DGARAGE_SIGN_TOOL=${GARAGE_SIGN_TOOL}, -DBUILD_SOTA_TOOLS=OFF,glib-2.0,"
+PACKAGECONFIG[sota-tools] = "\
+  -DBUILD_SOTA_TOOLS=ON -DGARAGE_SIGN_ARCHIVE=${UNPACKDIR}/cli-${UPTANE_SIGN_PV}.tgz -DGARAGE_SIGN_TOOL=${GARAGE_SIGN_TOOL}, \
+  -DBUILD_SOTA_TOOLS=OFF, \
+  glib-2.0 python3-native python3-requests-native, \
+"
 
 PROVIDES += "aktualizr"
 RPROVIDES:${PN} += "aktualizr aktualizr-info aktualizr-shared-prov"
