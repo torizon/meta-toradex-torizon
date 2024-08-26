@@ -1,0 +1,54 @@
+From 83a5272353249b1ea06638eaa6b421bee7cab43a Mon Sep 17 00:00:00 2001
+From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Date: Sat, 24 Aug 2024 15:11:09 -0300
+Subject: [PATCH 2/2] Adapt group numbers to match the static assignment in
+ torizon
+
+Some Unix groups (input, kvm, sgx) defined in OpenEmbedded layers have
+numeric IDs that differ from the ones used by Torizon OS (as defined by
+the "torizon-static-group" file) which may lead to users created during
+build being assigned to wrong group numbers. Here we fix this situation
+by changing them to match the assignment in the torizon-static-group
+file; this is also helpful to ensure that group numbers remain the same
+as in previous releases of the OS.
+
+Upstream-Status: Inappropriate [configuration]
+
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ group.master | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/group.master b/group.master
+index 0fa81a3..33d9ec7 100644
+--- a/group.master
++++ b/group.master
+@@ -12,7 +12,6 @@ uucp:*:10:
+ man:*:12:
+ proxy:*:13:
+ kmem:*:15:
+-input:*:19:
+ dialout:*:20:
+ fax:*:21:
+ voice:*:22:
+@@ -33,8 +32,6 @@ utmp:*:43:
+ video:*:44:
+ sasl:*:45:
+ plugdev:*:46:
+-kvm:*:47:
+-sgx:*:48:
+ gpio:*:49:
+ staff:*:50:
+ i2cdev:*:51:
+@@ -45,5 +42,8 @@ shutdown:*:70:
+ wheel:*:80:
+ nobody:*:99:
+ users:*:100:
++input:*:101:
++kvm:*:102:
+ render:*:103:
++sgx:*:104:
+ nogroup:*:65534:
+-- 
+2.25.1
+

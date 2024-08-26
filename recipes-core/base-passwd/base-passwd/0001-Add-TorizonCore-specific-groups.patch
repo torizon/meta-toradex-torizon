@@ -1,10 +1,11 @@
-From e7507f802575c4f9b81007e270fced2abcfbd5b0 Mon Sep 17 00:00:00 2001
+From a59e624753e1a7864f86c285c25a4f519bca376f Mon Sep 17 00:00:00 2001
 From: Sergio Prado <sergio.prado@toradex.com>
 Date: Thu, 28 Sep 2023 10:32:46 +0000
-Subject: [PATCH] Add TorizonCore specific groups
+Subject: [PATCH 1/2] Add TorizonCore specific groups
 
 Upstream-Status: Inappropriate [configuration]
 
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
 Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 Signed-off-by: Sergio Prado <sergio.prado@toradex.com>
 Signed-off-by: Stefan Agner <stefan.agner@toradex.com>
@@ -13,10 +14,10 @@ Signed-off-by: Stefan Agner <stefan.agner@toradex.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/group.master b/group.master
-index 5b622841be8f..f115390feecb 100644
+index e54fd1d..0fa81a3 100644
 --- a/group.master
 +++ b/group.master
-@@ -35,9 +35,15 @@
+@@ -35,9 +35,15 @@ sasl:*:45:
  plugdev:*:46:
  kvm:*:47:
  sgx:*:48:
