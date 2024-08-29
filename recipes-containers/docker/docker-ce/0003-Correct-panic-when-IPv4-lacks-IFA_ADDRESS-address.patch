@@ -1,0 +1,33 @@
+From cf9e4634d216b6fbc682865d7b7b326118e9ae15 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Thu, 29 Aug 2024 12:25:50 +0000
+Subject: [PATCH] Correct panic when IPv4 lacks IFA_ADDRESS address
+
+IFA_ADDRESS is to be used as the peer address if it differs from IFA_LOCAL.
+Therefore, include the check for "no IFA_ADDRESS" in the difference check.
+
+Example: ppp interfaces can contain IFA_LOCAL and no IFA_ADDRESS attribute
+
+Upstream-Status: Backport [https://github.com/vishvananda/netlink/pull/665/commits/b92fc1f5ee4cd7e43068245ff894c4e243cca396]
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ src/import/vendor/github.com/vishvananda/netlink/addr_linux.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/import/vendor/github.com/vishvananda/netlink/addr_linux.go b/src/import/vendor/github.com/vishvananda/netlink/addr_linux.go
+index 28746d5afe..3321801149 100644
+--- a/src/import/vendor/github.com/vishvananda/netlink/addr_linux.go
++++ b/src/import/vendor/github.com/vishvananda/netlink/addr_linux.go
+@@ -271,7 +271,7 @@ func parseAddr(m []byte) (addr Addr, family, index int, err error) {
+ 	// But obviously, as there are IPv6 PtP addresses, too,
+ 	// IFA_LOCAL should also be handled for IPv6.
+ 	if local != nil {
+-		if family == FAMILY_V4 && local.IP.Equal(dst.IP) {
++		if family == FAMILY_V4 && dst != nil && local.IP.Equal(dst.IP) {
+ 			addr.IPNet = dst
+ 		} else {
+ 			addr.IPNet = local
+-- 
+2.34.1
+
