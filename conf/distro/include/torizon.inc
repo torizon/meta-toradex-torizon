@@ -100,10 +100,3 @@ CURLVERSION ?= "8.6.0"
 
 PREFERRED_VERSION_curl ?= "${CURLVERSION}"
 PREFERRED_VERSION_libcurl ?= "${CURLVERSION}"
-
-# Choose a newer version of ostree only if override "cfs-support" is set which
-# would be the case on a secure-boot image. Otherwise, the older battle-tested
-# version is selected.
-OSTREEVERSION ?= "2021.6"
-OSTREEVERSION:cfs-support ?= "2024.4"
-PREFERRED_VERSION_ostree ?= "${OSTREEVERSION}"
