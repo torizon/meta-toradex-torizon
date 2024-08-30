@@ -13,9 +13,3 @@ do_install_basefilesissue () {
 	printf "%s \\\n \\\l\n\n" "${DISTRO_VERSION}" >> ${D}${sysconfdir}/issue
 	printf "%s %%h\n\n" "${DISTRO_VERSION}" >> ${D}${sysconfdir}/issue.net
 }
-
-do_install:append:cfs-support () {
-	# Get rid of the /dev/root entry in fstab to avoid errors from
-	# systemd-remount-fs.
-	sed -i -e '\#^ */dev/root#d' ${D}${sysconfdir}/fstab
-}

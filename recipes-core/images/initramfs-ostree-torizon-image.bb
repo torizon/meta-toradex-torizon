@@ -5,10 +5,6 @@ PACKAGE_INSTALL = "initramfs-framework-base initramfs-module-udev \
     initramfs-module-plymouth ${VIRTUAL-RUNTIME_base-utils} base-passwd \
     initramfs-module-kmod"
 
-PACKAGE_INSTALL:append:cfs-support = "\
-    initramfs-module-composefs \
-"
-
 SYSTEMD_DEFAULT_TARGET = "initrd.target"
 
 # Do not pollute the initrd image with rootfs features

@@ -117,11 +117,3 @@ PSEUDO_PASSWD:prepend = "${@bb.utils.contains('DISTRO_FEATURES', 'stateless-syst
 # due to limited hardware resources, remove Colibri iMX6 Solo 256MB
 # from the list of supported IDs in the Tezi image
 TORADEX_PRODUCT_IDS:remove:colibri-imx6 = "0014 0016"
-
-CORE_IMAGE_BASE_INSTALL:append:cfs-signed = "\
-    fsverity-utils \
-"
-
-CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
-    composefs-tools \
-"
