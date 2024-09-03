@@ -275,7 +275,8 @@ EULA_ACCEPTED=""
 
 # TI does not have an EULA that needs user acceptance. So in order to avoid
 # showing NXP's EULA we just say that EULA was accepted for AM62.
-if [ "${MACHINE}" = "verdin-am62" ]; then
+# Same for QEMU and x86 variants.
+if echo "${MACHINE}" | grep -q "verdin-am62\|qemuarm64\|genericx86-64"; then
     EULA_ACCEPTED=1
 fi
 
