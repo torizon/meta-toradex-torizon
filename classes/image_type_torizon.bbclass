@@ -234,6 +234,7 @@ UBOOT_BINARY_OTA:apalis-imx8 = "imx-boot"
 UBOOT_BINARY_OTA:verdin-imx8mm = "imx-boot"
 UBOOT_BINARY_OTA:verdin-imx8mp = "imx-boot"
 UBOOT_BINARY_OTA:verdin-am62 = "u-boot.img"
+UBOOT_BINARY_OTA:aquila-am69 = "u-boot.img"
 UBOOT_BINARY_OTA:qemuarm64 = "u-boot.bin"
 
 UBOOT_BINARY_OTA_IGNORE = "0"
