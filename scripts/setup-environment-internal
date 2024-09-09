@@ -112,8 +112,8 @@ fi
 # Create a common list of "<machine>(<layer>)", sorted by <machine>
 # Blacklist unsupported machines of Torizon
 MACHLAYERS=$(find layers/ -print | grep "conf/machine/.*\.conf" |
-            grep -E '(apalis.*\.conf|colibri.*\.conf|verdin.*\.conf|qemuarm64\.conf|genericx86-64\.conf)' |
-            grep -E -v '(imx7-nand|colibri-vf|tk1|colibri-imx7|colibri-imx6ull|verdin-am62-k3r5)\.conf' |
+            grep -E '(apalis.*\.conf|aquila.*\.conf|colibri.*\.conf|verdin.*\.conf|qemuarm64\.conf|genericx86-64\.conf)' |
+            grep -E -v '(imx7-nand|colibri-vf|tk1|colibri-imx7|colibri-imx6ull|verdin-am62-k3r5|aquila-am69-k3r5)\.conf' |
             sed -e 's/\.conf//g' -e 's/layers\///' |
             awk -F'/conf/machine/' '{print $NF "(" $1 ")"}' | LC_ALL=C sort)
 
@@ -125,7 +125,7 @@ variable_validation "$MACHLAYERS" "MACHINE" || return 1
 
 # DISTRO defaults to 'torizon' for am62/imx8/qemuarm64/genericx86-64 machines
 # DISTRO defaults to 'torizon-upstream' for other machines
-DISTRO_DEFAULT="torizon-upstream" && echo "$MACHINE" | grep -E -q '(imx8|am62|qemuarm64|genericx86-64)' && DISTRO_DEFAULT="torizon"
+DISTRO_DEFAULT="torizon-upstream" && echo "$MACHINE" | grep -E -q '(imx8|am62|am69|qemuarm64|genericx86-64)' && DISTRO_DEFAULT="torizon"
 DISTRO=${DISTRO:-$DISTRO_DEFAULT}
 
 # Create a common list of "<distro>(<layer>)" supported by Torizon, sorted by <distro>
@@ -276,7 +276,7 @@ EULA_ACCEPTED=""
 # TI does not have an EULA that needs user acceptance. So in order to avoid
 # showing NXP's EULA we just say that EULA was accepted for AM62.
 # Same for QEMU and x86 variants.
-if echo "${MACHINE}" | grep -q "verdin-am62\|qemuarm64\|genericx86-64"; then
+if echo "${MACHINE}" | grep -q "verdin-am62\|aquila-am69\|qemuarm64\|genericx86-64"; then
     EULA_ACCEPTED=1
 fi
 
