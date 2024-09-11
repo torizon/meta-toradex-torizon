@@ -43,7 +43,7 @@ gen_cfs_keys() {
 }
 
 def cfs_get_key_file_checksums(d):
-    if "cfs-signed" not in d.getVar("OVERRIDES"):
+    if "cfs-signed" not in d.getVar("OVERRIDES").split(":"):
         return ""
     seckey = os.path.join(d.getVar("CFS_SIGN_KEYDIR"),
                           d.getVar("CFS_SIGN_KEYNAME") + ".sec")
