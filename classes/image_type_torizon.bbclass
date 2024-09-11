@@ -234,11 +234,13 @@ UBOOT_BINARY_OTA:apalis-imx8 = "imx-boot"
 UBOOT_BINARY_OTA:verdin-imx8mm = "imx-boot"
 UBOOT_BINARY_OTA:verdin-imx8mp = "imx-boot"
 UBOOT_BINARY_OTA:verdin-am62 = "u-boot.img"
+UBOOT_BINARY_OTA:aquila-am69 = "u-boot.img"
 UBOOT_BINARY_OTA:qemuarm64 = "u-boot.bin"
 
 UBOOT_BINARY_OTA_IGNORE = "0"
 # disable for now while we investigate build issues
 UBOOT_BINARY_OTA_IGNORE:verdin-am62 = "1"
+UBOOT_BINARY_OTA_IGNORE:aquila-am69 = "1"
 UBOOT_BINARY_OTA_IGNORE:genericx86-64 = "1"
 
 # Function: find_uboot_env_blob
