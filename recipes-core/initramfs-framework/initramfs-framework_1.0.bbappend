@@ -78,13 +78,13 @@ generate_cfs_keys() {
 
 CFS_INSTALL_PREFUNCS_COND ?= " generate_cfs_keys"
 CFS_INSTALL_PREFUNCS ?= \
-    "${@d.getVar('CFS_INSTALL_PREFUNCS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+    "${@d.getVar('CFS_INSTALL_PREFUNCS_COND') if 'cfs-signed' in d.getVar('OVERRIDES').split(':') else ''}"
 CFS_INSTALL_DEPENDS_COND ?= "\
     coreutils-native:do_populate_sysroot \
     openssl-native:do_populate_sysroot \
 "
 CFS_INSTALL_DEPENDS ?= \
-    "${@d.getVar('CFS_INSTALL_DEPENDS_COND') if 'cfs-signed' in d.getVar('OVERRIDES') else ''}"
+    "${@d.getVar('CFS_INSTALL_DEPENDS_COND') if 'cfs-signed' in d.getVar('OVERRIDES').split(':') else ''}"
 
 CFS_INSTALL_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
 
