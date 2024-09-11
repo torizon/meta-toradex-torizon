@@ -1,4 +1,4 @@
-SRCREV_torizon-meta = "99e38525088a105d6e7d99bd0eb07c9880606d64"
+SRCREV_torizon-meta = "3981eab0174346a9707fb327c0458399f92acc72"
 SRCREV_torizon-meta:use-head-next = "${AUTOREV}"
 
 KMETABRANCH = "scarthgap-7.x.y"
