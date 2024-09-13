@@ -16,6 +16,9 @@ IMX_DEFAULT_BSP:upstream = "mainline"
 SDK_NAME_PREFIX = "${DISTRO}"
 SDK_VERSION = "${DISTRO_VERSION}"
 
+# Override shared by all torizon distros
+DISTROOVERRIDES .= ":torizon-distro"
+
 # Torizon machine specific overrides
 INHERIT += "torizon"
 
