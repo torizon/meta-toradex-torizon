@@ -12,8 +12,7 @@ Restart=always
 # Can add/modify below environment variables to affect update download properties
 # Environment="OSTREE_CURL_TIMEOUT=3600"
 # Environment="OSTREE_CURLM_MAX_TOTAL_CONN=1"
-Environment="AKTUALIZR_DATAPROXY_PARAMETERS=--enable-data-proxy"
-ExecStart=/usr/bin/aktualizr-torizon $AKTUALIZR_CMDLINE_PARAMETERS $AKTUALIZR_DATAPROXY_PARAMETERS
+ExecStart=/usr/bin/aktualizr-torizon $AKTUALIZR_CMDLINE_PARAMETERS
 
 [Install]
 WantedBy=multi-user.target
