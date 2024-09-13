@@ -19,6 +19,8 @@ do_compile:append () {
         ${WORKDIR}/uEnv.txt.in > uEnv.txt
 }
 
+TDX_AMEND_BOOT_SCRIPT:torizon-distro = "0"
+
 do_install () {
     install -d ${D}${libdir}/ostree-boot
     install -m 0644 uEnv.txt ${D}${libdir}/ostree-boot/
