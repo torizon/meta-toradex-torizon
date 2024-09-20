@@ -1,7 +1,7 @@
 kernel_image_type=@@KERNEL_IMAGETYPE@@
 overlays_file="overlays.txt"
 otaroot=1
-fitconf_fdt_overlays="@@DISTRO_BOOT_PREDEF_FITCONF@@"
+fitconf_fdt_overlays="@@FITCONF_FDT_OVERLAYS@@"
 
 set_bootargs=env set bootcmd_args env set bootargs ${defargs} root=LABEL=otaroot rootfstype=ext4 ${bootargs} ${tdxargs}
 
