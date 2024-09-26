@@ -96,6 +96,7 @@ fi
 
 if [ $# -gt 1 ]; then
     usage
+    echo "ERROR: too many arguments ($*). Exiting..." >&2
     return 1
 fi
 
