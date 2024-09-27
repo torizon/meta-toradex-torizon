@@ -28,6 +28,7 @@ SRC_URI = "\
            file://fluent-bit.service \
            file://fluent-bit.conf \
            file://emmc-health \
+           file://custom-empty.conf \
            "
 SRCREV = "73e72bdf9af542602255f1df9fde680346a36490"
 
@@ -73,4 +74,6 @@ do_install:append() {
     install -d ${D}${sysconfdir}/fluent-bit/
     install -m 0755 ${WORKDIR}/fluent-bit.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.conf
     install -m 0755 ${WORKDIR}/emmc-health ${D}${bindir}
+    install -d ${D}${sysconfdir}/fluent-bit/fluent-bit.d
+    install -m 0644 ${WORKDIR}/custom-empty.conf ${D}${sysconfdir}/fluent-bit/fluent-bit.d
 }
