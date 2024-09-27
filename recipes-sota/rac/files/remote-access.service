@@ -1,8 +1,8 @@
 [Unit]
 Description=Torizon Remote Access Client
-After=network-online.target nss-lookup.target boot-complete.target
+After=network-online.target nss-lookup.target boot-complete.target tzn-mqtt.service
 Requires=boot-complete.target
-Wants=network-online.target
+Wants=network-online.target tzn-mqtt.service
 ConditionPathExists=|/var/sota/import/pkey.pem
 
 [Service]
