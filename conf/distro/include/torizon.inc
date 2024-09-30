@@ -2,8 +2,6 @@ require conf/distro/include/tdx-base.inc
 
 MAINTAINER = "Toradex Torizon OS Team <torizon.os@toradex.com>"
 
-TCLIBCAPPEND = ""
-
 COPY_LIC_MANIFEST = "1"
 COPY_LIC_DIRS = "1"
 
