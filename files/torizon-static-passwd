@@ -16,6 +16,7 @@ list:x:38:38:Mailing List Manager:/var/list:/bin/sh
 irc:x:39:39:ircd:/var/run/ircd:/bin/sh
 gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/bin/sh
 ptest:x:529:529::/:/bin/nologin
+tss:x:983:983::/var/lib/tpm:/bin/false
 distcc:x:986:65534::/:/bin/nologin
 avahi:x:987:989::/run/avahi-daemon:/bin/false
 systemd-bus-proxy:x:988:984::/:/bin/nologin
