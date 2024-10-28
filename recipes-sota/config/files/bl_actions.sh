@@ -82,6 +82,7 @@ req_program "/usr/bin/mmc"         && alias MMC="$_"
 req_program "/usr/bin/rm"          && alias RM="$_"
 req_program "/usr/bin/sed"         && alias SED="$_"
 req_program "/usr/bin/sha256sum"   && alias SHA256SUM="$_"
+req_program "/usr/bin/sleep"       && alias SLEEP="$_"
 req_program "/usr/sbin/reboot"     && alias REBOOT="$_"
 req_program "/usr/bin/stat"        && alias STAT="$_"
 req_program "/usr/bin/touch"       && alias TOUCH="$_"
@@ -156,10 +157,19 @@ get_emmc_dev() {
 }
 
 # $1: eMMC device name (without /dev/)
+# $2: retries (optional)
 # output: Current partition (integer as string: 1, 2)
 get_emmc_active_partnum() {
     local devname="/dev/$1"
-    local actpart=$(MMC extcsd read "$devname" | SED -Ene 's/^\s*boot partition\s*([0-9]+)\s*enabled.*$/\1/ip')
+    local retries="${2:-5}"
+    local retry
+    local actpart
+    for ((retry=0; retry<retries; retry++)); do
+        actpart=$(MMC extcsd read "$devname" | SED -Ene 's/^\s*boot partition\s*([0-9]+)\s*enabled.*$/\1/ip')
+        [ -n "$actpart" ] && break
+        log "Could not determine current partition on device $devname ($retry/$retries)"
+        SLEEP 1
+    done
     if [ -z "$actpart" ]; then
         die "Cannot determine active partition on device $devname"
     fi
@@ -169,11 +179,24 @@ get_emmc_active_partnum() {
 
 # $1: eMMC device name (without /dev/)
 # $2: Partition to activate (integer as string: 1, 2; 0 to disable)
+# $3: retries (optional)
 switch_emmc_active_partnum() {
     local devname="/dev/$1"
     local partnum="$2"
-    maybe_run MMC bootpart enable "$partnum" 1 "$devname"
-    return
+    local retries="${3:-5}"
+    local retry
+    local partnew=""
+    for ((retry=0; retry<retries; retry++)); do
+	log "Switching active partition to $partnum on device $devname"
+        MMC bootpart enable "$partnum" 1 "$devname"
+        # Confirm the operation by re-reading the (new) current partition; besides working as a
+        # double-check, this deals with switching issues with the kernel (see ticket TOR-3613).
+        partnew=$(get_emmc_active_partnum "$1")
+        [ "${partnum}" -eq "${partnew}" ] && return 0
+        log "Could not switch active boot partition to $partnum (current=$partnew) on device $devname ($retry/$retries); retrying soon"
+        SLEEP 1
+    done
+    return 1
 }
 
 # $1: current partition
