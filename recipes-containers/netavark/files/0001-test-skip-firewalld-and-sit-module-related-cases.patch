@@ -1,0 +1,105 @@
+From d527af68458f071215e70d6e5f952017f882a626 Mon Sep 17 00:00:00 2001
+From: Mingli Yu <mingli.yu@windriver.com>
+Date: Mon, 24 Jun 2024 15:40:57 +0800
+Subject: [PATCH] test: skip firewalld and sit module related cases
+
+* Skip firewalld related cases as don't enable firewalld by default.
+
+* Skip some other cases as the sit0 device is automatically added to all
+network namespaces then this will break many test assumptions [1].
+
+[1] https://github.com/containers/netavark/issues/984
+
+Upstream-Status: Pending
+
+Signed-off-by: Mingli Yu <mingli.yu@windriver.com>
+---
+ test/100-bridge-iptables.bats | 4 ++++
+ test/250-bridge-nftables.bats | 2 ++
+ test/300-macvlan.bats         | 1 +
+ test/600-bridge-vrf.bats      | 1 +
+ 4 files changed, 8 insertions(+)
+
+diff --git a/test/100-bridge-iptables.bats b/test/100-bridge-iptables.bats
+index 420547b..3ff5d04 100644
+--- a/test/100-bridge-iptables.bats
++++ b/test/100-bridge-iptables.bats
+@@ -496,6 +496,7 @@ fw_driver=iptables
+ }
+ 
+ @test "$fw_driver - port range forwarding dual - udp" {
++    skip
+     test_port_fw ip=dual proto=udp range=3
+ }
+ 
+@@ -858,6 +859,7 @@ EOF
+ 
+ 
+ @test "$fw_driver - bridge teardown" {
++    skip
+     create_container_ns
+     configs=()
+     for i in 1 2; do
+@@ -991,6 +993,7 @@ EOF
+ }
+ 
+ @test "$fw_driver - test firewalld reload" {
++    skip
+     setup_firewalld
+ 
+     run_netavark --file ${TESTSDIR}/testfiles/simplebridge.json setup $(get_container_netns_path)
+@@ -1024,6 +1027,7 @@ EOF
+ }
+ 
+ @test "$fw_driver - port forwarding ipv4 - tcp with firewalld reload" {
++    skip
+     test_port_fw firewalld_reload=true
+ }
+ 
+diff --git a/test/250-bridge-nftables.bats b/test/250-bridge-nftables.bats
+index 77bc12c..7876f53 100644
+--- a/test/250-bridge-nftables.bats
++++ b/test/250-bridge-nftables.bats
+@@ -913,6 +913,7 @@ EOF
+ }
+ 
+ @test "$fw_driver - test firewalld reload" {
++    skip
+     setup_firewalld
+ 
+     run_netavark --file ${TESTSDIR}/testfiles/simplebridge.json setup $(get_container_netns_path)
+@@ -944,6 +945,7 @@ EOF
+ }
+ 
+ @test "$fw_driver - port forwarding ipv4 - tcp with firewalld reload" {
++    skip
+     test_port_fw firewalld_reload=true
+ }
+ 
+diff --git a/test/300-macvlan.bats b/test/300-macvlan.bats
+index c062a7f..e646faf 100644
+--- a/test/300-macvlan.bats
++++ b/test/300-macvlan.bats
+@@ -329,6 +329,7 @@ EOF
+ 
+ @test "macvlan same interface name on container" {
+ 
++   skip
+    read -r -d '\0' config <<EOF
+ {
+    "container_id": "someID",
+diff --git a/test/600-bridge-vrf.bats b/test/600-bridge-vrf.bats
+index 4b95f93..dc90e92 100644
+--- a/test/600-bridge-vrf.bats
++++ b/test/600-bridge-vrf.bats
+@@ -6,6 +6,7 @@
+ load helpers
+ 
+ @test vrf - bridge with vrf {
++    skip
+     run_in_host_netns ip link add test-vrf type vrf table 10
+     run_in_host_netns ip link set dev test-vrf up
+ 
+-- 
+2.34.1
+
