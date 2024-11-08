@@ -12,6 +12,7 @@ SRC_URI = " \
   file://gateway.url \
   file://root.crt \
   https://tuf-cli-releases.ota.here.com/cli-${GARAGE_SIGN_PV}.tgz;unpack=0;name=garagesign \
+  file://aktualizr-tmpfiles.conf \
 "
 
 SRCREV = "13d5e9493f87cb2d5e96f58804b54c29a5e0ff0b"
@@ -56,6 +57,9 @@ do_install:append() {
     
     install -m 0644 ${WORKDIR}/gateway.url ${D}/${libdir}/sota/gateway.url
     install -m 0644 ${WORKDIR}/root.crt ${D}/${libdir}/sota/root.crt
+
+    install -d ${D}${nonarch_libdir}/tmpfiles.d
+    install -m 0644 ${WORKDIR}/aktualizr-tmpfiles.conf ${D}${nonarch_libdir}/tmpfiles.d/aktualizr.conf
 }
 
 PACKAGES =+ "${PN}-misc"
@@ -71,6 +75,7 @@ FILES:${PN} += " \
   ${libdir}/sota/conf.d/30-rollback.toml \
   ${bindir}/aktualizr-info \
   ${binddir}/aktualizr-cert-provider \
+  ${nonarch_libdir}/tmpfiles.d/aktualizr.conf \
 "
 
 FILES:${PN}-dev = " \
