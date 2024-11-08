@@ -16,6 +16,7 @@ require rust-snapshot.inc
 
 S = "${RUSTSRC}/src/tools/cargo"
 CARGO_VENDORING_DIRECTORY = "${RUSTSRC}/vendor"
+UNPACKDIR = "${WORKDIR}"
 
 inherit cargo pkgconfig
 
