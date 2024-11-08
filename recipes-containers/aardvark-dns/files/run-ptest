@@ -1,3 +1,3 @@
 #!/bin/bash
 
-NETAVARK=/usr/libexec/podman/netavark AARDVARK=/usr/libexec/podman/aardvark-dns bats ./test/
+NETAVARK=/usr/libexec/podman/netavark AARDVARK=/usr/libexec/podman/aardvark-dns bats -t ./test/ | sed -e '/^ok/ s/^ok/PASS:/g' | sed -e '/^not ok/ s/^not ok/FAIL:/g'
