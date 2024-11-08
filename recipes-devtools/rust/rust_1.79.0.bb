@@ -26,6 +26,7 @@ INHIBIT_DEFAULT_RUST_DEPS:class-native = "1"
 PROVIDES:class-native = "virtual/${TARGET_PREFIX}rust"
 
 S = "${RUSTSRC}"
+UNPACKDIR = "${WORKDIR}"
 
 # Use at your own risk, accepted values are stable, beta and nightly
 RUST_CHANNEL ?= "stable"
