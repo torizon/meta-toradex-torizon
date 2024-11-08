@@ -99,7 +99,7 @@ GOVERSION ?= "1.22%"
 # Rust toolchain preferred versions:
 RUSTVERSION ?= "1.79%"
 
-CURLVERSION ?= "8.6.0"
+CURLVERSION ?= "8.10.1"
 
 PREFERRED_VERSION_curl ?= "${CURLVERSION}"
 PREFERRED_VERSION_libcurl ?= "${CURLVERSION}"

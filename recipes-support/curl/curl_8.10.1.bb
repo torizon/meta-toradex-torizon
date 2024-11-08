@@ -13,20 +13,20 @@ SRC_URI = " \
     https://curl.se/download/${BP}.tar.xz \
     file://run-ptest \
     file://disable-tests \
+    file://no-test-timeout.patch \
 "
-SRC_URI[sha256sum] = "3ccd55d91af9516539df80625f818c734dc6f2ecf9bada33c76765e99121db15"
+SRC_URI[sha256sum] = "73a4b0e99596a09fa5924a4fb7e4b995a85fda0d18a2c02ab9cf134bebce04ee"
 
 # Curl has used many names over the years...
 CVE_PRODUCT = "haxx:curl haxx:libcurl curl:curl curl:libcurl libcurl:libcurl daniel_stenberg:curl"
+CVE_STATUS[CVE-2024-32928] = "ignored: CURLOPT_SSL_VERIFYPEER was disabled on google cloud services causing a potential man in the middle attack"
 
 inherit autotools pkgconfig binconfig multilib_header ptest
 
-# Entropy source for random PACKAGECONFIG option
-RANDOM ?= "/dev/urandom"
-
-PACKAGECONFIG ??= "${@bb.utils.filter('DISTRO_FEATURES', 'ipv6', d)} aws basic-auth bearer-auth digest-auth negotiate-auth libidn openssl proxy random threaded-resolver verbose zlib"
-PACKAGECONFIG:class-native = "ipv6 openssl proxy random threaded-resolver verbose zlib"
-PACKAGECONFIG:class-nativesdk = "ipv6 openssl proxy random threaded-resolver verbose zlib"
+COMMON_PACKAGECONFIG = "basic-auth bearer-auth digest-auth negotiate-auth openssl proxy threaded-resolver verbose zlib"
+PACKAGECONFIG ??= "${COMMON_PACKAGECONFIG} ${@bb.utils.filter('DISTRO_FEATURES', 'ipv6', d)} aws libidn"
+PACKAGECONFIG:class-native = "${COMMON_PACKAGECONFIG} ipv6"
+PACKAGECONFIG:class-nativesdk = "${COMMON_PACKAGECONFIG} ipv6"
 
 # 'ares' and 'threaded-resolver' are mutually exclusive
 PACKAGECONFIG[ares] = "--enable-ares,--disable-ares,c-ares,,,threaded-resolver"
@@ -57,7 +57,6 @@ PACKAGECONFIG[nghttp2] = "--with-nghttp2,--without-nghttp2,nghttp2"
 PACKAGECONFIG[openssl] = "--with-openssl,--without-openssl,openssl"
 PACKAGECONFIG[pop3] = "--enable-pop3,--disable-pop3,"
 PACKAGECONFIG[proxy] = "--enable-proxy,--disable-proxy,"
-PACKAGECONFIG[random] = "--with-random=${RANDOM},--without-random"
 PACKAGECONFIG[rtmpdump] = "--with-librtmp,--without-librtmp,rtmpdump"
 PACKAGECONFIG[rtsp] = "--enable-rtsp,--disable-rtsp,"
 PACKAGECONFIG[smb] = "--enable-smb,--disable-smb,"
@@ -71,14 +70,13 @@ PACKAGECONFIG[zstd] = "--with-zstd,--without-zstd,zstd"
 
 EXTRA_OECONF = " \
     --disable-libcurl-option \
-    --disable-ntlm-wb \
     --with-ca-bundle=${sysconfdir}/ssl/certs/ca-certificates.crt \
     --without-libpsl \
     --enable-optimize \
     ${@'--without-ssl' if (bb.utils.filter('PACKAGECONFIG', 'gnutls mbedtls openssl', d) == '') else ''} \
 "
 
-do_install:append:class-target() {
+fix_absolute_paths () {
 	# cleanup buildpaths from curl-config
 	sed -i \
 	    -e 's,--sysroot=${STAGING_DIR_TARGET},,g' \
@@ -88,33 +86,48 @@ do_install:append:class-target() {
 	    ${D}${bindir}/curl-config
 }
 
+do_install:append:class-target() {
+	fix_absolute_paths
+}
+
+do_install:append:class-nativesdk() {
+	fix_absolute_paths
+}
+
 do_compile_ptest() {
 	oe_runmake -C ${B}/tests
 }
 
 do_install_ptest() {
-	cat  ${WORKDIR}/disable-tests >> ${S}/tests/data/DISABLED
-	rm -f ${B}/tests/configurehelp.pm
-	cp -rf ${B}/tests ${D}${PTEST_PATH}
-        rm -f ${D}${PTEST_PATH}/tests/libtest/.libs/libhostname.la
-        rm -f ${D}${PTEST_PATH}/tests/libtest/libhostname.la
-        mv ${D}${PTEST_PATH}/tests/libtest/.libs/* ${D}${PTEST_PATH}/tests/libtest/
-        mv ${D}${PTEST_PATH}/tests/libtest/libhostname.so ${D}${PTEST_PATH}/tests/libtest/.libs/
-        mv ${D}${PTEST_PATH}/tests/http/clients/.libs/* ${D}${PTEST_PATH}/tests/http/clients/
-	cp -rf ${S}/tests ${D}${PTEST_PATH}
-	find ${D}${PTEST_PATH}/ -type f -name Makefile.am -o -name Makefile.in -o -name Makefile -delete
-	install -d ${D}${PTEST_PATH}/src
-	ln -sf ${bindir}/curl   ${D}${PTEST_PATH}/src/curl
-	cp -rf ${D}${bindir}/curl-config ${D}${PTEST_PATH}
+	install -d ${D}${PTEST_PATH}/tests
+	cp ${S}/tests/*.p[lmy] ${D}${PTEST_PATH}/tests/
+
+	install -d ${D}${PTEST_PATH}/tests/libtest
+	for name in $(makefile-getvar ${B}/tests/libtest/Makefile noinst_PROGRAMS noinst_LTLIBRARIES); do
+		${B}/libtool --mode=install install ${B}/tests/libtest/$name ${D}${PTEST_PATH}/tests/libtest
+	done
+	cp ${S}/tests/libtest/notexists.pl ${D}${PTEST_PATH}/tests/libtest
+	rm -f ${D}${PTEST_PATH}/tests/libtest/libhostname.la
+
+	install -d ${D}${PTEST_PATH}/tests/server
+	for name in $(makefile-getvar ${B}/tests/server/Makefile noinst_PROGRAMS); do
+		${B}/libtool --mode=install install ${B}/tests/server/$name ${D}${PTEST_PATH}/tests/server
+	done
+
+	cp -r ${S}/tests/data ${D}${PTEST_PATH}/tests/
+
+	# More tests that we disable for automated QA as they're not reliable
+	cat ${UNPACKDIR}/disable-tests >>${D}${PTEST_PATH}/tests/data/DISABLED
 }
 
 RDEPENDS:${PN}-ptest += " \
-	bash \
+	locale-base-en-us \
 	perl-module-b \
 	perl-module-base \
 	perl-module-cwd \
 	perl-module-digest \
 	perl-module-digest-md5 \
+	perl-module-digest-sha \
 	perl-module-file-basename \
 	perl-module-file-spec \
 	perl-module-file-temp \
