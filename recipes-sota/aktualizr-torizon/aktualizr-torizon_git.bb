@@ -11,6 +11,7 @@ SRC_URI = " \
   file://aktualizr-torizon.service \
   file://gateway.url \
   file://root.crt \
+  file://aktualizr-tmpfiles.conf \
   https://github.com/uptane/ota-tuf/releases/download/v${UPTANE_SIGN_PV}/cli-${UPTANE_SIGN_PV}.tgz;unpack=0;name=uptanesign \
 "
 
@@ -56,6 +57,9 @@ do_install:append() {
     
     install -m 0644 ${UNPACKDIR}/gateway.url ${D}/${libdir}/sota/gateway.url
     install -m 0644 ${UNPACKDIR}/root.crt ${D}/${libdir}/sota/root.crt
+
+    install -d ${D}${nonarch_libdir}/tmpfiles.d
+    install -m 0644 ${WORKDIR}/aktualizr-tmpfiles.conf ${D}${nonarch_libdir}/tmpfiles.d/aktualizr.conf
 }
 
 PACKAGES =+ "${PN}-misc"
@@ -71,6 +75,7 @@ FILES:${PN} += " \
   ${libdir}/sota/conf.d/30-rollback.toml \
   ${bindir}/aktualizr-info \
   ${binddir}/aktualizr-cert-provider \
+  ${nonarch_libdir}/tmpfiles.d/aktualizr.conf \
 "
 
 FILES:${PN}-dev = " \
