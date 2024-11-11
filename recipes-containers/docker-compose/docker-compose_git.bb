@@ -22,6 +22,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://src/import/LICENSE;md5=175792518e4ac015ab6696d16c4f607e"
 
 GO_IMPORT = "import"
+UNPACKDIR = "${WORKDIR}"
 
 PV = "v2.28.1"
 
