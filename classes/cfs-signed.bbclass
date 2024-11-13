@@ -20,7 +20,7 @@
 #   addition of the composefs digest into the commit metadata) and the signature
 #   verification at runtime.
 #
-DISTROOVERRIDES:append = ":cfs-support:cfs-signed"
+DISTROOVERRIDES .= ":cfs-support:cfs-signed"
 
 # Variables a user will likely want to set up:
 #
