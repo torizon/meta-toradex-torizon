@@ -5,4 +5,10 @@ shopt -s extglob
 # Skip the plugin tests because those example plugins are built only while
 # running cargo test and for this to work as a ptest they would need to be cross
 # compiled and installed as part of the ptest.
-NETAVARK=/usr/libexec/podman/netavark bats test/!(*-plugin.bats)
+for i in `ls test`; do
+     if [ $i == "200-bridge-firewalld.bats" ] || [ $i == "500-plugin.bats" ] ; then
+         continue
+     fi
+     [ ${i: -4 -1} == ".bats" ] && NETAVARK=/usr/libexec/podman/netavark bats -t test/$i | sed -e '/^ok/ s/^ok/PASS: /g' | sed -e '/^not ok/ s/^not ok/FAIL: /g'
+done
+

@@ -75,6 +75,7 @@ BBMASK += " \
     /meta-freescale/recipes-graphics/cairo \
     /openembedded-core/meta/recipes-devtools/cargo \
     /openembedded-core/meta/recipes-devtools/rust \
+    /openembedded-core/meta/recipes-devtools/go \
 "
 
 # machines where TorizonCore is experimental
@@ -94,12 +95,12 @@ PREFERRED_RPROVIDER_aktualizr-shared-prov = "aktualizr-torizon"
 # disable warning message from meta-security
 SKIP_META_SECURITY_SANITY_CHECK = "1"
 
-GOVERSION ?= "1.20%"
+GOVERSION ?= "1.22%"
 
 # Rust toolchain preferred versions:
-RUSTVERSION ?= "1.70%"
+RUSTVERSION ?= "1.79%"
 
-CURLVERSION ?= "8.6.0"
+CURLVERSION ?= "8.10.1"
 
 PREFERRED_VERSION_curl ?= "${CURLVERSION}"
 PREFERRED_VERSION_libcurl ?= "${CURLVERSION}"

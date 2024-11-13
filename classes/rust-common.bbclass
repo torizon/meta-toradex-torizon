@@ -14,10 +14,10 @@ FILES:${PN}-dev += "${rustlibdir}/*.rlib ${rustlibdir}/*.rmeta"
 FILES:${PN}-dbg += "${rustlibdir}/.debug"
 
 RUSTLIB = "-L ${STAGING_DIR_HOST}${rustlibdir}"
-RUST_DEBUG_REMAP = "--remap-path-prefix=${WORKDIR}=/usr/src/debug/${PN}/${EXTENDPE}${PV}-${PR}"
+RUST_DEBUG_REMAP = "--remap-path-prefix=${WORKDIR}=${TARGET_DBGSRC_DIR}"
 RUSTFLAGS += "${RUSTLIB} ${RUST_DEBUG_REMAP}"
-RUSTLIB_DEP ?= "libstd-rs"
-RUST_PANIC_STRATEGY ?= "unwind"
+RUSTLIB_DEP ??= "libstd-rs"
+RUST_PANIC_STRATEGY ??= "unwind"
 
 def target_is_armv7(d):
     '''Determine if target is armv7'''
@@ -63,6 +63,8 @@ def rust_base_triple(d, thing):
     # This catches ARM targets and appends the necessary hard float bits
     if os == "linux-gnueabi" or os == "linux-musleabi":
         libc = bb.utils.contains('TUNE_FEATURES', 'callconvention-hard', 'hf', '', d)
+    elif os == "linux-gnux32" or os == "linux-muslx32":
+        libc = ""
     elif "musl" in os:
         libc = "-musl"
         os = "linux"

@@ -21,16 +21,21 @@ def llvm_features_from_tune(d):
 
     if 'vfpv4' in feat:
         f.append("+vfp4")
-    if 'vfpv3' in feat:
+    elif 'vfpv4d16' in feat:
+        f.append("+vfp4")
+        f.append("-d32")
+    elif 'vfpv3' in feat:
         f.append("+vfp3")
-    if 'vfpv3d16' in feat:
-        f.append("+d16")
-
-    if 'vfpv2' in feat or 'vfp' in feat:
+    elif 'vfpv3d16' in feat:
+        f.append("+vfp3")
+        f.append("-d32")
+    elif 'vfpv2' in feat or 'vfp' in feat:
         f.append("+vfp2")
 
     if 'neon' in feat:
         f.append("+neon")
+    elif target_is_armv7(d):
+        f.append("-neon")
 
     if 'mips32' in feat:
         f.append("+mips32")
@@ -125,7 +130,7 @@ def llvm_features(d):
 llvm_features[vardepvalue] = "${@llvm_features(d)}"
 
 ## arm-unknown-linux-gnueabihf
-DATA_LAYOUT[arm-eabi] = "e-m:e-p:32:32-i64:64-v128:64:128-a:0:32-n32-S64"
+DATA_LAYOUT[arm-eabi] = "e-m:e-p:32:32-Fi8-i64:64-v128:64:128-a:0:32-n32-S64"
 TARGET_ENDIAN[arm-eabi] = "little"
 TARGET_POINTER_WIDTH[arm-eabi] = "32"
 TARGET_C_INT_WIDTH[arm-eabi] = "32"
@@ -133,7 +138,7 @@ MAX_ATOMIC_WIDTH[arm-eabi] = "64"
 FEATURES[arm-eabi] = "+v6,+vfp2"
 
 ## armv7-unknown-linux-gnueabihf
-DATA_LAYOUT[armv7-eabi] = "e-m:e-p:32:32-i64:64-v128:64:128-a:0:32-n32-S64"
+DATA_LAYOUT[armv7-eabi] = "e-m:e-p:32:32-Fi8-i64:64-v128:64:128-a:0:32-n32-S64"
 TARGET_ENDIAN[armv7-eabi] = "little"
 TARGET_POINTER_WIDTH[armv7-eabi] = "32"
 TARGET_C_INT_WIDTH[armv7-eabi] = "32"
@@ -148,7 +153,7 @@ TARGET_C_INT_WIDTH[aarch64] = "32"
 MAX_ATOMIC_WIDTH[aarch64] = "128"
 
 ## x86_64-unknown-linux-{gnu, musl}
-DATA_LAYOUT[x86_64] = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+DATA_LAYOUT[x86_64] = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 TARGET_ENDIAN[x86_64] = "little"
 TARGET_POINTER_WIDTH[x86_64] = "64"
 TARGET_C_INT_WIDTH[x86_64] = "32"
@@ -294,6 +299,8 @@ def llvm_cpu(d):
     trans['i586'] = "i586"
     trans['mips64'] = "mips64"
     trans['mips64el'] = "mips64"
+    trans['powerpc64le'] = "ppc64le"
+    trans['powerpc64'] = "ppc64"
     trans['riscv64'] = "generic-rv64"
     trans['riscv32'] = "generic-rv32"
     trans['loongarch64'] = "la464"

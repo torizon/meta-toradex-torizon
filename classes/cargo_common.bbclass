@@ -28,12 +28,22 @@ export PKG_CONFIG_ALLOW_CROSS = "1"
 # Don't instruct cargo to use crates downloaded by bitbake. Some rust packages,
 # for example the rust compiler itself, come with their own vendored sources.
 # Specifying two [source.crates-io] will not work.
-CARGO_DISABLE_BITBAKE_VENDORING ?= "0"
+CARGO_DISABLE_BITBAKE_VENDORING ??= "0"
 
 # Used by libstd-rs to point to the vendor dir included in rustc src
-CARGO_VENDORING_DIRECTORY ?= "${CARGO_HOME}/bitbake"
+CARGO_VENDORING_DIRECTORY ??= "${CARGO_HOME}/bitbake"
 
-CARGO_RUST_TARGET_CCLD ?= "${RUST_TARGET_CCLD}"
+# The directory of the Cargo.toml relative to the root directory, per default
+# assume there's a Cargo.toml directly in the root directory
+CARGO_SRC_DIR ??= ""
+
+# The actual path to the Cargo.toml
+CARGO_MANIFEST_PATH ??= "${S}/${CARGO_SRC_DIR}/Cargo.toml"
+
+# Path to Cargo.lock
+CARGO_LOCK_PATH ??= "${@ os.path.join(os.path.dirname(d.getVar('CARGO_MANIFEST_PATH')), 'Cargo.lock')}"
+
+CARGO_RUST_TARGET_CCLD ??= "${RUST_TARGET_CCLD}"
 cargo_common_do_configure () {
 	mkdir -p ${CARGO_HOME}/bitbake
 
@@ -117,6 +127,8 @@ cargo_common_do_configure () {
 }
 
 python cargo_common_do_patch_paths() {
+    import shutil
+
     cargo_config = os.path.join(d.getVar("CARGO_HOME"), "config")
     if not os.path.exists(cargo_config):
         return
@@ -130,7 +142,7 @@ python cargo_common_do_patch_paths() {
     fetcher = bb.fetch2.Fetch(src_uri, d)
     for url in fetcher.urls:
         ud = fetcher.ud[url]
-        if ud.type == 'git':
+        if ud.type == 'git' or ud.type == 'gitsm':
             name = ud.parm.get('name')
             destsuffix = ud.parm.get('destsuffix')
             if name is not None and destsuffix is not None:
@@ -146,6 +158,44 @@ python cargo_common_do_patch_paths() {
             print('\n[patch."%s"]' % k, file=config)
             for name in v:
                 print(name, file=config)
+
+    if not patches:
+        return
+
+    # Cargo.lock file is needed for to be sure that artifacts
+    # downloaded by the fetch steps are those expected by the
+    # project and that the possible patches are correctly applied.
+    # Moreover since we do not want any modification
+    # of this file (for reproducibility purpose), we prevent it by
+    # using --frozen flag (in CARGO_BUILD_FLAGS) and raise a clear error
+    # here is better than letting cargo tell (in case the file is missing)
+    # "Cargo.lock should be modified but --frozen was given"
+
+    lockfile = d.getVar("CARGO_LOCK_PATH")
+    if not os.path.exists(lockfile):
+        bb.fatal(f"{lockfile} file doesn't exist")
+
+    # There are patched files and so Cargo.lock should be modified but we use
+    # --frozen so let's handle that modifications here.
+    #
+    # Note that a "better" (more elegant ?) would have been to use cargo update for
+    # patched packages:
+    #  cargo update --offline -p package_1 -p package_2
+    # But this is not possible since it requires that cargo local git db
+    # to be populated and this is not the case as we fetch git repo ourself.
+
+    lockfile_orig = lockfile + ".orig"
+    if not os.path.exists(lockfile_orig):
+        shutil.copy(lockfile, lockfile_orig)
+
+    newlines = []
+    with open(lockfile_orig, "r") as f:
+        for line in f.readlines():
+            if not line.startswith("source = \"git"):
+                newlines.append(line)
+
+    with open(lockfile, "w") as f:
+        f.writelines(newlines)
 }
 do_configure[postfuncs] += "cargo_common_do_patch_paths"
 

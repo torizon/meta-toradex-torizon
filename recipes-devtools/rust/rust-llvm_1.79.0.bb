@@ -4,7 +4,7 @@ HOMEPAGE = "http://www.rust-lang.org"
 
 # check src/llvm-project/llvm/CMakeLists.txt for llvm version in use
 #
-LLVM_RELEASE = "16.0.2"
+LLVM_RELEASE = "17.0.6"
 
 require rust-source.inc
 
@@ -16,7 +16,7 @@ S = "${RUSTSRC}/src/llvm-project/llvm"
 
 LIC_FILES_CHKSUM = "file://LICENSE.TXT;md5=8a15a0759ef07f2682d2ba4b893c9afe"
 
-inherit cmake python3native
+inherit cmake
 
 DEPENDS += "ninja-native rust-llvm-native"
 
@@ -30,9 +30,11 @@ CXXFLAGS:remove = "-g"
 
 LLVM_DIR = "llvm${LLVM_RELEASE}"
 
+RUST_LLVM_TARGETS ?= "ARM;AArch64;Mips;PowerPC;RISCV;X86"
+
 EXTRA_OECMAKE = " \
     -DCMAKE_BUILD_TYPE=Release \
-    -DLLVM_TARGETS_TO_BUILD='ARM;AArch64;Mips;PowerPC;RISCV;X86' \
+    -DLLVM_TARGETS_TO_BUILD='${RUST_LLVM_TARGETS}' \
     -DLLVM_BUILD_DOCS=OFF \
     -DLLVM_ENABLE_TERMINFO=OFF \
     -DLLVM_ENABLE_ZLIB=OFF \
@@ -47,6 +49,15 @@ EXTRA_OECMAKE = " \
     -DLLVM_TARGET_ARCH=${TARGET_ARCH} \
     -DCMAKE_INSTALL_PREFIX:PATH=${libdir}/llvm-rust \
 "
+
+# Forcibly disable the detection of these packages as otherwise
+# it will look at the host Python install
+EXTRA_OECMAKE += "\
+    -DPY_PYGMENTS_FOUND=OFF \
+    -DPY_PYGMENTS_LEXERS_C_CPP_FOUND=OFF \
+    -DPY_YAML_FOUND=OFF \
+"
+
 EXTRA_OECMAKE:append:class-target = "\
     -DLLVM_BUILD_TOOLS=OFF \
     -DLLVM_TABLEGEN=${STAGING_LIBDIR_NATIVE}/llvm-rust/bin/llvm-tblgen \
