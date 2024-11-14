@@ -125,5 +125,5 @@ CORE_IMAGE_BASE_INSTALL:append:cfs-signed = "\
 "
 
 CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
-    composefs-tools \
+    composefs \
 "
