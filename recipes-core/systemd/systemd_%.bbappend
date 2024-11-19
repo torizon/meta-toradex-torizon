@@ -45,7 +45,7 @@ pkg_postinst:${PN}:append () {
 }
 
 do_install:append() {
-    if [ ${@ oe.types.boolean('${VOLATILE_LOG_DIR}') } = True ]; then
+    if ${@bb.utils.contains('FILESYSTEM_PERMS_TABLES', 'files/fs-perms-volatile-log.txt', 'true', 'false', d)}; then
         sed -i '/^d \/var\/log /d' ${D}${nonarch_libdir}/tmpfiles.d/var.conf
         echo 'L+ /var/log - - - - /var/volatile/log' >> ${D}${sysconfdir}/tmpfiles.d/00-create-volatile.conf
     else
