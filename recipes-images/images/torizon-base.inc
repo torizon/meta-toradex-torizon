@@ -30,7 +30,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     ethtool \
     evtest \
     fastfetch \
-    fluent-bit \
+    fluentbit \
     htop \
     i2c-tools \
     iproute2 \
@@ -125,5 +125,5 @@ CORE_IMAGE_BASE_INSTALL:append:cfs-signed = "\
 "
 
 CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
-    composefs-tools \
+    composefs \
 "

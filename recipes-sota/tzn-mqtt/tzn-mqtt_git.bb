@@ -12,8 +12,7 @@ SRC_URI += " \
 SRCREV = "516ce5198a077fffcc2a19d946b3c21814841f01"
 SRCREV:use-head-next = "${AUTOREV}"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${WORKDIR}/git"
 
 PV = "0.0+git${SRCPV}"
 CARGO_SRC_DIR = ""
@@ -430,5 +429,5 @@ SRC_URI[zvariant_utils-2.0.0.sha256sum] = "fc242db087efc22bd9ade7aa7809e4ba82813
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/tzn-mqtt.service ${D}${systemd_unitdir}/system/tzn-mqtt.service
+    install -m 0644 ${UNPACKDIR}/tzn-mqtt.service ${D}${systemd_unitdir}/system/tzn-mqtt.service
 }

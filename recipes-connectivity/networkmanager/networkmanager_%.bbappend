@@ -28,6 +28,6 @@ do_install:append() {
 
     chmod 0600 ${D}${sysconfdir}/NetworkManager/system-connections/network?.nmconnection
 
-    install -m 0600 ${WORKDIR}/99-disable-uap.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-disable-uap.conf
+    install -m 0600 ${UNPACKDIR}/99-disable-uap.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-disable-uap.conf
 }
 
