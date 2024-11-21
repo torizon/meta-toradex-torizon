@@ -59,7 +59,7 @@ do_install:append() {
     install -m 0644 ${UNPACKDIR}/root.crt ${D}/${libdir}/sota/root.crt
 
     install -d ${D}${nonarch_libdir}/tmpfiles.d
-    install -m 0644 ${WORKDIR}/aktualizr-tmpfiles.conf ${D}${nonarch_libdir}/tmpfiles.d/aktualizr.conf
+    install -m 0644 ${UNPACKDIR}/aktualizr-tmpfiles.conf ${D}${nonarch_libdir}/tmpfiles.d/aktualizr.conf
 }
 
 PACKAGES =+ "${PN}-misc"
