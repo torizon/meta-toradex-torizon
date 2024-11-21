@@ -93,3 +93,4 @@ FILES:${PN}-misc = " \
 "
 
 BBCLASSEXTEND = "native"
+INSANE_SKIP += "buildpaths"
