@@ -1,6 +1,6 @@
-From fc0ecf5e2b2dd08d6c346693caf205c7d3225428 Mon Sep 17 00:00:00 2001
+From 17390df7e5df467b4a97a848d1fff0514f23e2bf Mon Sep 17 00:00:00 2001
 From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
-Date: Thu, 21 Nov 2024 16:45:27 +0000
+Date: Fri, 22 Nov 2024 10:00:34 -0300
 Subject: [PATCH] curl: Make socket callback during cleanup into no-op
 
 Because curl_multi_cleanup may invoke callbacks, we effectively have
@@ -23,10 +23,18 @@ Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
  1 file changed, 15 insertions(+)
 
 diff --git a/src/libostree/ostree-fetcher-curl.c b/src/libostree/ostree-fetcher-curl.c
-index d6534b46..a35f9286 100644
+index d6534b46..c07d0673 100644
 --- a/src/libostree/ostree-fetcher-curl.c
 +++ b/src/libostree/ostree-fetcher-curl.c
-@@ -79,6 +79,7 @@ struct OstreeFetcher
+@@ -25,6 +25,7 @@
+ #include <gio/gunixoutputstream.h>
+ #include <glib-unix.h>
+ #include <curl/curl.h>
++#include <stdbool.h>
+ 
+ /* These macros came from 7.43.0, but we want to check
+  * for versions a bit earlier than that (to work on CentOS 7),
+@@ -79,6 +80,7 @@ struct OstreeFetcher
    struct curl_slist *extra_headers;
    int tmpdir_dfd;
    char *custom_user_agent;
@@ -34,7 +42,7 @@ index d6534b46..a35f9286 100644
  
    GMainContext *mainctx;
    CURLM *multi;
-@@ -177,6 +178,16 @@ _ostree_fetcher_finalize (GObject *object)
+@@ -177,6 +179,15 @@ _ostree_fetcher_finalize (GObject *object)
  {
    OstreeFetcher *self = OSTREE_FETCHER (object);
  
@@ -47,7 +55,6 @@ index d6534b46..a35f9286 100644
 +  // e.g. g_hash_table_unref() may itself invoke callbacks, which is where
 +  // some data is cleaned up.
 +  self->finalizing = true;
-+
    curl_multi_cleanup (self->multi);
    g_free (self->remote_name);
    g_free (self->tls_ca_db_path);
