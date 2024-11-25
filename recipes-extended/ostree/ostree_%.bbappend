@@ -8,6 +8,8 @@ SRC_URI:append = " \
     file://0003-ostree-fetcher-curl-set-max-parallel-connections.patch \
     file://0004-Add-support-for-kernel_image_type-in-uEnv.txt.patch \
     file://0004-curl-Make-socket-callback-during-cleanup-into-no-op.patch \
+    file://0001-mount-Allow-building-when-macro-MOUNT_ATTR_IDMAP-is-.patch \
+    file://0002-mount-Allow-building-when-macro-LOOP_CONFIGURE-is-no.patch \
     file://ostree-pending-reboot.service \
     file://ostree-pending-reboot.path \
     file://ostree-repo-config.sh \
