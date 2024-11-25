@@ -7,7 +7,7 @@ SRC_URI[garagesign.md5sum] = "584cd16aa7824e34b593dae63796466b"
 SRC_URI[garagesign.sha256sum] = "c7d5fdceef3e815363e3aa398c38643ca213f9b7f66d50f55c76a66cb74565d2"
 
 SRC_URI = " \
-  gitsm://github.com/toradex/aktualizr.git;protocol=https;branch=toradex-master \
+  gitsm://github.com/toradex/aktualizr.git;protocol=https;branch=toradex-kirkstone-6.x.y \
   file://aktualizr-torizon.service \
   file://gateway.url \
   file://root.crt \
@@ -15,7 +15,7 @@ SRC_URI = " \
   file://aktualizr-tmpfiles.conf \
 "
 
-SRCREV = "13d5e9493f87cb2d5e96f58804b54c29a5e0ff0b"
+SRCREV = "9444e804662e7c6e38e5f615f3e368f4a78d1fdb"
 SRCREV:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
