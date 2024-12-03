@@ -1,7 +1,9 @@
-From 7a5048cc44966363a23c70ac15ad13d43d26e78d Mon Sep 17 00:00:00 2001
+From 2081a996bc941ff892fb6b76d23b1cc6bac00770 Mon Sep 17 00:00:00 2001
 From: Sergio Prado <sergio.prado@toradex.com>
 Date: Wed, 13 Jul 2022 14:52:33 -0300
-Subject: [PATCH 2/3] Add support for the fdtfile variable in uEnv.txt
+Subject: [PATCH 1/2] Add support for the fdtfile variable in uEnv.txt
+
+Comments for v1:
 
 When TorizonCore Builder applies a device tree to a TorizonCore
 image, the variable fdtfile is defined in uEnv.txt, instead of
@@ -11,65 +13,82 @@ This patch adds support in ostree to this variable, to make sure its
 rollback variant (fdtfile2) is created in an update, and used in a
 rollback situation.
 
-Upstream-Status: Inappropriate [TorizonCore specific]
-
 Signed-off-by: Sergio Prado <sergio.prado@toradex.com>
+
+Comments for v2:
+
+Fix memory leak and generalize the implementation to allow other fields
+to be searched in uEnv.txt.
+
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+
+Upstream-Status: Inappropriate [TorizonCore specific]
 ---
- src/libostree/ostree-bootloader-uboot.c | 34 +++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+ src/libostree/ostree-bootloader-uboot.c | 44 +++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
 diff --git a/src/libostree/ostree-bootloader-uboot.c b/src/libostree/ostree-bootloader-uboot.c
-index 41280cf1..6242781b 100644
+index 41280cf1..6eb41e4e 100644
 --- a/src/libostree/ostree-bootloader-uboot.c
 +++ b/src/libostree/ostree-bootloader-uboot.c
-@@ -98,6 +98,36 @@ append_system_uenv (OstreeBootloaderUboot *self, const char *bootargs, GPtrArray
+@@ -98,6 +98,40 @@ append_system_uenv (OstreeBootloaderUboot *self, const char *bootargs, GPtrArray
    return TRUE;
  }
  
-+static gboolean
-+search_fdtfile (const char  *line,
-+                void        *data,
-+                GError     **error)
++struct uboot_config_get_params
 +{
++  const char *key; /* in */
++  const char *val; /* out */
++};
++
++static gboolean
++uboot_config_get_helper (const char *line, void *data, GError **error)
++{
++  struct uboot_config_get_params *params = data;
 +  g_auto(GStrv) vars = g_strsplit(line, "=", -1);
-+  if (!g_strcmp0 (vars[0], "fdtfile"))
++  if (!g_strcmp0 (vars[0], params->key))
 +    {
-+      gchar **val = data;
-+      *val = g_strdup (vars[1]);
++      params->val = g_strdup (vars[1]);
 +      return 0;
 +    }
 +  return 1;
 +}
 +
++/* The caller becomes the owner of the returned pointer. */
 +static const char *
-+uboot_config_get_fdtfile (GCancellable  *cancellable,
-+                          GError        **error)
++uboot_config_get (const char *key, GCancellable *cancellable, GError **error)
 +{
 +  const char *cfgfile = "/usr/lib/ostree-boot/uEnv.txt";
-+  const char *val = NULL;
++  struct uboot_config_get_params params = { .key = key, .val = NULL };
 +
-+  if (!g_file_test(cfgfile, G_FILE_TEST_EXISTS))
++  if (!g_file_test (cfgfile, G_FILE_TEST_EXISTS))
 +    return NULL;
 +
-+  ot_parse_file_by_line (cfgfile, search_fdtfile, &val, cancellable, error);
++  ot_parse_file_by_line (cfgfile, uboot_config_get_helper, &params, cancellable, error);
 +
-+  return val;
++  return params.val;
 +}
 +
  static gboolean
  create_config_from_boot_loader_entries (OstreeBootloaderUboot *self, int bootversion,
                                          GPtrArray *new_lines, GCancellable *cancellable,
-@@ -141,6 +171,10 @@ create_config_from_boot_loader_entries (OstreeBootloaderUboot *self, int bootver
+@@ -141,6 +175,16 @@ create_config_from_boot_loader_entries (OstreeBootloaderUboot *self, int bootver
        if (val)
          g_ptr_array_add (new_lines, g_strdup_printf ("fdtdir%s=/boot%s", index_suffix, val));
  
-+      val = uboot_config_get_fdtfile(cancellable, error);
-+      if (val && i)
-+        g_ptr_array_add (new_lines, g_strdup_printf ("fdtfile%s=%s", index_suffix, val));
++      if (i)
++        {
++          val = uboot_config_get ("fdtfile", cancellable, error);
++          if (val)
++            {
++              g_ptr_array_add (new_lines, g_strdup_printf ("fdtfile%s=%s", index_suffix, val));
++              g_free (val);
++            }
++        }
 +
        val = ostree_bootconfig_parser_get (config, "options");
        if (val)
          {
 -- 
-2.25.1
+2.34.1
 
