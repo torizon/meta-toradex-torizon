@@ -1,0 +1,44 @@
+From 4ba5b9e295e4dd5db69e10215859d68b5512da25 Mon Sep 17 00:00:00 2001
+From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Date: Tue, 3 Dec 2024 18:08:12 -0300
+Subject: [PATCH 2/2] Add support for kernel_image_type in uEnv.txt
+
+Save uEnv.txt variable "kernel_image_type" from the previous deployment
+to allow rollbacks to work when an OS update changes the kernel image
+type, which would be the case when upgrading from unsigned to signed
+images (or the reverse).
+
+Upstream-Status: Inappropriate [TorizonCore specific]
+
+Related-to: TOR-3563
+
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ src/libostree/ostree-bootloader-uboot.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/src/libostree/ostree-bootloader-uboot.c b/src/libostree/ostree-bootloader-uboot.c
+index 6eb41e4e..a566b997 100644
+--- a/src/libostree/ostree-bootloader-uboot.c
++++ b/src/libostree/ostree-bootloader-uboot.c
+@@ -193,6 +193,17 @@ create_config_from_boot_loader_entries (OstreeBootloaderUboot *self, int bootver
+             if (!append_system_uenv (self, val, new_lines, cancellable, error))
+               return FALSE;
+         }
++
++      if (i)
++        {
++          val = uboot_config_get ("kernel_image_type", cancellable, error);
++          if (val)
++            {
++              g_ptr_array_add (new_lines,
++                               g_strdup_printf ("kernel_image_type%s=%s", index_suffix, val));
++              g_free (val);
++            }
++        }
+     }
+ 
+   return TRUE;
+-- 
+2.34.1
+
