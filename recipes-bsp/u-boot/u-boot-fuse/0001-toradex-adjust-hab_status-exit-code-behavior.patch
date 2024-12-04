@@ -80,4 +80,3 @@ index 27e053ef701..91ff7c9dfe6 100644
  static ulong get_image_ivt_offset(ulong img_addr)
 -- 
 2.34.1
-
