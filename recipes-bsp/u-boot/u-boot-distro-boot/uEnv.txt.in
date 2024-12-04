@@ -57,6 +57,7 @@ check_rollback_needed=if test -n "${kernel_image2}" && test "${rollback}" = "1";
     env set fdtdir ${fdtdir2}; \
     env set fdt_file ${fdt_file2}; \
     env set fdtfile ${fdtfile2}; \
+    test -n "${kernel_image_type2}" && env set kernel_image_type ${kernel_image_type2}; \
 fi || true
 
 set_fdt_path=if test -n "${fdtdir}"; then \
