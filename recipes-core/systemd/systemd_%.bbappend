@@ -60,5 +60,5 @@ do_install:append() {
     # The default SaveIntervalSec (60 secs) is too frequent, change to 1 hour
     sed -i -e "s/^.*SaveIntervalSec.*$/SaveIntervalSec=3600/" ${D}${sysconfdir}/systemd/timesyncd.conf
 
-    install -m 755 ${UNPACKDIR}/torizon-recover ${D}${rootlibexecdir}/systemd
+    install -m 755 ${UNPACKDIR}/torizon-recover ${D}${nonarch_libdir}/systemd
 }
