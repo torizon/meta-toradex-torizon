@@ -14,6 +14,27 @@ composefs_error() {
 	fatal "$@"
 }
 
+composefs_enable_fsverity_fs() {
+	root_dev=$(mount | sed -ne "\#${ROOTFS_DIR}# {s# *\(/dev/[^ ]*\) .*#\1#p}")
+	if [ ! -b "${root_dev}" ]; then
+		msg "Could not determine root device!"
+		return 1
+	fi
+	if tune2fs -l "${root_dev}" 2>/dev/null | \
+	   grep -i 'filesystem features:.*\bverity\b' >/dev/null; then
+		debug 'Feature "verity" is already enabled on the filesystem.'
+	else
+		if tune2fs -O verity "${root_dev}"; then
+			msg 'Enabling "verity" feature on the filesystem succeeded.'
+		else
+			msg 'Enabling "verity" feature on the filesystem FAILED.'
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
 # $1: number of currently processed items
 # $2: total number of items to process
 # $3: (optional) when set to "1", a newline is added at the end
@@ -53,7 +74,7 @@ composefs_progress() {
 # which doesn't look like a good idea. Instead, here we depend only on
 # "findutils" and "fsverity-utils".
 #
-composefs_enable_fsverity_all() {
+composefs_enable_fsverity_files() {
 	nfiles="$(find "${SYSROOT_DIR}/ostree/repo/objects" \! -type d | wc -l)"
 	count="0"
 
@@ -87,9 +108,17 @@ composefs_ensure_fsverity() {
 		sed -i -e "/^\[composefs\]/,/^\[.*\]/ {s/^enabled[[:space:]]*=.*\$/enabled = ${bootparam_cfs_enabled}/}" "${PREPARE_ROOT_CFG}"
 	fi
 
-	# Check configuration key composefs.enabled; this could be set to true|false|signed.
+	# Check configuration key composefs.enabled; this could be set to no|maybe|yes|signed.
 	enabled="$(sed -n -e '/^\[composefs\]/,/^\[.*\]/ {s/^enabled[[:space:]]*=[[:space:]]*\([^[:space:]]*\)/\1/p}' "${PREPARE_ROOT_CFG}")"
+	enabled="${enabled:-no}"
 	debug "composefs.enabled=${enabled}"
+
+	if [ "${enabled}" != "no" ]; then
+		# Enable fsverity at the filesystem level; errors here would be detected upon
+		# ostree deployment generation as well so we don't make them fatal here.
+		composefs_enable_fsverity_fs
+	fi
+
 	if [ "${enabled}" != "signed" ]; then
 		debug "composefs signing is not enabled in ${PREPARE_ROOT_CFG}"
 		return 0
@@ -129,7 +158,7 @@ composefs_ensure_fsverity() {
 	msg ""
 
 	t0="$(date '+%s')"
-	composefs_enable_fsverity_all
+	composefs_enable_fsverity_files
 	t1="$(date '+%s')"
 
 	# ---
