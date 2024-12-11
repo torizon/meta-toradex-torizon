@@ -3,14 +3,16 @@
 # Assign name "ethernetN" to net devices with Toradex OUI.
 # Supports Toradex boards with single/dual ethernet interfaces.
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 KERNEL" >&2
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 OUI KERNEL" >&2
     exit 1
 fi
 
-dev="${1}"
+oui="${1}"
+
+dev="${2}"
 devpath="/sys/class/net/${dev}"
-if [ ! -e ${devpath} ]
+if [ ! -e "${devpath}" ]
 then
   echo "Error: dev path does not exist!" >&2
   exit 1
@@ -18,13 +20,22 @@ fi
 
 devaddr="${devpath}/address"
 
-# Toradex OUI
-oui=00:14:2d
+# Toradex OUIs
+case $oui in
+  00:14:2d)
+    max_range=16777216 # 16777215 = 0xFFFFFF, maximum valid serial for MAC OUI 1 (00:14:2D)
+    mac0_serial=$(( $(tr '\0' '\n' < /proc/device-tree/serial-number) + 0 ))
+    ;;
+  8c:06:cb)
+    max_range=33554432 # 33554431 = 0x1FFFFFF, maximum valid serial for MAC OUI 2 (8C:06:CB)
+    # Correct MAC 0 serial, so we can derive the correct MAC address, by removing the second OUI range offset
+    mac0_serial=$(( $(tr '\0' '\n' < /proc/device-tree/serial-number) - 16777216))
+    ;;
+esac
 
-# Number of net devices with Toradex OUI
-devs=$(grep ${oui} /sys/class/net/*/address | wc -l)
-
-if [ ${devs} -gt 2 ]
+# shellcheck disable=SC2126
+devs=$(grep "${oui}" /sys/class/net/*/address | wc -l)
+if [ "${devs}" -gt 2 ]
 then
   # Limitation: this script can handle up to two devices
   echo "Error: Found ${devs} devices with Toradex OUI!" >&2
@@ -32,28 +43,26 @@ then
   exit 1
 fi
 
-mac0_serial=$(expr $(cat /proc/device-tree/serial-number | tr '\0' '\n') + 0)
-
 # Secondary MAC address is allocated from block
 # 0x100000(1048576) higher than the first MAC address
 mac1_offset=1048576
+# shellcheck disable=SC2034
 mac1_serial=$((mac0_serial + mac1_offset))
 
 for i in $(seq 0 $((devs - 1)))
 do
   eval serial="\${mac${i}_serial}"
 
-  # 16777215 = 0xFFFFFF, maximum valid serial
-  if [ ${serial} -gt 16777215 ]
+  # shellcheck disable=SC2154
+  if [ "${serial}" -gt "${max_range}" ]
   then
     echo "Error: mac${i} serial is greater than 0xFFFFFF!" >&2
     exit 1
   fi
-  eval mac${i}_serial_hex=$(eval printf "%x" "\${mac${i}_serial}" |  sed -e 's/[0-9a-f]\{2\}/&:/g' -e 's/:$//')
-  eval mac${i}="${oui}:\${mac${i}_serial_hex}"
+  mac_serial_hex="$(printf "%x" "${serial}" |  sed -e 's/[0-9a-f]\{2\}/&:/g' -e 's/:$//')"
+  currentmac="${oui}:${mac_serial_hex}"
 
-  eval currentmac="\${mac${i}}"
-  if [ $(cat ${devaddr}) = ${currentmac} ]
+  if [ "$(cat "${devaddr}")" = "${currentmac}" ]
   then
     echo "ethernet${i}"
     exit 0
