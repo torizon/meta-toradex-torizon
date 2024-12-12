@@ -1,0 +1,12 @@
+[Unit]
+Description=Update static OSTree repository configuration
+Before=aktualizr.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/sysroot
+ExecStart=/usr/sbin/ostree-repo-config.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
