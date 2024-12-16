@@ -15,24 +15,26 @@ FUSE_NUM = ""
 STATUS_CMD = ""
 CLOSE_CMD = ""
 
-IMX6_COMMON_BANK_WORD = "3 0;\
-3 1;\
-3 2;\
-3 3;\
-3 4;\
-3 5;\
-3 6;\
-3 7;\
+IMX6_COMMON_BANK_WORD = "\
+    (3, 0), \
+    (3, 1), \
+    (3, 2), \
+    (3, 3), \
+    (3, 4), \
+    (3, 5), \
+    (3, 6), \
+    (3, 7) \
 "
 
-IMX7_IMX8M_COMMON_BANK_WORD = "6 0;\
-6 1;\
-6 2;\
-6 3;\
-7 0;\
-7 1;\
-7 2;\
-7 3;\
+IMX7_IMX8M_COMMON_BANK_WORD = "\
+    (6, 0), \
+    (6, 1), \
+    (6, 2), \
+    (6, 3), \
+    (7, 0), \
+    (7, 1), \
+    (7, 2), \
+    (7, 3) \
 "
 
 FUSE_NUM_8 = "1 2 3 4 5 6 7 8"
@@ -70,43 +72,45 @@ FUSE_NUM:mx8m-generic-bsp = "${FUSE_NUM_8}"
 STATUS_CMD:mx8m-generic-bsp = "${HAB_STATUS_CMD}"
 CLOSE_CMD:mx8m-generic-bsp = "${IMX7_IMX8M_COMMON_CLOSE_CMD}"
 
-BANK_WORD:mx8qm-generic-bsp = "0 722;\
-0 723;\
-0 724;\
-0 725;\
-0 726;\
-0 727;\
-0 728;\
-0 729;\
-0 730;\
-0 731;\
-0 732;\
-0 733;\
-0 734;\
-0 735;\
-0 736;\
-0 737;\
+BANK_WORD:mx8qm-generic-bsp = "\
+    (0, 722), \
+    (0, 723), \
+    (0, 724), \
+    (0, 725), \
+    (0, 726), \
+    (0, 727), \
+    (0, 728), \
+    (0, 729), \
+    (0, 730), \
+    (0, 731), \
+    (0, 732), \
+    (0, 733), \
+    (0, 734), \
+    (0, 735), \
+    (0, 736), \
+    (0, 737) \
 "
 FUSE_NUM:mx8qm-generic-bsp = "${FUSE_NUM_16}"
 STATUS_CMD:mx8qm-generic-bsp = "${AHAB_STATUS_CMD}"
 CLOSE_CMD:mx8qm-generic-bsp = "${AHAB_CLOSE_CMD}"
 
-BANK_WORD:mx8x-generic-bsp = "0 730;\
-0 731;\
-0 732;\
-0 733;\
-0 734;\
-0 735;\
-0 736;\
-0 737;\
-0 738;\
-0 739;\
-0 740;\
-0 741;\
-0 742;\
-0 743;\
-0 744;\
-0 745;\
+BANK_WORD:mx8x-generic-bsp = "\
+    (0, 730), \
+    (0, 731), \
+    (0, 732), \
+    (0, 733), \
+    (0, 734), \
+    (0, 735), \
+    (0, 736), \
+    (0, 737), \
+    (0, 738), \
+    (0, 739), \
+    (0, 740), \
+    (0, 741), \
+    (0, 742), \
+    (0, 743), \
+    (0, 744), \
+    (0, 745) \
 "
 FUSE_NUM:mx8x-generic-bsp = "${FUSE_NUM_16}"
 STATUS_CMD:mx8x-generic-bsp = "${AHAB_STATUS_CMD}"
@@ -128,19 +132,23 @@ UENV_VARS_TO_DEL_EXTRA ?= "kernel_image \
     temp \
 "
 
-do_compile:append () {
-    # Normalize input to a shell variable, otherwise following line causes yocto parser to error
-    bank_word_in="${BANK_WORD}"
-    bank_word=$(IFS=';'; i=1; for bw in ${bank_word_in}; do echo "fuse_bank_word_${i}=${bw}"; let "i=i+1"; done)
-    # Replace implicit newlines with explicit newlines
-    bank_word=$(echo "$bank_word" | sed -n -e '1h;2,$H;${g;s/\n/\\n/gp}')
+def get_bank_word_internal(d):
+    bank_word_in=list(eval(d.getVar("BANK_WORD")))
+    bank_word=""
+    for i, bw in enumerate(bank_word_in, start=1):
+        bank_word+="fuse_bank_word_{}={} {};\\n".format(i, bw[0], bw[1])
+    return bank_word
 
+BANK_WORD_INTERNAL = "${@get_bank_word_internal(d)}"
+
+do_compile:append () {
+    bbwarn "internal ${BANK_WORD_INTERNAL}"
     bbdebug 1 "Building uEnv.txt..."
     sed -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
         -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
         -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \
-        -e "s/@@BANK_WORD@@/${bank_word}/" \
+        -e "s/@@BANK_WORD@@/${BANK_WORD_INTERNAL}/" \
         -e 's/@@FUSE_NUM@@/${FUSE_NUM}/' \
         -e 's/@@STATUS_CMD@@/${STATUS_CMD}/' \
         -e 's/@@CLOSE_CMD@@/${CLOSE_CMD}/' \
