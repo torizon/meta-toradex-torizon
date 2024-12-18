@@ -133,7 +133,11 @@ UENV_VARS_TO_DEL_EXTRA ?= "kernel_image \
 "
 
 def get_bank_word_internal(d):
-    bank_word_in=list(eval(d.getVar("BANK_WORD")))
+    bank_word_var = d.getVar("BANK_WORD")
+    if not bank_word_var:
+        return ""
+
+    bank_word_in=list(eval(bank_word_var))
     bank_word=""
     for i, bw in enumerate(bank_word_in, start=1):
         bank_word+="fuse_bank_word_{}={} {};\\n".format(i, bw[0], bw[1])
