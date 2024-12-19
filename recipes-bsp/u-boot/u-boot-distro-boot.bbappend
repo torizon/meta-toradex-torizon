@@ -146,7 +146,6 @@ def get_bank_word_internal(d):
 BANK_WORD_INTERNAL = "${@get_bank_word_internal(d)}"
 
 do_compile:append () {
-    bbwarn "internal ${BANK_WORD_INTERNAL}"
     bbdebug 1 "Building uEnv.txt..."
     sed -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
