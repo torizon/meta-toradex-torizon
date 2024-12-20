@@ -58,6 +58,8 @@ do_install:append() {
 
 require recipes-extended/ostree/ostree-prepare-root.inc
 
+CFS_UPGRADE_ENABLE ?= "0"
+
 do_install:append:cfs-support() {
     # Bundled into initramfs-module-kmod package:
     install -d ${D}/etc/modules-load.d/
@@ -65,6 +67,8 @@ do_install:append:cfs-support() {
 
     # Bundled into initramfs-module-composefs package:
     install -m 0755 ${UNPACKDIR}/composefs ${D}/init.d/94-composefs
+    sed -i -e 's/@@CFS_UPGRADE_ENABLE@@/${CFS_UPGRADE_ENABLE}/g' ${D}/init.d/94-composefs
+
     install -d ${D}${nonarch_libdir}/ostree/
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf

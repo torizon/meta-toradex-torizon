@@ -2,6 +2,12 @@
 # Copyright (C) 2023 Toradex AG.
 # Licensed on MIT
 
+# Enable additions to allow upgrades from legacy to composefs-based storage (OSTree).
+CFS_UPGRADE_ENABLE="${CFS_UPGRADE_ENABLE:-@@CFS_UPGRADE_ENABLE@@}"
+
+# Force enabling fsverity (mostly for debugging purposes).
+CFS_ALWAYS_ENABLE="${CFS_ALWAYS_ENABLE:-0}"
+
 SYSROOT_DIR="/sysroot"
 COMPOSEFS_NAME=".ostree.cfs"
 PREPARE_ROOT_CFG="/usr/lib/ostree/prepare-root.conf"
@@ -10,24 +16,25 @@ composefs_enabled() {
 	return 0
 }
 
-composefs_error() {
-	fatal "$@"
+composefs_warn() {
+	msg "## WARNING: $*"
 }
 
 composefs_enable_fsverity_fs() {
 	root_dev=$(mount | sed -ne "\#${ROOTFS_DIR}# {s# *\(/dev/[^ ]*\) .*#\1#p}")
 	if [ ! -b "${root_dev}" ]; then
-		msg "Could not determine root device!"
+		composefs_warn "Could not determine root device!"
 		return 1
 	fi
+
 	if tune2fs -l "${root_dev}" 2>/dev/null | \
-	   grep -i 'filesystem features:.*\bverity\b' >/dev/null; then
+	   grep -q -i 'filesystem features:.*\bverity\b'; then
 		debug 'Feature "verity" is already enabled on the filesystem.'
 	else
 		if tune2fs -O verity "${root_dev}"; then
 			msg 'Enabling "verity" feature on the filesystem succeeded.'
 		else
-			msg 'Enabling "verity" feature on the filesystem FAILED.'
+			composefs_warn 'Enabling "verity" feature on the filesystem FAILED.'
 			return 1
 		fi
 	fi
@@ -55,10 +62,10 @@ composefs_progress() {
 	bar_len="50"
 	bar_done="$((bar_len * bar_cur / bar_tot))"
 	bar_todo="$((bar_len - bar_done))"
-	bar_str1="$(printf "%*s" ${bar_done} | tr ' ' '=')"
-	bar_str2="$(printf "%*s" ${bar_todo} | tr ' ' '.')"
-	bar_str3="$(printf "%d" ${bar_cur})"
-	bar_str4="$(printf "%d" ${bar_tot})"
+	bar_str1="$(printf "%*s" "${bar_done}" '' | tr ' ' '=')"
+	bar_str2="$(printf "%*s" "${bar_todo}" '' | tr ' ' '.')"
+	bar_str3="$(printf "%d" "${bar_cur}")"
+	bar_str4="$(printf "%d" "${bar_tot}")"
 
 	bar_str="$(printf "\rProgress: [%s%s] (%5s/%5s)" "${bar_str1}" "${bar_str2}" "${bar_str3}" "${bar_str4}")"
 
@@ -75,22 +82,40 @@ composefs_progress() {
 # "findutils" and "fsverity-utils".
 #
 composefs_enable_fsverity_files() {
-	nfiles="$(find "${SYSROOT_DIR}/ostree/repo/objects" \! -type d | wc -l)"
+	nfiles="$(find "${SYSROOT_DIR}/ostree/repo/objects" -type f | wc -l)"
 	count="0"
+	tmpf="$(mktemp)"
 
-	# Enable verity in all repository objects.
-	find "${SYSROOT_DIR}/ostree/repo/objects" \! -type d | while read fname; do
+	# Enable verity on all repository files.
+	find "${SYSROOT_DIR}/ostree/repo/objects" -type f | while read -r fname; do
 		composefs_progress "${count}" "${nfiles}"
-		fsverity enable "${fname}" 2>/dev/null
+		{ fsverity enable "${fname}" || fsverity measure "${fname}"; } >/dev/null 2>/dev/null
+		# shellcheck disable=SC2181
+		if [ "$?" -ne 0 ]; then
+			echo "ERROR: Could not enable fsverity on '${fname}'." >>"${tmpf}"
+		fi
 		count=$((count + 1))
 	done
 
 	composefs_progress "${nfiles}" "${nfiles}" "1"
+	msg ""
 
 	# And also on the composefs file of every deployment.
-	for cfsfile_ in "${SYSROOT_DIR}/ostree/deploy"/*/deploy/*/"${COMPOSEFS_NAME}"; do
-		fsverity enable "${cfsfile_}" 2>/dev/null
+	for fname in $(ls -1 "${SYSROOT_DIR}/ostree/deploy"/*/deploy/*/"${COMPOSEFS_NAME}" 2>/dev/null); do
+		{ fsverity enable "${fname}" || fsverity measure "${fname}"; } >/dev/null 2>/dev/null
+		# shellcheck disable=SC2181
+		if [ "$?" -ne 0 ]; then
+			echo "ERROR: Could not enable fsverity on '${fname}'." >>"${tmpf}"
+		fi
 	done
+
+	nerrors=$(grep -c 'ERROR:' "${tmpf}")
+	if [ "${nerrors}" -ne 0 ]; then
+		msg "Could not enable fsverity on ${nerrors} files (out of ${nfiles})."
+		return 1
+	fi
+
+	return 0
 }
 
 composefs_ensure_fsverity() {
@@ -103,7 +128,7 @@ composefs_ensure_fsverity() {
 	# Allow setting composefs.enabled config via kernel cmdline;
 	# "cfs.enabled" could be set to false|true|signed or any other value accepted
 	# by "ostree-prepare-root".
-	if [ "${bootparam_cfs_enabled}" ]; then
+	if [ -n "${bootparam_cfs_enabled}" ]; then
 		debug "Overriding composefs.enabled: setting to ${bootparam_cfs_enabled}"
 		sed -i -e "/^\[composefs\]/,/^\[.*\]/ {s/^enabled[[:space:]]*=.*\$/enabled = ${bootparam_cfs_enabled}/}" "${PREPARE_ROOT_CFG}"
 	fi
@@ -113,39 +138,70 @@ composefs_ensure_fsverity() {
 	enabled="${enabled:-no}"
 	debug "composefs.enabled=${enabled}"
 
-	if [ "${enabled}" != "no" ]; then
-		# Enable fsverity at the filesystem level; errors here would be detected upon
-		# ostree deployment generation as well so we don't make them fatal here.
-		composefs_enable_fsverity_fs
+	if [ "${enabled}" = "no" ]; then
+		debug "composefs is not enabled in ${PREPARE_ROOT_CFG}"
+		return 0
 	fi
 
-	if [ "${enabled}" != "signed" ]; then
-		debug "composefs signing is not enabled in ${PREPARE_ROOT_CFG}"
-		return 0
+	# Enable fsverity at the filesystem level.
+	if ! composefs_enable_fsverity_fs; then
+		debug "Could not enable fsverity on the fs - avoid enabling it on individual files"
+		return 1
 	fi
 
 	if [ -z "${bootparam_ostree}" ]; then
-		debug "ostree= parameter not passed in kernel cmdline"
-		return 0
+		debug "Parameter ostree= not passed in kernel cmdline"
+		return 1
 	fi
 
 	# Determine deployment being booted from kernel cmdline:
 	deployment="$(realpath -e "${SYSROOT_DIR}${bootparam_ostree}" 2>/dev/null)"
-	cfsfile="${deployment}/${COMPOSEFS_NAME}"
-	lockfile="${cfsfile}.rdlock"
-
 	if [ -z "${deployment}" ]; then
 		debug "Could not determine current deployment (ostree=${bootparam_ostree})"
 		return 1
 	fi
 
-	# We want to enable fsverity in the following cases:
+	cfsfile="${deployment}/${COMPOSEFS_NAME}"
+	lockfile="${SYSROOT_DIR}/ostree/repo/enable-verity.lock"
+
+	if [ ! -f "${cfsfile}" ]; then
+		debug "File '${cfsfile}' does not exist"
+	fi
+
+	# Handle the case where fsverity is partially enabled on the repository; this would normally
+	# happen when transitioning from legacy to composefs-backed installations.
+	enable_verity_on_upgrade="0"
+	if [ "${CFS_UPGRADE_ENABLE}" = "1" ]; then
+		# Use the /usr/etc/os-release file to figure out if fsverity is not enabled in some
+		# of the deployments.
+		osrfiles=$(ls -1 ${SYSROOT_DIR}/ostree/deploy/torizon/deploy/*/usr/etc/os-release 2>/dev/null)
+		for fn in ${osrfiles}; do
+			if ! fsverity measure "${fn}" >/dev/null 2>/dev/null; then
+				enable_verity_on_upgrade="1"
+				break
+			fi
+		done
+	fi
+
+	# We want to enable fsverity in any of the following cases:
 	#
-	# - If the lockfile exists (fsverity enabling operation may have been interrupted).
-	# - If fsverity is not enabled on the .cfs file.
+	# - If the lockfile exists; fsverity enabling operation may have been interrupted.
+	# - If fsverity is not enabled on the .cfs file; this would be the case after an OS
+	#   installation with e.g. Toradex Easy Installer (or any installer that unpacks a
+	#   tarball with the rootfs).
+	# - If we are upgrading from a legacy system and composefs is not enabled on some
+	#   files (this is optional and enabled by setting CFS_UPGRADE_ENABLE="1").
 	#
-	if [ ! -f "${lockfile}" ] && fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
-		debug "fsverity is already enabled in storage"
+	if [ -f "${lockfile}" ]; then
+		debug "Lockfile exists - continue fsverity enabling"
+	elif [ -f "${cfsfile}" ] && ! fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
+		debug "File '${cfsfile}' does not have fsverity info - start fsverity enabling"
+	elif [ "${enable_verity_on_upgrade}" = "1" ]; then
+		debug "Some deployment does not have fsverity info - start fsverity enabling"
+	elif [ "${CFS_ALWAYS_ENABLE}" = "1" ]; then
+		debug "CFS_ALWAYS_ENABLE is set - start fsverity enabling"
+	else
+		debug "Enabling fsverity on repository is not needed"
 		return 0
 	fi
 
@@ -159,18 +215,18 @@ composefs_ensure_fsverity() {
 
 	t0="$(date '+%s')"
 	composefs_enable_fsverity_files
+	composefs_enable_status="$?"
 	t1="$(date '+%s')"
 
 	# ---
 	rm "${lockfile}"
 
-	# Final result comes from measuring the composefs file (again):
-	if fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
-		msg ""
-		msg "Enabling fsverity succeeded (after $((t1 - t0)) seconds)."
-	else
-		msg ""
-		msg "Enabling fsverity failed (system will not boot)."
+	msg "Enabling fsverity took $((t1 - t0)) seconds."
+
+	if [ "${composefs_enable_status}" -ne 0 ]; then
+		# TODO: Consider rebooting or forcing a rollback.
+		# TODO: Consider copying the file holding the errors somewhere.
+		composefs_warn "Enabling fsverity failed - system may not boot."
 		return 1
 	fi
 
@@ -188,5 +244,6 @@ composefs_run() {
 		composefs_ensure_fsverity
 	else
 		debug "No rootfs has been set"
+		return 1
 	fi
 }
