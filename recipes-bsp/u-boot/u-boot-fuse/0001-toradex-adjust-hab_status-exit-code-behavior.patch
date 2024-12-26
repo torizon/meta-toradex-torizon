@@ -6,7 +6,7 @@ Subject: [PATCH 2/2] toradex: adjust hab_status exit code behavior
 Adjust exit code behavior to return a 1 if there are any HAB events.
 An exception is made for a known HAB event on i.MX6 SoCs.
 
-Upstream-status; Inappropriate [Torizon OS specific]
+Upstream-Status: Inappropriate [Torizon OS specific]
 
 Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
 ---
