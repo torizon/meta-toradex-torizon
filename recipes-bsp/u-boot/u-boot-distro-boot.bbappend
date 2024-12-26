@@ -4,10 +4,11 @@ SRC_URI:append = " \
     file://uEnv.txt.in \
 "
 
-# DISTRO_BOOT_PREDEF_FITCONF: String in this variable will be added by the boot script to the string
-# passed to 'bootm' when booting a FIT image. This can be leveraged to force some FIT configurations
-# (such as configurations representing device-tree overlays) to be used when booting.
-DISTRO_BOOT_PREDEF_FITCONF ??= ""
+# FITCONF_FDT_OVERLAYS: String in this variable will be added by the boot
+# script to the string passed to 'bootm' when booting a FIT image. This can
+# be leveraged to force some FIT configurations (such as configurations
+# representing device-tree overlays) to be used when booting.
+FITCONF_FDT_OVERLAYS ??= ""
 
 # Machine specific values related to HAB/AHAB fusing (i.MX specific)
 BANK_WORD = ""
@@ -169,6 +170,8 @@ do_compile:append () {
     sed -e "s/@@VARS_TO_DEL@@/${vars_to_del}/" \
         ${WORKDIR}/uEnv.txt.temp > uEnv.txt
 }
+
+TDX_AMEND_BOOT_SCRIPT:torizon-distro = "0"
 
 do_install () {
     install -d ${D}${libdir}/ostree-boot
