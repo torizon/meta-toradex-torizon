@@ -9,6 +9,8 @@ SRC_URI:append = " \
     file://0004-Add-support-for-kernel_image_type-in-uEnv.txt.patch \
     file://ostree-pending-reboot.service \
     file://ostree-pending-reboot.path \
+    file://ostree-repo-config.sh \
+    file://ostree-repo-config.service \
 "
 
 # Disable PTEST for ostree as it requires options that are not enabled when
@@ -30,6 +32,25 @@ PACKAGECONFIG:append:cfs-support = " composefs"
 PACKAGECONFIG:append:cfs-signed = " ed25519-libsodium"
 
 SYSTEMD_SERVICE:${PN} += "ostree-pending-reboot.path ostree-pending-reboot.service"
+
+# OSTREE_REPO_CFG_...: configurations to be set by "ostree config set <key>"
+# executed on the sysroot of the running device - operation performed by the
+# service ostree-repo-config.
+#
+# OSTREE_REPO_CFG_COMPOSEFS: related to key=ex-integrity.composefs (no|yes|maybe).
+# OSTREE_REPO_CFG_FSVERITY: related to key=ex-integrity.fsverity (no|yes|maybe).
+#
+OSTREE_REPO_CFG_COMPOSEFS_DEFAULT = ""
+OSTREE_REPO_CFG_COMPOSEFS_DEFAULT:cfs-support = "yes"
+OSTREE_REPO_CFG_COMPOSEFS_DEFAULT:cfs-signed = "yes"
+OSTREE_REPO_CFG_COMPOSEFS ?= "${OSTREE_REPO_CFG_COMPOSEFS_DEFAULT}"
+
+OSTREE_REPO_CFG_FSVERITY_DEFAULT = ""
+OSTREE_REPO_CFG_FSVERITY_DEFAULT:cfs-support = "maybe"
+OSTREE_REPO_CFG_FSVERITY_DEFAULT:cfs-signed = "yes"
+OSTREE_REPO_CFG_FSVERITY ?= "${OSTREE_REPO_CFG_FSVERITY_DEFAULT}"
+
+SYSTEMD_SERVICE:${PN}:append:cfs-support = " ostree-repo-config.service"
 
 def is_ti(d):
     overrides = d.getVar('OVERRIDES')
@@ -67,4 +88,11 @@ require ostree-prepare-root.inc
 do_install:append:cfs-support() {
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
+
+    install -m 0644 ${WORKDIR}/ostree-repo-config.service ${D}${systemd_system_unitdir}
+    install -d ${D}${sbindir}
+    install -m 0755 ${WORKDIR}/ostree-repo-config.sh ${D}${sbindir}
+    sed -e 's/@@OSTREE_REPO_CFG_COMPOSEFS@@/${OSTREE_REPO_CFG_COMPOSEFS}/' \
+        -e 's/@@OSTREE_REPO_CFG_FSVERITY@@/${OSTREE_REPO_CFG_FSVERITY}/' \
+        -i ${D}${sbindir}/ostree-repo-config.sh
 }
