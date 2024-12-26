@@ -1,0 +1,45 @@
+From 9cd7e9c280888356f9a40e84264a4ba4a851416e Mon Sep 17 00:00:00 2001
+From: Jeremias Cordoba <js.cordoba8321@gmail.com>
+Date: Wed, 20 Nov 2024 16:16:24 -0800
+Subject: [PATCH] toradex: adjust ahab_status exit code behavior
+
+Adjust exit code behavior to return a 1 if there are any
+SECO events.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
+---
+ arch/arm/mach-imx/imx8/ahab.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/imx8/ahab.c b/arch/arm/mach-imx/imx8/ahab.c
+index eb3916a7229..800b6d5b554 100644
+--- a/arch/arm/mach-imx/imx8/ahab.c
++++ b/arch/arm/mach-imx/imx8/ahab.c
+@@ -318,6 +318,7 @@ static int do_ahab_status(struct cmd_tbl *cmdtp, int flag, int argc,
+ 	u8 idx = 0U;
+ 	u32 event;
+ 	u16 lc;
++	int retval = 1;
+ 
+ 	err = sc_seco_chip_info(-1, &lc, NULL, NULL, NULL);
+ 	if (err) {
+@@ -336,10 +337,12 @@ static int do_ahab_status(struct cmd_tbl *cmdtp, int flag, int argc,
+ 		err = sc_seco_get_event(-1, idx, &event);
+ 	}
+ 
+-	if (idx == 0)
++	if (idx == 0) {
+ 		printf("No SECO Events Found!\n\n");
++		retval = 0;
++	}
+ 
+-	return 0;
++	return retval;
+ }
+ 
+ int ahab_close(void)
+-- 
+2.30.2
+
