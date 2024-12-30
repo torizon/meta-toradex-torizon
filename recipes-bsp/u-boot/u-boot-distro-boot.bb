@@ -1,8 +1,21 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
+DESCRIPTION = "Boot script for launching images with U-Boot distro boot"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 
-SRC_URI:append = " \
+INHIBIT_DEFAULT_DEPS = "1"
+DEPENDS = "u-boot-mkimage-native"
+
+SRC_URI = "\
+    file://boot.cmd.in \
     file://uEnv.txt.in \
 "
+
+APPEND ?= ""
+
+KERNEL_BOOTCMD ??= "bootz"
+KERNEL_BOOTCMD:aarch64 ?= "booti"
+
+DTB_PREFIX ??= "${@d.getVar('KERNEL_DTB_PREFIX').replace("/", "_") if d.getVar('KERNEL_DTB_PREFIX') else ''}"
 
 # FITCONF_FDT_OVERLAYS: String in this variable will be added by the boot
 # script to the string passed to 'bootm' when booting a FIT image. This can
@@ -204,7 +217,16 @@ keep_fusing_block() {
     done
 }
 
-do_compile:append () {
+inherit deploy
+
+do_compile() {
+    sed -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
+        -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
+        -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
+        -e 's/@@APPEND@@/${APPEND}/' \
+        -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \
+        "${WORKDIR}/boot.cmd.in" > boot.cmd
+
     bbdebug 1 "Building uEnv.txt..."
     sed -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
@@ -248,12 +270,23 @@ do_compile:append () {
     cp ${WORKDIR}/uEnv.txt.temp uEnv.txt
 }
 
-TDX_AMEND_BOOT_SCRIPT:torizon-distro = "0"
-
 do_install () {
     install -d ${D}${libdir}/ostree-boot
     install -m 0644 uEnv.txt ${D}${libdir}/ostree-boot/
 }
 
+do_deploy() {
+    mkimage -T script -C none -n "Distro boot script" -d boot.cmd boot.scr
+    install -m 0644 boot.scr ${DEPLOYDIR}/boot.scr-${MACHINE}
+}
+addtask deploy after do_install before do_build
+
+PROVIDES += "u-boot-default-script"
+
+TDX_AMEND_BOOT_SCRIPT:torizon-distro = "0"
+TDX_AMEND_BOOT_SCRIPT:common-distro = "0"
+
 PACKAGES = "ostree-uboot-env"
 FILES:ostree-uboot-env = "${libdir}/ostree-boot/uEnv.txt"
+
+PACKAGE_ARCH = "${MACHINE_ARCH}"
