@@ -1,0 +1,29 @@
+From 73f7adae5b49685c7e18f811039c8de543cdf0ac Mon Sep 17 00:00:00 2001
+From: Matheus Castello <matheus@castello.eng.br>
+Date: Sun, 15 Oct 2023 17:39:14 -0300
+Subject: [PATCH] i915: hwmon: Add check for the dGfx platform
+
+The hwmon should be available only for dGfx platform
+
+Signed-off-by: Matheus Castello <matheus@castello.eng.br>
+---
+ drivers/gpu/drm/i915/i915_hwmon.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/gpu/drm/i915/i915_hwmon.c b/drivers/gpu/drm/i915/i915_hwmon.c
+index 6e0944af3131..d0ee493f1e7c 100644
+--- a/drivers/gpu/drm/i915/i915_hwmon.c
++++ b/drivers/gpu/drm/i915/i915_hwmon.c
+@@ -500,6 +500,10 @@ void i915_hwmon_register(struct drm_i915_private *i915)
+ 	struct device *hwmon_dev;
+ 	struct i915_hwmon_drvdata *ddat;
+ 
++	/* hwmon is available only for dGfx */
++	if (!IS_DGFX(i915))
++		return;
++
+ 	hwmon = kzalloc(sizeof(*hwmon), GFP_KERNEL);
+ 	if (!hwmon)
+ 		return;
+-- 
+2.42.0
