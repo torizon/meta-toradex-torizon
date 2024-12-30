@@ -1,6 +1,6 @@
 RDEPENDS:${PN}:class-target:remove:sota = "virtual-grub-bootconf"
 
-GRUB_BUILDIN += "reboot"
+GRUB_BUILDIN += "reboot regexp"
 
 # Create startup.nsh so it can be consumed by wic
 do_deploy:append:class-target() {
