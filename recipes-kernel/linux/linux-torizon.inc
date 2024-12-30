@@ -1,5 +1,9 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+SRC_URI:append:common-torizon = " \
+    file://torizon.scc \
+"
+
 SRC_URI:append:cfs-support = "\
     file://composefs.scc \
 "
