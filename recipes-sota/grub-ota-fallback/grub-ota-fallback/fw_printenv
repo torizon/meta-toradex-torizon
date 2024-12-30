@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Aliasing grub-editenv to U-Boot's fw_setenv
+if [[ $# -ne 1 ]]; then
+    grub-editenv /var/rootdirs/media/efi/EFI/BOOT/grubenv list
+else
+    grub-editenv /var/rootdirs/media/efi/EFI/BOOT/grubenv list | grep "^$1=" || echo "$1="
+fi
