@@ -69,6 +69,10 @@ CORE_IMAGE_BASE_INSTALL:append:tdx = " \
     udev-toradex-rules \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:common-torizon-distro = " \
+    resize-helper \
+"
+
 # SOTA related packages
 CORE_IMAGE_BASE_INSTALL:append:sota = " \
     auto-provisioning \
