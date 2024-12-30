@@ -24,7 +24,6 @@ SPLASH = "plymouth"
 
 # Base packages
 CORE_IMAGE_BASE_INSTALL:append = " \
-    alsa-ucm-conf-tdx \
     cpupower \
     curl \
     ethtool \
@@ -46,19 +45,16 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
-    ostree-devicetree-overlays \
     packagegroup-core-full-cmdline-multiuser \
     packagegroup-core-full-cmdline-utils \
     parted \
     rsync \
-    set-hostname \
     sshfs-fuse \
     sudo \
     systemd-analyze \
     torizon-conf \
     torizon-users \
     tzdata \
-    udev-toradex-rules \
     usermount \
     vim-tiny \
     wireguard-tools \
@@ -66,7 +62,11 @@ CORE_IMAGE_BASE_INSTALL:append = " \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:tdx = " \
+    alsa-ucm-conf-tdx \
+    ostree-devicetree-overlays \
+    set-hostname \
     tdx-info \
+    udev-toradex-rules \
 "
 
 # SOTA related packages
