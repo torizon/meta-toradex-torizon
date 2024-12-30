@@ -1,0 +1,13 @@
+[Unit]
+Description=Check and create grubenv if not present
+After=boot-complete.target
+Requires=boot-complete.target
+ConditionPathExists=|!/var/rootdirs/media/efi/EFI/BOOT/grubenv
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/rootdirs/media/efi/EFI/BOOT/
+ExecStart=/usr/bin/grub-editenv ./grubenv create ; /usr/bin/grub-editenv ./grubenv set bootcount=0 bootlimit=3 rollback=0 upgrade_available=0
+
+[Install]
+WantedBy=multi-user.target
