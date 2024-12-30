@@ -1,5 +1,6 @@
-require u-boot-ota.inc
-require u-boot-fuse.inc
+require recipes-bsp/u-boot/u-boot-fuse.inc
+require recipes-bsp/u-boot/u-boot-ota.inc
+require recipes-bsp/u-boot/u-boot-rollback.inc
 
 deploy_uboot_with_spl () {
     #Deploy u-boot-with-spl.imx
