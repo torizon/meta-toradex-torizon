@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Aliasing grub-editenv to U-Boot's fw_setenv
+if [[ $# -eq 2 ]]; then
+    grub-editenv /var/rootdirs/media/efi/EFI/BOOT/grubenv set "$1"="$2"
+fi

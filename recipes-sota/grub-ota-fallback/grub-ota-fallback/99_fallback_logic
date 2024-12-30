@@ -1,0 +1,53 @@
+# GRUB can't add, so we hack an increment
+set inc_range="0,1 1,2 2,3"
+function inc_bootcount {
+    set incr=""
+    regexp --set=1:incr "${bootcount},([0-9]+)" "${inc_range}"
+    set bootcount=$incr
+}
+
+function inc_default {
+    set incr=""
+    regexp --set=1:incr "${default},([0-9]+)" "${inc_range}"
+    set default=$incr
+}
+
+# Load all the variables needed
+load_env
+
+if [ "${rollback}" == "0" -a "${upgrade_available}" = "1" ]; then
+    # Make sure to reset default whenever we already performed a rollback
+    # and deployed a new image. This way we'll be able to boot this new image
+    # and test it. If all fails we can still fallback.
+    set default=0
+    save_env default
+fi
+
+if [ "${rollback}" == "1" -a "${upgrade_available}" = "1" ]; then
+    # Make sure to reset upgrade_available to avoid unnecessary wear
+    # Note this also makes rollback permanent. aktualizr will reset rollback
+    # when a new (hopefully better) update comes in.
+    set upgrade_available=0
+    save_env upgrade_available
+fi
+
+if [ "${bootcount}" == "${bootlimit}" ]; then
+    # We've reached our retry limit, marking for OS rollback
+    set rollback=1
+    save_env rollback
+else
+    inc_bootcount
+    save_env bootcount
+fi
+
+if [ "${upgrade_available}" == "1" ]; then
+    if [ "${rollback}" == 1 ]; then
+        # We need to rollback, so we reset 'bootcount' and increase default value.
+        # Since entries are ordered from newest to oldest, increasing default is
+        # rolling back to the last entry.
+        inc_default
+        set bootcount=0
+        save_env default
+        save_env bootcount
+    fi
+fi
