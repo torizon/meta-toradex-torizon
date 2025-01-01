@@ -2,9 +2,6 @@ kernel_image_type=@@KERNEL_IMAGETYPE@@
 overlays_file="overlays.txt"
 otaroot=1
 fitconf_fdt_overlays="@@FITCONF_FDT_OVERLAYS@@"
-@@BANK_WORD@@
-fuse_num=@@FUSE_NUM@@
-vars_to_del=@@VARS_TO_DEL@@
 
 set_bootargs=env set bootcmd_args env set bootargs ${defargs} root=LABEL=otaroot rootfstype=ext4 ${bootargs} ${tdxargs}
 
@@ -112,6 +109,11 @@ bootcmd_boot=if test ${bootscript_debug} != 1; then \
                  fi; \
              fi || true
 
+#+START_FUSING_BLOCK_NXP
+@@BANK_WORD@@
+fuse_num=@@FUSE_NUM@@
+vars_to_del=@@VARS_TO_DEL@@
+
 prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" || test "${fuse_status}" = "need-reboot"; then \
                if test "${fuse_status}" = "pending"; then \
                    env set index 1; \
@@ -211,6 +213,14 @@ set_vars=if test "${save_vars}" = "1"; then \
 reset_dev=if test "${fuse_status}" = "need-reboot"; then \
               reset; \
           fi || true
+#+END_FUSING_BLOCK_NXP
+#+START_FUSING_BLOCK_DUMMY
+# Dummy fuse functions:
+prog_fuses=true
+read_fuses=true
+set_vars=true
+reset_dev=true
+#+END_FUSING_BLOCK_DUMMY
 
 # Ensure "prog_fuses", "read_fuses", "set_vars", and "reset_dev" are ran first here.
 bootcmd_run=run prog_fuses && run read_fuses && run set_vars && run reset_dev && \
