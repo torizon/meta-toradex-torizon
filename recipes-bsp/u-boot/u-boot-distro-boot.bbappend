@@ -141,7 +141,7 @@ def get_bank_word_internal(d):
     bank_word_in=list(eval(bank_word_var))
     bank_word=""
     for i, bw in enumerate(bank_word_in, start=1):
-        bank_word+="fuse_bank_word_{}={} {};\\n".format(i, bw[0], bw[1])
+        bank_word+="fuse_bank_word_{}={} {}\\n".format(i, bw[0], bw[1])
     return bank_word
 
 BANK_WORD_INTERNAL = "${@get_bank_word_internal(d)}"
