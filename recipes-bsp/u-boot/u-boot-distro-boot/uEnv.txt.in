@@ -170,15 +170,20 @@ prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" |
 read_fuses=if test -n "${fuse_num}"; then \
                for num in ${fuse_num}; do \
                    if env exists fuse_val_${num}; then \
-                       env set temp fuse cmp \\$fuse_bank_word_$num 0x\\$fuse_val_$num; \
+                       env set temp fuse cmp \\$fuse_bank_word_${num} \\$fuse_val_${num}; \
                        run temp; \
                    else \
                        false; \
                    fi; \
                    if test $? != "0"; then \
-                       env set temp fuse readm \\$fuse_bank_word_$num ${loadaddr}; \
-                       run temp; \
-                       setexpr.l fuse_val_${num} "*${loadaddr}"; \
+                       env set temp fuse readm \\$fuse_bank_word_${num} ${loadaddr}; \
+                       if run temp; then \
+                           setexpr.l fuse_val_${num} "*${loadaddr}"; \
+                           env set temp env set fuse_val_${num} 0x\\$fuse_val_${num}; \
+                           run temp; \
+                       else \
+                           env set fuse_val_${num} 0x0; \
+                       fi; \
                        env set save_vars 1; \
                    fi; \
                done; \
