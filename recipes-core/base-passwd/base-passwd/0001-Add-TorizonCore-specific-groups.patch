@@ -1,10 +1,12 @@
-From 0225ba7f4c0ad5c81c4e6dbabae80732d0173a8e Mon Sep 17 00:00:00 2001
+From a59e624753e1a7864f86c285c25a4f519bca376f Mon Sep 17 00:00:00 2001
 From: Sergio Prado <sergio.prado@toradex.com>
-Date: Fri, 29 Apr 2022 06:32:52 -0300
-Subject: [PATCH] Add TorizonCore specific groups.
+Date: Thu, 28 Sep 2023 10:32:46 +0000
+Subject: [PATCH 1/2] Add TorizonCore specific groups
 
 Upstream-Status: Inappropriate [configuration]
 
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 Signed-off-by: Sergio Prado <sergio.prado@toradex.com>
 Signed-off-by: Stefan Agner <stefan.agner@toradex.com>
 ---
@@ -12,14 +14,13 @@ Signed-off-by: Stefan Agner <stefan.agner@toradex.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/group.master b/group.master
-index eeecda86c82f..e1722a0a6d0e 100644
+index e54fd1d..0fa81a3 100644
 --- a/group.master
 +++ b/group.master
-@@ -35,8 +35,14 @@ video:*:44:
- sasl:*:45:
+@@ -35,9 +35,15 @@ sasl:*:45:
  plugdev:*:46:
- kvm:*:102:
-+render:*:103:
+ kvm:*:47:
+ sgx:*:48:
 +gpio:*:49:
  staff:*:50:
 +i2cdev:*:51:
@@ -27,8 +28,10 @@ index eeecda86c82f..e1722a0a6d0e 100644
 +pwm:*:54:
  games:*:60:
  shutdown:*:70:
+ wheel:*:80:
 +nobody:*:99:
  users:*:100:
++render:*:103:
  nogroup:*:65534:
 -- 
 2.25.1
