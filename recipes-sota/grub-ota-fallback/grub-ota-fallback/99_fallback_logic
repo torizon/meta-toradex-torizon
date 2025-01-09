@@ -15,7 +15,7 @@ function inc_default {
 # Load all the variables needed
 load_env
 
-if [ "${rollback}" == "0" -a "${upgrade_available}" = "1" ]; then
+if [ "${rollback}" == "0" -a "${upgrade_available}" == "1" ]; then
     # Make sure to reset default whenever we already performed a rollback
     # and deployed a new image. This way we'll be able to boot this new image
     # and test it. If all fails we can still fallback.
@@ -23,7 +23,7 @@ if [ "${rollback}" == "0" -a "${upgrade_available}" = "1" ]; then
     save_env default
 fi
 
-if [ "${rollback}" == "1" -a "${upgrade_available}" = "1" ]; then
+if [ "${rollback}" == "1" -a "${upgrade_available}" == "1" ]; then
     # Make sure to reset upgrade_available to avoid unnecessary wear
     # Note this also makes rollback permanent. aktualizr will reset rollback
     # when a new (hopefully better) update comes in.
@@ -31,7 +31,7 @@ if [ "${rollback}" == "1" -a "${upgrade_available}" = "1" ]; then
     save_env upgrade_available
 fi
 
-if [ "${bootcount}" == "${bootlimit}" ]; then
+if [ "${bootcount}" -ge "${bootlimit}" ]; then
     # We've reached our retry limit, marking for OS rollback
     set rollback=1
     save_env rollback
