@@ -10,6 +10,7 @@ SRC_URI = " \
             file://50-secondaries.toml \
             file://secondaries.json \
             file://bl_actions.sh \
+            file://common_actions.sh \
             "
 
 S = "${WORKDIR}/sources"
@@ -26,10 +27,12 @@ do_install:append () {
 
     install -d ${D}${bindir}
     install -m 0744 ${UNPACKDIR}/bl_actions.sh ${D}${bindir}/bl_actions.sh
+    install -m 0744 ${UNPACKDIR}/common_actions.sh ${D}${bindir}/common_actions.sh
 }
 
 FILES:${PN} = " \
                 ${libdir}/sota/conf.d/50-secondaries.toml \
                 ${libdir}/sota/secondaries.json \
                 ${bindir}/bl_actions.sh \
+                ${bindir}/common_actions.sh \
                 "
