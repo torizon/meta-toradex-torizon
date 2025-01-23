@@ -98,8 +98,8 @@ def get_layer_revision_information(d):
         # Create GLib dictionary
         return "{" + ",".join(layers) + "}"
     except:
-        e = sys.exc_info()[0]
-        bb.warn("Failed to get layers information. Exception: {}".format(e))
+        e = sys.exc_info()[1]
+        bb.warn("Failed to get layers information. Caused by layer at {}. Exception: {}".format(path, e))
 
 # Use immediate expansion here to avoid calling a somewhat costly function whenever
 # EXTRA_OSTREE_COMMIT is expanded.
