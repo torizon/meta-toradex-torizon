@@ -1,0 +1,45 @@
+From 87cce84fd1e72bbd020bb76edc5882b2447ed703 Mon Sep 17 00:00:00 2001
+From: kas User <kas@example.com>
+Date: Thu, 23 Jan 2025 18:50:39 +0000
+Subject: [PATCH] include/configs/smarc-rzv2l: add required Torizon boot
+ commands
+
+Torizon boot scripts need some variables to be defined, so we add those
+to the env setting.
+Also change the bootcommand so that our boot.scr is loaded when u-boot
+starts and Torizon gets properly loaded.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Signed-off-by: kas User <kas@example.com>
+---
+ include/configs/smarc-rzv2l.h | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/include/configs/smarc-rzv2l.h b/include/configs/smarc-rzv2l.h
+index 8a59b67b60..9b1c88961e 100644
+--- a/include/configs/smarc-rzv2l.h
++++ b/include/configs/smarc-rzv2l.h
+@@ -67,9 +67,16 @@
+ 	"bootimage=unzip 0x4A080000 0x48080000; booti 0x48080000 - 0x48000000 \0" \
+ 	"emmcload=ext4load mmc 0:2 0x48080000 boot/Image;ext4load mmc 0:2 0x48000000 boot/r9a07g054l2-smarc.dtb;run prodemmcbootargs \0" \
+ 	"sd1load=ext4load mmc 1:2 0x48080000 boot/Image;ext4load mmc 1:2 0x48000000 boot/r9a07g054l2-smarc.dtb;run prodsdbootargs \0" \
+-	"bootcmd_check=if mmc dev 1; then run sd1load; else run emmcload; fi \0"
+-
+-#define CONFIG_BOOTCOMMAND	"env default -a;run bootcmd_check;run bootimage"
++	"bootcmd_check=if mmc dev 1; then run sd1load; else run emmcload; fi \0" \
++	"devtype=mmc \0" \
++	"devnum=1 \0" \
++	"fdtfile=r9a07g054l2-smarc.dtb \0" \
++	"fdt_addr_r=0x50200000 \0" \
++	"kernel_addr_load=0x48200000 \0" \
++	"kernel_addr_r=0x48200000 \0" \
++	"ramdisk_addr_r=0x50300000 \0"
++
++#define CONFIG_BOOTCOMMAND	"ext4load ${devtype} ${devnum}:1 ${loadaddr} /boot.scr; source"
+ 
+ /* For board */
+ /* Ethernet RAVB */
+-- 
+2.44.1
+
