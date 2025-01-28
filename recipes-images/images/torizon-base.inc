@@ -84,7 +84,7 @@ CORE_IMAGE_BASE_INSTALL:append:mx8-nxp-bsp = " \
     kernel-module-imx-gpu-viv \
 "
 
-CORE_IMAGE_BASE_INSTALL:append:verdin-am62 = " \
+CORE_IMAGE_BASE_INSTALL:append:am62xx = " \
     ti-img-rogue-driver \
 "
 
