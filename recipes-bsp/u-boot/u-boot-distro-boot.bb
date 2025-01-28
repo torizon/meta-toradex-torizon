@@ -221,8 +221,13 @@ keep_fusing_block() {
 
 inherit deploy
 
+UBOOT_BOOT_PARTITION_NUMBER ?= "1"
+OTAROOT_PARTITION_NUMBER ?= "1"
+UENV_EXTRA_CONFIGS ?= "true"
+
 do_compile() {
-    sed -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
+    sed -e 's/@@UBOOT_BOOT_PARTITION_NUMBER@@/${UBOOT_BOOT_PARTITION_NUMBER}/' \
+        -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
         -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
         -e 's/@@APPEND@@/${APPEND}/' \
@@ -230,7 +235,9 @@ do_compile() {
         "${S}/boot.cmd.in" > boot.cmd
 
     bbdebug 1 "Building uEnv.txt..."
-    sed -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
+    sed -e 's#@@UENV_EXTRA_CONFIGS@@#${UENV_EXTRA_CONFIGS}#' \
+        -e 's/@@OTAROOT_PARTITION_NUMBER@@/${OTAROOT_PARTITION_NUMBER}/' \
+        -e 's/@@KERNEL_BOOTCMD@@/${KERNEL_BOOTCMD}/' \
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
         -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
         -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \

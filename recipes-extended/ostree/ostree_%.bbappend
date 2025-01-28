@@ -68,7 +68,8 @@ def is_ti(d):
 
 def get_deps(d):
     if is_ti(d):  # TI
-        return 'u-boot-toradex-ti' if d.getVar('PREFERRED_PROVIDER_u-boot') else ''
+        preferred_provider_uboot = d.getVar('PREFERRED_PROVIDER_u-boot')
+        return preferred_provider_uboot if preferred_provider_uboot is not None else ''
     else:  # NXP/x86 generic/QEMU
         return 'u-boot-default-script' if d.getVar('PREFERRED_PROVIDER_u-boot-default-script') else ''
 
