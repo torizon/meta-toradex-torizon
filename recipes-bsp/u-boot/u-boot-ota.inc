@@ -1,11 +1,3 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/u-boot-ota:"
-
-SRC_URI:append = " \
-    file://bootcommand.cfg \
-    file://bootcount.cfg \
-    file://bootlimit.cfg \
-"
-
 # Produce files required for generating file "u-boot-ota.json" during
 # Torizon image generation, namely:
 #
