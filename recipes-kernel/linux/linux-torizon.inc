@@ -14,6 +14,32 @@ SRC_URI:append:cfs-signed = "\
 
 KBUILD_BUILD_VERSION .= "-Torizon"
 
+do_patch:append:preempt-rt() {
+	# When the RT patches are applied via "git apply" by the kgit-s2q tool
+	# (part of yocto-kernel-tools) the author is set to "invalid_git config"
+	# which we validate here to ensure we'll amend the proper commit.
+	#
+	author0=$(git --git-dir="${S}/.git" log -1 --format='%an' HEAD)
+	author1=$(git --git-dir="${S}/.git" log -1 --format='%an' HEAD^)
+	if [ "${author0}" != "invalid_git config" ] || \
+	   [ "${author1}" = "invalid_git config" ]; then
+		bbfatal "Assumption for PREMPT_RT patches is no longer valid; task needs review!"
+	fi
+
+	# Reset the date of the commit introducing the RT patches to get a
+	# reproducible hash.
+	#
+	# This is basically a workaround for the fact that the RT patches are
+	# applied as a single patch file without author and commit date
+	# information which causes the generated commit to always have a
+	# different hash even with the exact same base kernel and RT patches.
+	#
+	GIT_COMMITTER_DATE='1970-01-01T00:00:00 +0000' \
+	git --git-dir="${S}/.git" commit \
+	    --amend --no-edit -m 'RT patches' \
+	    --date='1970-01-01T00:00:00 +0000'
+}
+
 # Print kernel URL and BRANCH to files to be used by ostree commit as metadata
 kernel_do_deploy:append() {
 	url=`git --git-dir=${S}/.git config --get remote.origin.url`
