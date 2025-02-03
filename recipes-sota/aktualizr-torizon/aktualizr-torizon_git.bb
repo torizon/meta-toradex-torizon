@@ -15,7 +15,7 @@ SRC_URI = " \
   https://github.com/uptane/ota-tuf/releases/download/v${UPTANE_SIGN_PV}/cli-${UPTANE_SIGN_PV}.tgz;unpack=0;name=uptanesign \
 "
 
-SRCREV = "afedabf0bc6f423b3dbabbb44ac34b8e218e1c54"
+SRCREV = "eff8ec84a3d6b5aae689ad7ca68f55842694743d"
 SRCREV:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
