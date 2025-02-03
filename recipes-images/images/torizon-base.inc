@@ -80,6 +80,11 @@ CORE_IMAGE_BASE_INSTALL:append:sota = " \
     tzn-mqtt \
 "
 
+# Packages that install firmwares/kernel modules that must be present
+# in the rootfs. Firmware blobs, generally speaking, cannot be loaded
+# from containers as their kernel module counterparts generally expect
+# the files to be in an specific directory (generally /lib/firmware)
+
 CORE_IMAGE_BASE_INSTALL:append:mx8-nxp-bsp = " \
     kernel-module-imx-gpu-viv \
 "
@@ -90,6 +95,10 @@ CORE_IMAGE_BASE_INSTALL:append:am62xx = " \
 
 CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
     kernel-module-isp-vvcam \
+"
+
+CORE_IMAGE_BASE_INSTALL:append:mx95-nxp-bsp = " \
+    mali-imx \
 "
 
 nss_altfiles_set_users_groups () {
