@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# avoiding 'imx-setup-release' clean-up routine
+_TDX_MACHINE="${MACHINE}"
+_TDX_DISTRO="${_TDX_DISTRO_SELECT}"
+
+source imx-setup-release.sh -b "${1:-build-$_TDX_DISTRO}"
+
+if ! grep -q "# Torizon" conf/local.conf; then
+  sed -i "/^DISTRO .*/c\DISTRO ?= '${_TDX_DISTRO}'" conf/local.conf
+
+  sed -i "/^PACKAGE_CLASSES .*/c\# PACKAGE_CLASSES = \"package_deb\"" conf/local.conf
+  sed -i "/^EXTRA_IMAGE_FEATURES += \"package-management\"/c\# EXTRA_IMAGE_FEATURES += \"package-management\"" conf/local.conf
+
+  _TDX_OEROOT=$(dirname "$(pwd)")
+  _TDX_BUILDDIR=$(pwd)
+  cat <<EOF >>conf/local.conf
+# Where to store sources
+DL_DIR ?= "${_TDX_OEROOT}/downloads"
+
+# Where to save shared state
+SSTATE_DIR ?= "${_TDX_OEROOT}/sstate-cache"
+
+# Where to save the build system work output
+TMPDIR = "${_TDX_BUILDDIR}/tmp"
+
+# Where to save the packages and images
+TI_COMMON_DEPLOY = "${_TDX_BUILDDIR}/deploy"
+DEPLOY_DIR = "\${TI_COMMON_DEPLOY}\${@'' if d.getVar('BB_CURRENT_MC') == 'default' else '/\${BB_CURRENT_MC}'}"
+
+# Torizon
+include conf/machine/include/\${MACHINE}.inc
+EOF
+fi
+
+
+if ! grep -q "# Torizon" conf/bblayers.conf; then 
+  cat <<EOF >>conf/bblayers.conf
+# Torizon
+BBLAYERS += "\${BSPDIR}/sources/meta-toradex-torizon"
+BBLAYERS += "\${BSPDIR}/sources/meta-updater"
+
+OEROOT := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)))}/../.."
+EOF
+fi
+
+cat <<EOF
+
+Welcome to Common Torizon OS
+
+For more information about OpenEmbedded see their website:
+
+    http://www.openembedded.org/
+
+Your build environment has been configured with:
+
+    MACHINE = ${_TDX_MACHINE}
+    DISTRO = ${_TDX_DISTRO}
+
+You can now run 'bitbake <target>'
+
+Some of common targets are:
+
+    torizon-docker
+    torizon-minimal
+    torizon-podman
+
+EOF
