@@ -7,4 +7,4 @@ BBMASK += "\
 "
 
 PREFERRED_PROVIDER_virtual/dtb = ""
-OSTREE_DEPLOY_DEVICETREE:forcevariable = "0"
+PREFERRED_PROVIDER_u-boot-default-script = "u-boot-distro-boot"
