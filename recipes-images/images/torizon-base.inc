@@ -45,6 +45,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
+    ostree-devicetree-overlays \
     packagegroup-core-full-cmdline-multiuser \
     packagegroup-core-full-cmdline-utils \
     parted \
@@ -63,7 +64,6 @@ CORE_IMAGE_BASE_INSTALL:append = " \
 
 CORE_IMAGE_BASE_INSTALL:append:tdx = " \
     alsa-ucm-conf-tdx \
-    ostree-devicetree-overlays \
     set-hostname \
     tdx-info \
     udev-toradex-rules \
@@ -84,7 +84,7 @@ CORE_IMAGE_BASE_INSTALL:append:mx8-nxp-bsp = " \
     kernel-module-imx-gpu-viv \
 "
 
-CORE_IMAGE_BASE_INSTALL:append:verdin-am62 = " \
+CORE_IMAGE_BASE_INSTALL:append:am62xx = " \
     ti-img-rogue-driver \
 "
 

@@ -1,0 +1,10 @@
+# short-description: Create OTA-enabled SD card image
+# long-description: Creates a partitioned SD card image with OSTree
+# physical sysroot as a payload. Boot files are located in the
+# first vfat partition.
+# Based on:
+# meta-ti/meta-ti-bsp/wic/sdimage-2part.wks
+# meta-updater/scripts/lib/wic/canned-wks/sdimage-sota.wks
+
+part --source bootimg-partition --fstype=vfat --label boot --active --align 1024 --use-uuid --fixed-size 128M
+part / --source otaimage --ondisk mmcblk --fstype=ext4 --align 1024
