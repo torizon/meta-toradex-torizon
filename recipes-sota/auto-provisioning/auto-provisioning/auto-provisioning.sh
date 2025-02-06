@@ -131,16 +131,24 @@ register_device() {
 }
 
 write_credentials() {
+    local temp_dir
+
     log "Updating device credentials"
 
-    rm -Rf $SOTA_CRED_DIR && mkdir -p $SOTA_CRED_DIR
-    if ! unzip device.zip -d $SOTA_CRED_DIR >/dev/null; then
+    temp_dir="${SOTA_CRED_DIR}.tmp"
+    rm -Rf ${temp_dir} && mkdir -p ${temp_dir}
+    if ! unzip device.zip -d ${temp_dir} >/dev/null; then
+	rm -rf ${temp_dir}
         exit_error "Failed extracting credentials file"
     fi
+    sync
 
-    rm -rf $SOTA_BASE_DIR/sql.db
+    rm -rf ${SOTA_CRED_DIR}
+    mv -f ${temp_dir} ${SOTA_CRED_DIR}
 
-    rm -rf $CONFIG_FILE
+    rm -rf ${SOTA_BASE_DIR}/sql.db
+    rm -rf ${CONFIG_FILE}
+    sync
 }
 
 restart_services() {
