@@ -1,4 +1,5 @@
 SRC_URI:append:am62xx-evm = " file://fw_env.config"
+SRC_URI:append:am62pxx-evm = " file://fw_env.config"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
