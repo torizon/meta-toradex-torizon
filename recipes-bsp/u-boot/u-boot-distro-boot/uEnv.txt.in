@@ -231,6 +231,6 @@ uenv_extra_configs=@@UENV_EXTRA_CONFIGS@@
 
 # Ensure "prog_fuses", "read_fuses", "set_vars", and "reset_dev" are ran first here.
 bootcmd_run=run prog_fuses && run read_fuses && run set_vars && run reset_dev && \
-            run board_fixups && run uenv_extra_configs && run check_rollback_needed && run set_bootargs && run set_fdt_path && \
+            run board_fixups && run check_rollback_needed && run uenv_extra_configs && run set_bootargs && run set_fdt_path && \
             run bootcmd_dtb && run bootcmd_args && run set_bootargs_custom && run set_kernel_load_addr && \
             run bootcmd_load_k && run bootcmd_unzip_k && run bootcmd_load_r && run bootcmd_boot
