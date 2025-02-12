@@ -29,8 +29,6 @@ SRCREV_tough = "9316c096b32196df75ba17a8a5502b19baffe24e"
 S = "${WORKDIR}/git"
 
 SYSTEMD_SERVICE:${PN} = "remote-access.service"
-# Keep disabled by default for now
-SYSTEMD_AUTO_ENABLE:${PN} = "disable"
 
 PV = "0.0+git${SRCPV}"
 
