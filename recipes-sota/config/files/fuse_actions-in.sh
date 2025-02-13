@@ -143,8 +143,23 @@ create_yaml_content() {
         fi
     done
 
+    local fuse_close
+    fuse_close=$(FW_PRINTENV fuse_val_close | SED -Ee "s/\s*fuse_val_close=(.*)$/\1/")
+    if [ "$fuse_close" = 0 ]; then
+        log "Device is currently open"
+        local prog_close="false"
+    elif [ "$fuse_close" = 1 ]; then
+        log "Device is currently closed"
+        local prog_close="true"
+    else
+        # If we can't determine the closing state from U-Boot then just assume it's open
+        log "Unable to determine Device closed state, will assume device is open"
+        local prog_close="false"
+    fi
+
 cat << EOF > "$SECONDARY_FIRMWARE_PATH"
 fuses:
+  fuse-close: $prog_close
   fuse-val1: $fuse_val_1
   fuse-val2: $fuse_val_2
   fuse-val3: $fuse_val_3
@@ -167,24 +182,6 @@ cat << EOF >> "$SECONDARY_FIRMWARE_PATH"
   fuse-val16: $fuse_val_16
 EOF
     fi
-
-    local fuse_close
-    fuse_close=$(FW_PRINTENV fuse_val_close | SED -Ee "s/\s*fuse_val_close=(.*)$/\1/")
-    if [ "$fuse_close" = 0 ]; then
-        log "Device is currently open"
-        local prog_close="false"
-    elif [ "$fuse_close" = 1 ]; then
-        log "Device is currently closed"
-        local prog_close="true"
-    else
-        # If we can't determine the closing state from U-Boot then just assume it's open
-        log "Unable to determine Device closed state, will assume device is open"
-        local prog_close="false"
-    fi
-
-cat << EOF >> "$SECONDARY_FIRMWARE_PATH"
-  fuse-close: $prog_close
-EOF
 }
 
 # Creates target_name file if it does not already exist
