@@ -64,7 +64,8 @@ _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "verdin-imx8mp"        "meta-toradex")
 
 _TDX_COMMON_MACHINES=("intel-corei7-64"    "meta-intel" \
-                 "imx95-19x19-verdin" "meta-imx")
+                 "imx95-19x19-verdin" "meta-imx" \
+                 "smarc-rzv2l"        "rz-community-bsp")
 
 if [ "$(whoami)" = "root" ]; then
     echo "ERROR: do not build Torizon OS as root. Exiting..." >&2
@@ -148,6 +149,9 @@ else
             fi
             # Both Common Torizon and Common Xenomai share the same setup script, only the Distro is different
             DISTRO="$_TDX_DISTRO_SELECT" . ${_TDX_SCRIPTS_PATH}/setup-environment-intel $@
+        ;;
+        smarc-rzv2l)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-renesas
         ;;
         *)
             echo "Unknown machine ${MACHINE}!"
