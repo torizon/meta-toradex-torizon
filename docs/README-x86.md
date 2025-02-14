@@ -24,20 +24,34 @@ $ git clone https://git.yoctoproject.org/meta-virtualization -b scarthgap
 ```bash
 $ git clone https://github.com/openembedded/meta-openembedded -b scarthgap
 ```
-
-Build
-======
-1. Go back into our top folder `common-torizon`
-2. Create a symlink to our `setup-environment`:
+  * Go back into our top folder `common-torizon`
+  * Create a symlink to our `setup-environment`:
 ```bash
 $ ln -s layers/meta-toradex-torizon/scripts/setup-environment setup-environment
 ```
-3. Source `setup-environment` to setup build:
+
+Repo Sync
+======
+1. If you dont have `repo` tool installed, please refer to this [link](https://developer.toradex.com/torizon/in-depth/build-torizoncore-from-source-with-yocto-projectopenembedded/#download-metadata).
+2. Start syncing the manifest
+```bash
+$ repo init -u git://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/x86/default.xml
+$ repo sync -j 10
+```
+We **strongly recommend** using the `default.xml` manifest. We also have there `integration.xml` and `next.xml`, but these are development manifests used internally and they might be unstable.
+`default.xml` is the manifest used for our releases, so they are reliable.  
+Since we're now using the manifest, Common Torizon `setup-script` link will be automatically created for you on your top folder.
+> [!IMPORTANT]  
+> Common Torizon OS is only available on branches `scarthgap-7.x.y` or newer!
+
+Build
+======
+1. Source `setup-environment` to setup build:
 ```bash
 $ MACHINE=intel-corei7-64 . setup-environment build-corei7-64
 ```
 This will create a build folder named `build-corei7-64`, where all build artifacts will be stored.
-4. Start Common Torizon build:
+2. Start Common Torizon build:
 ```bash
 $ bitbake torizon-docker
 ```
