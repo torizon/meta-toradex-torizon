@@ -14,7 +14,7 @@ SRC_URI:append:cfs-signed = "\
 
 KBUILD_BUILD_VERSION .= "-Torizon"
 
-do_patch:append:preempt-rt() {
+do_amend_preempt_rt_commits() {
 	# When the RT patches are applied via "git apply" by the kgit-s2q tool
 	# (part of yocto-kernel-tools) the author is set to "invalid_git config"
 	# which we validate here to ensure we'll amend the proper commit.
@@ -47,6 +47,9 @@ do_patch:append:preempt-rt() {
 	    --amend --no-edit -m 'RT patches' \
 	    --date='1970-01-01T00:00:00 +0000'
 }
+PREEMPT_RT_PATCH_FUNCS = ""
+PREEMPT_RT_PATCH_FUNCS:preempt-rt = "do_amend_preempt_rt_commits"
+do_patch[postfuncs] += "${PREEMPT_RT_PATCH_FUNCS}"
 
 # Print kernel URL and BRANCH to files to be used by ostree commit as metadata
 kernel_do_deploy:append() {

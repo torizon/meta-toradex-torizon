@@ -21,8 +21,6 @@ LIC_FILES_CHKSUM = " \
 "
 
 SYSTEMD_SERVICE:${PN} = "tzn-mqtt.service"
-# Keep disabled by default for now
-SYSTEMD_AUTO_ENABLE:${PN} = "disable"
 
 SRC_URI += " \
     crate://crates.io/addr2line/0.21.0 \

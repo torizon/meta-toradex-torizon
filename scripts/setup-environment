@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -*- mode: shell-script-mode; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 #
 # Copyright (C) 2012-13 O.S. Systems Software LTDA.
@@ -18,4 +18,139 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-. layers/meta-toradex-torizon/scripts/setup-environment-internal $@
+
+trap "unset $(declare -p | sed -ne 's/^declare .. \(_TDX_[_a-z0-9]\+\)=.*/\1/ip'; declare -fp | sed -ne 's/^\(_tdx_[-_a-z0-9]\+\) *()/\1/ip')" RETURN
+
+_tdx_usage () {
+    cat >&2 <<EOF
+
+Usage: [DISTRO=<DISTRO>] [MACHINE=<MACHINE>] [EULA=1] source ${BASH_SOURCE[0]} [-h] [BUILDDIR]
+
+If no MACHINE is set, list of all distros will be shown for user to choose, and then the desired machine.
+If no DISTRO is set, 'torizon|torizon-upstream|common-torizon' will be chosen depending on MACHINE.
+If no EULA is set, user will be asked to read it and to accept it (if the selected machine requires it).
+If no BUILDIR is set, it will be set to build-\$DISTRO.
+
+Options:
+  -h    Show this help message.
+EOF
+
+    echo "Distros"
+    printf "\t%s\t%s\n" "${_TDX_AVAILABLE_DISTROS[@]}"
+    echo ""
+    echo "Toradex Machines"
+    printf "\t%s\t%s\n" "${_TDX_TORADEX_MACHINES[@]}"
+    echo ""
+    echo "Common Torizon Machines"
+    printf "\t%s\t%s\n" "${_TDX_COMMON_MACHINES[@]}"
+}
+
+_TDX_AVAILABLE_DISTROS=("torizon"                 "(for Toradex devices)" \
+                   "common-torizon"          "(for 3rd party devices)" \
+                   "common-torizon-xenomai3" "(for intel-corei7-64)" \
+                   "common-torizon-xenomai4" "(for intel-corei7-64)")
+
+_TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
+                  "apalis-imx8"          "meta-toradex-nxp" \
+                  "aquila-am69"          "meta-toradex-ti" \
+                  "colibri-imx6"         "meta-freescale-3rdparty" \
+                  "colibri-imx6ull-emmc" "meta-toradex-nxp" \
+                  "colibri-imx7-emmc"    "meta-freescale-3rdparty" \
+                  "colibri-imx8x"        "meta-toradex-nxp" \
+                  "genericx86-64"        "meta-yocto/meta-yocto-bsp" \
+                  "qemuarm64"            "openembedded-core/meta" \
+                  "verdin-am62"          "meta-toradex-ti" \
+                  "verdin-imx8mm"        "meta-toradex-nxp" \
+                  "verdin-imx8mp"        "meta-toradex")
+
+_TDX_COMMON_MACHINES=("intel-corei7-64"    "meta-intel" \
+                 "imx95-19x19-verdin" "meta-imx")
+
+if [ "$(whoami)" = "root" ]; then
+    echo "ERROR: do not build Torizon OS as root. Exiting..." >&2
+    return 1
+fi
+
+if [ $# -gt 1 ] || [ "$1" == "-h" ]; then
+    _tdx_usage
+    return 1
+fi
+
+_TDX_DIALOG_UTIL=""
+# check for whiptail
+if which whiptail > /dev/null 2>&1; then
+    _TDX_DIALOG_UTIL=$(which whiptail)
+else
+    # check for dialog
+    if which dialog > /dev/null 2>&1; then
+        _TDX_DIALOG_UTIL=$(which whiptail)
+    fi
+fi
+
+# if no dialog box util and no MACHINE specified, show usage help and quit
+if [ -z "${_TDX_DIALOG_UTIL}" ] && [ -z "${MACHINE}" ]; then
+    echo "To choose a MACHINE or DISTRO interactively please install whiptail or dialog."
+    echo "To choose a MACHINE or DISTRO non-interactively please use the following:"
+    _tdx_usage
+    return 1
+fi
+
+# if DISTRO is passed, we take the user selection
+_TDX_DISTRO_SELECT="${DISTRO}"
+
+# if no MACHINE is passed, we can not infer the distro desired
+if [ -z "${MACHINE}" ]; then
+    if [ -z "${_TDX_DISTRO_SELECT}" ]; then
+        # if not, we ask the user to select a DISTRO, to narrow down the MACHINEs available
+        _TDX_DISTRO_SELECT=$("${_TDX_DIALOG_UTIL}" --title "Distro selection" --menu \
+                        "Please choose a Torizon distribution" 0 0 20 \
+                        "${_TDX_AVAILABLE_DISTROS[@]}" \
+                        3>&1 1>&2 2>&3)
+    fi
+
+    if [ "${_TDX_DISTRO_SELECT}" == "torizon" ] || [ "${DISTRO}" == "torizon-upstream" ]; then
+        MACHINE=$("${_TDX_DIALOG_UTIL}" --title "Machine selection" --menu \
+                     "Please choose a machine to build" 0 0 20 \
+                     "${_TDX_TORADEX_MACHINES[@]}" \
+                     3>&1 1>&2 2>&3)
+    elif [ "${_TDX_DISTRO_SELECT}" == "common-torizon" ]; then
+        MACHINE=$("${_TDX_DIALOG_UTIL}" --title "Machine selection" --menu \
+                     "Please choose a machine to build" 0 80 20 \
+                     "${_TDX_COMMON_MACHINES[@]}" \
+                     3>&1 1>&2 2>&3)
+    elif [ "${_TDX_DISTRO_SELECT}" == "common-torizon-xenomai3" ] || [ "${_TDX_DISTRO_SELECT}" == "common-torizon-xenomai4" ]; then
+        # In case it is Common Xenomai, we currently only support intel-corei7-64
+        MACHINE="intel-corei7-64"
+    else
+        echo "Unknown DISTRO=\"$_TDX_DISTRO_SELECT\"!"
+        return 1
+    fi
+fi
+
+_TDX_LAYERS_DIR=$(find . -maxdepth 2 -type d -name meta-toradex-torizon)
+_TDX_LAYERS_DIR=$(dirname "${_TDX_LAYERS_DIR}")
+_TDX_SCRIPTS_PATH="${_TDX_LAYERS_DIR}"/meta-toradex-torizon/scripts/lib/setup-devices
+
+if echo "${_TDX_TORADEX_MACHINES[@]}" | grep -q "$MACHINE"; then
+    # for Toradex MACHINES, we let our internal script decide which Torizon distro to use (torizon or torizon-upstream)
+    . ${_TDX_SCRIPTS_PATH}/setup-environment-toradex $@
+else
+    # Common Torizon machines
+    case "${MACHINE}" in
+        imx95-19x19-verdin)
+            # for iMX95, there's only common-torizon as possible DISTRO
+            _TDX_DISTRO_SELECT="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-imx $@
+        ;;
+        intel-corei7-64)
+            # If no distro was passed explicitly, we default to Common Torizon
+            if [ -z "${_TDX_DISTRO_SELECT}" ]; then
+                _TDX_DISTRO_SELECT="common-torizon"
+            fi
+            # Both Common Torizon and Common Xenomai share the same setup script, only the Distro is different
+            DISTRO="$_TDX_DISTRO_SELECT" . ${_TDX_SCRIPTS_PATH}/setup-environment-intel $@
+        ;;
+        *)
+            echo "Unknown machine ${MACHINE}!"
+        ;;
+    esac
+fi
