@@ -34,6 +34,7 @@ Now you should be ready to start building one of the available Torizon images:
 
 Below you'll find documentation for some devices to which Common Torizon was already ported, with more details on how to fetch, setup and build them.
 
+* [AM62x SK EVM](./docs/README-ti.md)
 * [iMX95](./docs/README-imx95.md)
 * [RZ/V2L](./docs/README-rzv2l.md)
 * [x86](./docs/README-x86.md)
