@@ -63,7 +63,8 @@ _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "verdin-imx8mm"        "meta-toradex-nxp" \
                   "verdin-imx8mp"        "meta-toradex")
 
-_TDX_COMMON_MACHINES=("intel-corei7-64"    "meta-intel" \
+_TDX_COMMON_MACHINES=("am62xx-evm"    "meta-ti-bsp" \
+                 "intel-corei7-64"    "meta-intel" \
                  "imx95-19x19-verdin" "meta-imx" \
                  "smarc-rzv2l"        "rz-community-bsp")
 
@@ -138,6 +139,10 @@ if echo "${_TDX_TORADEX_MACHINES[@]}" | grep -q "$MACHINE"; then
 else
     # Common Torizon machines
     case "${MACHINE}" in
+        am62xx-evm)
+            # for TI boards there's only common-torizon as possible DISTRO
+            MACHINE="${MACHINE}" DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-ti $@
+        ;;
         imx95-19x19-verdin)
             # for iMX95, there's only common-torizon as possible DISTRO
             _TDX_DISTRO_SELECT="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-imx $@
