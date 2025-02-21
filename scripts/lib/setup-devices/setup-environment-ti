@@ -1,0 +1,123 @@
+#!/bin/bash
+
+OEROOT=$(pwd)
+BUILDDIR="${1:-build-ti-$DISTRO}"
+
+mkdir -p "${BUILDDIR}/conf"
+cd "${BUILDDIR}"
+
+if [ ! -e "conf/bblayers.conf" ]; then
+  echo "Downloading sample bblayers.conf from git.ti.com..."
+  wget "https://git.ti.com/cgit/arago-project/oe-layersetup/plain/sample-files/bblayers.conf.sample" -O conf/bblayers.conf
+  cat <<EOF >>conf/bblayers.conf
+BBLAYERS += " \\
+    \${OEROOT}/sources/meta-virtualization \\
+    \${OEROOT}/sources/meta-openembedded/meta-networking \\
+    \${OEROOT}/sources/meta-openembedded/meta-python \\
+    \${OEROOT}/sources/meta-openembedded/meta-oe \\
+    \${OEROOT}/sources/meta-openembedded/meta-filesystems \\
+    \${OEROOT}/sources/meta-ti/meta-ti-extras \\
+    \${OEROOT}/sources/meta-ti/meta-ti-bsp \\
+    \${OEROOT}/sources/meta-arm/meta-arm \\
+    \${OEROOT}/sources/meta-arm/meta-arm-toolchain \\
+    \${OEROOT}/sources/oe-core/meta \\
+    \${OEROOT}/sources/meta-yocto/meta-poky \\
+    \${OEROOT}/sources/meta-yocto/meta-yocto-bsp \\
+"
+EOF
+fi
+
+if [ ! -e "conf/local.conf" ]; then
+  echo "Downloading sample local.conf from git.ti.com..."
+  wget "https://git.ti.com/cgit/arago-project/oe-layersetup/plain/sample-files/local-arago64-v2.conf.sample" -O conf/local.conf
+fi
+
+# Adapted from the TI oe-layersetup repo, oe-layertool-setup.sh file
+cat <<EOF >conf/setenv
+# Set OEBASE to where the build and source directories reside
+# NOTE: Do NOT place a trailing / on the end of OEBASE.
+export OEBASE="\${OEROOT}"
+
+# try to find out bitbake directory
+BITBAKEDIR=\$(find "\${OEBASE}/sources" -name "*bitbake*")
+for f in \${BITBAKEDIR}
+do
+    if [ -d \${f}/bin ]
+    then
+        PATH="\${f}/bin:\$PATH"
+    fi
+done
+
+# check for any scripts directories in the top-level of the repos and add those
+# to the PATH
+SCRIPTS=\$(find "\${OEBASE}/sources" -maxdepth 2 -name "scripts" -type d)
+for s in \${SCRIPTS}
+do
+    PATH="\${s}:\$PATH"
+done
+
+unset BITBAKEDIR
+unset SCRIPTS
+export PATH
+export BUILDDIR="${BUILDDIR}"
+export BB_ENV_PASSTHROUGH_ADDITIONS="MACHINE DISTRO TCMODE TCLIBC http_proxy ftp_proxy https_proxy all_proxy ALL_PROXY no_proxy SSH_AGENT_PID SSH_AUTH_SOCK BB_SRCREV_POLICY SDKMACHINE BB_NUMBER_THREADS
+PARALLEL_MAKE GIT_PROXY_COMMAND GIT_PROXY_IGNORE SOCKS5_PASSWD SOCKS5_USER OEBASE META_SDK_PATH TOOLCHAIN_TYPE TOOLCHAIN_BRAND TOOLCHAIN_BASE TOOLCHAIN_PATH TOOLCHAIN_PATH_ARMV5 TOOLCHAIN_PATH_ARMV7 TOO
+LCHAIN_PATH_ARMV8 EXTRA_TISDK_FILES TISDK_VERSION ARAGO_BRAND ARAGO_RT_ENABLE ARAGO_SYSTEST_ENABLE ARAGO_KERNEL_SUFFIX TI_SECURE_DEV_PKG_CAT TI_SECURE_DEV_PKG_AUTO TI_SECURE_DEV_PKG_K3 ARAGO_SYSVINIT SY
+SFW_FILE"
+EOF
+
+source conf/setenv
+
+# Update DISTRO and MACHINE
+sed -E -i "/(^|#|#.*( |#))DISTRO .*/c\DISTRO = '${DISTRO}'" conf/local.conf
+sed -E -i "/(^|#|#.*( |#))MACHINE .*/c\MACHINE = '${MACHINE}'" conf/local.conf
+
+if ! grep -q "# Torizon" conf/local.conf; then
+  echo "Adapting conf/local.conf for a Torizon OS build."
+  sed -i "/^TMPDIR .*/c\TMPDIR = \"\${TOPDIR}/tmp\"" conf/local.conf
+  sed -i "/^PACKAGE_CLASSES .*/c\# PACKAGE_CLASSES = \"package_deb\"" conf/local.conf
+  sed -i "/^EXTRA_IMAGE_FEATURES = \"debug-tweaks\"/c\# EXTRA_IMAGE_FEATURES = \"debug-tweaks\"" conf/local.conf
+  sed -i "/^SSTATE_DIR .*/c\SSTATE_DIR= \"\${TOPDIR}/sstate-cache\"" conf/local.conf
+
+  cat <<EOF >>conf/local.conf
+# Where to save the packages and images
+TI_COMMON_DEPLOY = "\${TOPDIR}/deploy"
+
+# Torizon
+include conf/machine/include/\${MACHINE}.inc
+EOF
+fi
+
+if ! grep -q "# Torizon" conf/bblayers.conf; then
+  echo "Adapting conf/bblayers.conf for a Torizon OS build."
+  cat <<EOF >>conf/bblayers.conf
+# Torizon
+BBLAYERS += "\${OEROOT}/sources/meta-toradex-torizon"
+BBLAYERS += "\${OEROOT}/sources/meta-updater"
+
+OEROOT := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)))}/../.."
+EOF
+fi
+
+cat <<EOF
+
+Welcome to Common Torizon OS
+
+For more information about OpenEmbedded see their website:
+
+    http://www.openembedded.org/
+
+Your build environment has been configured with:
+
+    MACHINE = ${MACHINE}
+    DISTRO = ${DISTRO}
+
+You can now run 'bitbake <target>'
+
+Some of common targets are:
+
+    torizon-docker
+    torizon-minimal
+    torizon-podman
+
+EOF
