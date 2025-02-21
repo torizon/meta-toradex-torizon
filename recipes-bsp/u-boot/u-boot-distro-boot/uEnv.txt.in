@@ -181,7 +181,7 @@ read_fuses=if test -n "${fuse_num}"; then \
                            env set temp env set fuse_val_${num} 0x\\$fuse_val_${num}; \
                            run temp; \
                        else \
-                           env set fuse_val_${num} 0x0; \
+                           env delete fuse_val_${num}; \
                        fi; \
                        env set save_vars 1; \
                    fi; \
