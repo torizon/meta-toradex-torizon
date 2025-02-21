@@ -1,4 +1,4 @@
-Sync
+Setup
 ======
 1. Clone Renesas BSP layer:
 ```
@@ -30,7 +30,7 @@ $ bitbake torizon-docker
 
 All artifacts should be inside `build/deploy/images/smarc-rzv2l`
 
-Flashing the device
+Flash the Device
 ======
 1. With `SW11` set to `OFF ON OFF ON`, run (assuming ttyUSB0)
 ```
@@ -68,7 +68,7 @@ Have the SD card in a single partition and run (assuming SD card is `sdc`)
 $ sudo dd if=torizon-docker-smarc-rzv2l-7.0.0-devel-20250127163415+build.0.ota-ext4 of=/dev/sdc1 oflag=direct bs=4M status=progress conv=fsync
 ```
 
-Booting
+Boot
 ======
 With both steps above finished, just move `sw11` to `OFF OFF OFF ON`, insert the SD card into `CN10` and power on the device.  
 Press `Enter` on keyboard so you land on u-boot shell, and then run
