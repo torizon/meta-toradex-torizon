@@ -186,17 +186,11 @@ read_fuses=if test -n "${fuse_num}"; then \
                        env set save_vars 1; \
                    fi; \
                done; \
-               tdx_is_closed; \
-               if test $? != "0"; then \
-                   if test "${fuse_val_close}" != "0"; then \
+               if tdx_secboot_get "dev.closed" temp; then \
+                   if test "${fuse_val_close}" != "${temp}"; then \
+                       env set fuse_val_close "${temp}"; \
                        env set save_vars 1; \
                    fi; \
-                   env set fuse_val_close 0; \
-               else \
-                   if test "${fuse_val_close}" != "1"; then \
-                       env set save_vars 1; \
-                   fi; \
-                   env set fuse_val_close 1; \
                fi; \
            fi || true
 
