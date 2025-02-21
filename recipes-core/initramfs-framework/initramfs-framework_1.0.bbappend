@@ -132,6 +132,7 @@ RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
     kernel-module-tc358768 \
     kernel-module-ti-sn65dsi83 \
     kernel-module-lontium-lt8912b \
+    kernel-module-sii902x \
 "
 
 do_install:append:ti-soc() {
