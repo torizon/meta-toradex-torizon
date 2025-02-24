@@ -1,4 +1,4 @@
-Sync
+Setup
 ======
 1. Create the project folder:
 ```bash
@@ -37,7 +37,7 @@ $ bitbake torizon-docker
 
 All artifacts should be inside `build-imx95/deploy/images/imx95-19x19-verdin`, including the `.wic` file.
 
-Flashing the device
+Flash the Device
 ======
 1. Change board boot switch to `ON OFF OFF ON` (CM33 Serial Download)
 2. Download [uuu](https://github.com/nxp-imx/mfgtools/releases/tag/uuu_1.5.201) or build it from [source](https://github.com/nxp-imx/mfgtools)

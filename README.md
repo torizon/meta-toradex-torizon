@@ -15,29 +15,29 @@ https://developer.toradex.com/knowledge-base/build-torizoncore
 
 Building Common Torizon OS
 ========
-To build Common Torizon you'll need to first download the desired BSP, and then download `meta-toradex-torizon`'s layer on top of that, along with its dependencies (if not already present).
-If you want to build Common Torizon on the `scarthgap` branch:
+Download the BSP layers for your machine, the `meta-toradex-torizon` layer, and other layers that are required to build Common Torizon.
+To build Common Torizon on the `scarthgap` branch:
 ```bash
 $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
 $ git clone https://git.yoctoproject.org/git/meta-virtualization -b scarthgap
 ```
 
-Once that's in place, you'll need to source whatever script your BSP uses to setup the build environment and edit your `conf/bblayers.conf` to add `meta-toradex-torizon` layer and its dependencies (and any other that might be missing).
+Then, source whatever script your BSP uses to setup the build environment and edit your `conf/bblayers.conf` to add `meta-toradex-torizon` layer and its dependencies (and any other that might be missing).
 
-After that you'll need to edit your `conf/local.conf` file to set the MACHINE you want to build (if not set already), and you'll need to change the DISTRO to `DISTRO='common-torizon'`.
+After that, edit your `conf/local.conf` file to set the MACHINE you want to build (if not set already), and change the DISTRO to `DISTRO='common-torizon'`.
 
-Now you should be ready to start building one of the available Torizon images:
+Start building one of the available Torizon images:
 * torizon-docker
 * torizon-minimal
 * torizon-podman (**experimental**)
 
 Below you'll find documentation for some devices to which Common Torizon was already ported, with more details on how to fetch, setup and build them.
 
-* [AM62x SK EVM](./docs/README-ti.md)
-* [iMX95](./docs/README-imx95.md)
-* [RZ/V2L](./docs/README-rzv2l.md)
-* [x86](./docs/README-x86.md)
+* [Texas Instruments AM62x SK EVM](./docs/README-ti.md)
+* [Toradex i.MX95 Verdin EVK](./docs/README-imx95.md)
+* [Renesas RZ/V2L EVKIT](./docs/README-rzv2l.md)
+* [Intel x86](./docs/README-x86.md)
 
 Reporting Issues
 ================
