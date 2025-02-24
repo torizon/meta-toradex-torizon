@@ -167,7 +167,21 @@ prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" |
                fi; \
            fi || true
 
-read_fuses=if test -n "${fuse_num}"; then \
+read_fuses=if tdx_secboot_get "bld.secboot" temp && test "${temp}" = "1"; then \
+               echo "## NOTE: Bootloader seems to support secure boot."; \
+               true; \
+           else \
+               echo "## WARNING: Fusing feature not supported by the bootloader."; \
+               for num in ${fuse_num}; do \
+                   if env exists fuse_val_${num}; then \
+                       env delete fuse_val_${num}; \
+                       env set save_vars 1; \
+                   fi; \
+               done; \
+               false; \
+           fi; \
+           \
+           if test $? = "0" && test -n "${fuse_num}"; then \
                for num in ${fuse_num}; do \
                    if env exists fuse_val_${num}; then \
                        env set temp fuse cmp -q \\$fuse_bank_word_${num} \\$fuse_val_${num}; \
