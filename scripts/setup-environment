@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-trap "unset $(declare -p | sed -ne 's/^declare .. \(_TDX_[_a-z0-9]\+\)=.*/\1/ip'; declare -fp | sed -ne 's/^\(_tdx_[-_a-z0-9]\+\) *()/\1/ip')" RETURN
+trap "unset $(declare -p | sed -ne 's/^declare .. \(_TDX_[_a-z0-9]\+\)=.*/\1/ip' &> /dev/null; declare -fp | sed -ne 's/^\(_tdx_[-_a-z0-9]\+\) *()/\1/ip' &> /dev/null)" RETURN
 
 _tdx_usage () {
     cat >&2 <<EOF
