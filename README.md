@@ -34,7 +34,7 @@ Start building one of the available Torizon images:
 
 Below you'll find documentation for some devices to which Common Torizon was already ported, with more details on how to fetch, setup and build them.
 
-* [Texas Instruments AM62x/AM62L/AM62P SK EVM](./docs/README-ti.md)
+* [Texas Instruments AM62x/AM62L/AM62P SK EVM and BeagleY-AI](./docs/README-ti.md)
 * [Toradex i.MX95 Verdin EVK](./docs/README-imx95.md)
 * [Renesas RZ/V2L EVKIT](./docs/README-rzv2l.md)
 * [Intel x86](./docs/README-x86.md)
