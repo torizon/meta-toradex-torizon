@@ -1,11 +1,10 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/u-boot-fuse:"
 
-# TODO: This patch heavily reuses code from the hardening feature from meta-tordadex-security.
-# Consider reconciling the two, to avoid too much code duplication.
 TDX_UBOOT_FUSE_PATCHES_COMMON = " \
-    file://0001-toradex-add-new-command-to-determine-HAB-AHAB-closed.patch \
+    file://0001-toradex-common-add-hab-utilities-module.patch \
 "
 
+# TODO: Consider moving this to meta-toradex-security / u-boot-hab.inc
 TDX_UBOOT_FUSE_PATCHES_UPSTREAM = " \
     ${TDX_UBOOT_FUSE_PATCHES_COMMON} \
     file://0001-toradex-adjust-hab_status-exit-code-behavior.patch \
