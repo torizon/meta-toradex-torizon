@@ -1,0 +1,93 @@
+From d04025b710b62b78831b223cbff5acfbc24d6e13 Mon Sep 17 00:00:00 2001
+From: Jeremias Cordoba <js.cordoba8321@gmail.com>
+Date: Thu, 5 Dec 2024 15:07:03 -0800
+Subject: [PATCH] toradex: common: add hab utilities module
+
+Add hab utilities module initially containing an auxiliary function to
+detect a known HAB event on i.MX6.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ common/Makefile         |  3 +++
+ common/tdx-hab-utils.c  | 31 +++++++++++++++++++++++++++++++
+ include/tdx-hab-utils.h | 13 +++++++++++++
+ 3 files changed, 47 insertions(+)
+ create mode 100644 common/tdx-hab-utils.c
+ create mode 100644 include/tdx-hab-utils.h
+
+diff --git a/common/Makefile b/common/Makefile
+index e9835473420..15f38f902b0 100644
+--- a/common/Makefile
++++ b/common/Makefile
+@@ -30,6 +30,9 @@ obj-$(CONFIG_USB_GADGET) += usb.o
+ obj-$(CONFIG_USB_STORAGE) += usb_storage.o
+ obj-$(CONFIG_USB_ONBOARD_HUB) += usb_onboard_hub.o
+ 
++obj-$(CONFIG_IMX_HAB) += tdx-hab-utils.o
++obj-$(CONFIG_AHAB_BOOT) += tdx-hab-utils.o
++
+ # others
+ obj-$(CONFIG_CONSOLE_MUX) += iomux.o
+ obj-$(CONFIG_MTD_NOR_FLASH) += flash.o
+diff --git a/common/tdx-hab-utils.c b/common/tdx-hab-utils.c
+new file mode 100644
+index 00000000000..840a640fc58
+--- /dev/null
++++ b/common/tdx-hab-utils.c
+@@ -0,0 +1,31 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright 2024 Toradex
++ */
++
++#include <common.h>
++#include <tdx-hab-utils.h>
++
++#ifdef IGNORE_KNOWN_HAB_EVENTS
++static uint8_t known_rng_fail_event[][RNG_FAIL_EVENT_SIZE] = {
++	{ 0xdb, 0x00, 0x24, 0x42,  0x69, 0x30, 0xe1, 0x1d,
++	  0x00, 0x04, 0x00, 0x02,  0x40, 0x00, 0x36, 0x06,
++	  0x55, 0x55, 0x00, 0x03,  0x00, 0x00, 0x00, 0x00,
++	  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x00, 0x00, 0x00, 0x01 },
++};
++
++bool is_known_fail_event(const uint8_t *data, size_t len)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(known_rng_fail_event); i++) {
++		if (memcmp(data, known_rng_fail_event[i],
++			   min_t(size_t, len, RNG_FAIL_EVENT_SIZE)) == 0) {
++			return true;
++		}
++	}
++
++	return false;
++}
++#endif
+diff --git a/include/tdx-hab-utils.h b/include/tdx-hab-utils.h
+new file mode 100644
+index 00000000000..316a0a61c38
+--- /dev/null
++++ b/include/tdx-hab-utils.h
+@@ -0,0 +1,13 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright 2024 Toradex
++ */
++
++#if (defined(CONFIG_MX6Q) || defined(CONFIG_MX6DL) || defined(CONFIG_MX6QDL))
++#define IGNORE_KNOWN_HAB_EVENTS 1
++#endif
++
++#ifdef IGNORE_KNOWN_HAB_EVENTS
++#define RNG_FAIL_EVENT_SIZE 36
++bool is_known_fail_event(const uint8_t *data, size_t len);
++#endif
+-- 
+2.34.1
+
