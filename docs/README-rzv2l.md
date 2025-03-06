@@ -3,6 +3,7 @@ Setup
 1. Clone Renesas BSP layer:
 ```
 $ git clone https://github.com/renesas-rz/rz-community-bsp.git -b scarthgap
+$ cd rz-community-bsp
 ```
 2. Clone meta-toradex-torizon into `rz-community-bsp` folder
 ```
@@ -11,7 +12,7 @@ $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x
 3. Clone Torizon dependencies into `rz-community-bsp`
 ```
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
-$ git clone https://github.com/uptane/meta-updater.git -b scarthgap
+$ git clone https://git.yoctoproject.org/meta-virtualization -b scarthgap
 ```
 4. Create a symlink to our `setup-environment`:
 ```bash
@@ -22,7 +23,7 @@ Build
 ======
 1. Build with the following commands, inside `rz-community-bsp`
 ```
-$ ./kas-container shell
+$ ./kas-container shell --update --force-checkout kas/yocto/scarthgap.yml:kas/opt/debug.yml:kas/image/renesas-image-demo.yml:kas/machine/smarc-rzg2l.yml:kas/kernel/cip-6.1.yml
 $ cd /repo
 $ MACHINE=smarc-rzv2l . setup-environment
 $ bitbake torizon-docker
@@ -47,7 +48,7 @@ Please Input : H'00000
 ```
 then
 ```
-cat bl2_bp-smarc-rzv2l.srec > /dev/ttyUSB0
+$ cat bl2_bp-smarc-rzv2l.srec > /dev/ttyUSB0
 ```
 And again
 ```
@@ -60,7 +61,7 @@ Please Input : H'1D200
 ```
 then
 ```
-cat fip-smarc-rzv2l.srec > /dev/ttyUSB0
+$ cat fip-smarc-rzv2l.srec > /dev/ttyUSB0
 ```
 3. And finally copy the rootfs to the SD card
 Have the SD card in a single partition and run (assuming SD card is `sdc`)
