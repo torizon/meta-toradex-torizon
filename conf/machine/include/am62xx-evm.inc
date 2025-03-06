@@ -1,6 +1,6 @@
 WKS_FILE:sota:am62xx-evm = "torizon-am62xx-sota.wks"
 
-OSTREE_KERNEL_ARGS:sota:am62xx-evm:append = "console=ttyS2,115200 earlycon root=LABEL=otaroot rootfstype=ext4"
+OSTREE_KERNEL_ARGS:sota:am62xx-evm = "quiet logo.nologo vt.global_cursor_default=0 plymouth.ignore-serial-consoles splash fbcon=map:10 console=ttyS2,115200 root=LABEL=otaroot rootfstype=ext4"
 
 UBOOT_BOOT_PARTITION_NUMBER:am62xx-evm = "2"
 OTAROOT_PARTITION_NUMBER:am62xx-evm = "2"
