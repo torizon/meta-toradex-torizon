@@ -14,6 +14,8 @@ BBMASK += " \
 
 OSTREE_DEPLOY_DEVICETREE = "0"
 
+hostname:pn-base-files ?= "${MACHINE}"
+
 require conf/distro/include/versioning.inc
 
 SDK_VENDOR = "-tznsdk"
