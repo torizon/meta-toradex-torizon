@@ -1,4 +1,4 @@
-From 9cd7e9c280888356f9a40e84264a4ba4a851416e Mon Sep 17 00:00:00 2001
+From 2e6f06e945971661d9d9bd3edc01317132041eba Mon Sep 17 00:00:00 2001
 From: Jeremias Cordoba <js.cordoba8321@gmail.com>
 Date: Wed, 20 Nov 2024 16:16:24 -0800
 Subject: [PATCH] toradex: adjust ahab_status exit code behavior
@@ -41,5 +41,5 @@ index eb3916a7229..800b6d5b554 100644
  
  int ahab_close(void)
 -- 
-2.30.2
+2.34.1
 

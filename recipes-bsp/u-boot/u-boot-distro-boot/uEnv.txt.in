@@ -167,37 +167,44 @@ prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" |
                fi; \
            fi || true
 
-read_fuses=if test -n "${fuse_num}"; then \
+read_fuses=if tdx_secboot_get "bld.secboot" temp && test "${temp}" = "1"; then \
+               echo "## NOTE: Bootloader seems to support secure boot."; \
+               true; \
+           else \
+               echo "## WARNING: Fusing feature not supported by the bootloader."; \
                for num in ${fuse_num}; do \
                    if env exists fuse_val_${num}; then \
-                       env set temp fuse cmp \\$fuse_bank_word_${num} \\$fuse_val_${num}; \
+                       env delete fuse_val_${num}; \
+                       env set save_vars 1; \
+                   fi; \
+               done; \
+               false; \
+           fi; \
+           \
+           if test $? = "0" && test -n "${fuse_num}"; then \
+               for num in ${fuse_num}; do \
+                   if env exists fuse_val_${num}; then \
+                       env set temp fuse cmp -q \\$fuse_bank_word_${num} \\$fuse_val_${num}; \
                        run temp; \
                    else \
                        false; \
                    fi; \
                    if test $? != "0"; then \
-                       env set temp fuse readm \\$fuse_bank_word_${num} ${loadaddr}; \
+                       env set temp fuse readv -q \\$fuse_bank_word_${num} fuse_val_${num}; \
                        if run temp; then \
-                           setexpr.l fuse_val_${num} "*${loadaddr}"; \
                            env set temp env set fuse_val_${num} 0x\\$fuse_val_${num}; \
                            run temp; \
                        else \
-                           env set fuse_val_${num} 0x0; \
+                           env delete fuse_val_${num}; \
                        fi; \
                        env set save_vars 1; \
                    fi; \
                done; \
-               tdx_is_closed; \
-               if test $? != "0"; then \
-                   if test "${fuse_val_close}" != "0"; then \
+               if tdx_secboot_get "dev.closed" temp; then \
+                   if test "${fuse_val_close}" != "${temp}"; then \
+                       env set fuse_val_close "${temp}"; \
                        env set save_vars 1; \
                    fi; \
-                   env set fuse_val_close 0; \
-               else \
-                   if test "${fuse_val_close}" != "1"; then \
-                       env set save_vars 1; \
-                   fi; \
-                   env set fuse_val_close 1; \
                fi; \
            fi || true
 
