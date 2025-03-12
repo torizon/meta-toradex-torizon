@@ -1,4 +1,4 @@
-require am62xx.inc
+require common-am62xx.inc
 
 TORIZON_TTY_DEVICE = "ttyS0,115200"
 

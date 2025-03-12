@@ -1,4 +1,4 @@
-require am62xx.inc
+require common-am62xx.inc
 
 CORE_IMAGE_BASE_INSTALL:append:am62pxx = " ti-img-rogue-driver"
 
