@@ -1,4 +1,4 @@
-require am62xx.inc
+require common-am62xx.inc
 
 UENV_EXTRA_CONFIGS = "if test "${board_name}" = "am62b_p1_skevm" -a "${fdtfile}" = "ti/k3-am625-sk.dtb"; then env set fdtfile k3-am625-sk.dtb; fi"
 
