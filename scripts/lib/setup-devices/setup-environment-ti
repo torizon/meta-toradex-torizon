@@ -18,6 +18,7 @@ BBLAYERS += " \\
     \${OEROOT}/sources/meta-openembedded/meta-filesystems \\
     \${OEROOT}/sources/meta-ti/meta-ti-extras \\
     \${OEROOT}/sources/meta-ti/meta-ti-bsp \\
+    \${OEROOT}/sources/meta-ti/meta-beagle \\
     \${OEROOT}/sources/meta-arm/meta-arm \\
     \${OEROOT}/sources/meta-arm/meta-arm-toolchain \\
     \${OEROOT}/sources/oe-core/meta \\
