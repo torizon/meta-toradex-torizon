@@ -1,6 +1,6 @@
-From ef09d07359e5a2dca1dd3a723c31c53d601492cf Mon Sep 17 00:00:00 2001
-From: Stefan Agner <stefan.agner@toradex.com>
-Date: Tue, 4 Feb 2020 16:23:46 +0100
+From 47b616c86ab0eac828fa9a2962a0f5ffc78aebf1 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Wed, 19 Mar 2025 18:14:31 +0000
 Subject: [PATCH] disable boot splash later
 
 Currently we have one big target (multi-user.target) for lots of
@@ -9,13 +9,15 @@ started at the very end. Work around by explicitly order after
 docker.service.
 
 Upstream-Status: Inappropriate [embedded specific]
+
 Signed-off-by: Stefan Agner <stefan.agner@toradex.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 ---
  systemd-units/plymouth-quit.service.in | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/systemd-units/plymouth-quit.service.in b/systemd-units/plymouth-quit.service.in
-index 147e9eef23a5..87fa20ccbe88 100644
+index ed9f9b9..d32f7b6 100644
 --- a/systemd-units/plymouth-quit.service.in
 +++ b/systemd-units/plymouth-quit.service.in
 @@ -1,6 +1,6 @@
@@ -25,7 +27,7 @@ index 147e9eef23a5..87fa20ccbe88 100644
 +After=rc-local.service plymouth-start.service systemd-user-sessions.service docker.service
  
  [Service]
- ExecStart=-@PLYMOUTH_CLIENT_DIR@/plymouth quit --retain-splash
+ ExecStart=-@PLYMOUTH_CLIENT_DIR@/plymouth quit
 -- 
-2.25.0
+2.34.1
 
