@@ -1,5 +1,8 @@
 # Base configurations for TI's BSP AM62 devices
 
+# Adding custom override to differentiate between Verdin AM62 and TI's AM62xx EVMs
+MACHINEOVERRIDES =. "common-ti:"
+
 WKS_FILE:sota = "torizon-am62xx-sota.wks"
 
 TORIZON_TTY_DEVICE ?= "ttyS2,115200"
