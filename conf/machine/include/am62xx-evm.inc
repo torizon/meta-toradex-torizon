@@ -9,8 +9,8 @@ KERNEL_DEVICETREE = " \
     ti/k3-am62x-sk-csi2-tevi-ov5640.dtbo \
     ti/k3-am62x-sk-hdmi-audio.dtbo \
 "
-# Overlays in KERNEL_DEVICETREE to be applied during boot time
-KERNEL_DEVICETREE_OVERLAY_BOOT = " \
+# Overlays in OSTREE_DEVICETREE to be applied during boot time
+OSTREE_DEVICETREE_OVERLAY_BOOT = " \
     k3-am62x-sk-csi2-imx219.dtbo \
     k3-am62x-sk-csi2-ov5640.dtbo \
     k3-am62x-sk-csi2-tevi-ov5640.dtbo \
