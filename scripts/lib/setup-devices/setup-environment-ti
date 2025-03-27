@@ -78,6 +78,7 @@ if [ "${MACHINE}" = "beagley-ai" ]; then
     cat <<EOF >>conf/bblayers.conf
 BBLAYERS += "\${OEROOT}/sources/meta-ti/meta-beagle"
 EOF
+  fi
 fi
 
 if ! grep -q "# Torizon" conf/local.conf; then
