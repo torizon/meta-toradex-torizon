@@ -18,7 +18,6 @@ BBLAYERS += " \\
     \${OEROOT}/sources/meta-openembedded/meta-filesystems \\
     \${OEROOT}/sources/meta-ti/meta-ti-extras \\
     \${OEROOT}/sources/meta-ti/meta-ti-bsp \\
-    \${OEROOT}/sources/meta-ti/meta-beagle \\
     \${OEROOT}/sources/meta-arm/meta-arm \\
     \${OEROOT}/sources/meta-arm/meta-arm-toolchain \\
     \${OEROOT}/sources/oe-core/meta \\
@@ -72,6 +71,14 @@ source conf/setenv
 # Update DISTRO and MACHINE
 sed -E -i "/(^|#|#.*( |#))DISTRO .*/c\DISTRO = '${DISTRO}'" conf/local.conf
 sed -E -i "/(^|#|#.*( |#))MACHINE .*/c\MACHINE = '${MACHINE}'" conf/local.conf
+
+# Check if meta-beagle should be added to bblayers.conf or not
+if [ "${MACHINE}" = "beagley-ai" ]; then
+  if ! grep -q "^BBLAYERS.*/meta-beagle" conf/bblayers.conf; then
+    cat <<EOF >>conf/bblayers.conf
+BBLAYERS += "\${OEROOT}/sources/meta-ti/meta-beagle"
+EOF
+fi
 
 if ! grep -q "# Torizon" conf/local.conf; then
   echo "Adapting conf/local.conf for a Torizon OS build."
