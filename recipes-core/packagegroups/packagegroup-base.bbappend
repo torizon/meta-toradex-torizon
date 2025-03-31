@@ -4,6 +4,9 @@ RDEPENDS:packagegroup-base-wifi:append = " \
     linux-firmware-sd8887 \
     linux-firmware-sd8997 \
     hostapd \
+"
+
+RDEPENDS:packagegroup-base-wifi:append:tdx = " \
     mwifiexap \
 "
 

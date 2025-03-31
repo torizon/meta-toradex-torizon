@@ -30,4 +30,3 @@ do_install:append() {
 
     install -m 0600 ${UNPACKDIR}/99-disable-uap.conf ${D}${sysconfdir}/NetworkManager/conf.d/99-disable-uap.conf
 }
-

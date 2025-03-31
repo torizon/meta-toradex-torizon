@@ -29,7 +29,7 @@ composefs_enable_fsverity_fs() {
 
 	if tune2fs -l "${root_dev}" 2>/dev/null | \
 	   grep -q -i 'filesystem features:.*\bverity\b'; then
-		info 'Feature "verity" is already enabled on the filesystem.'
+		debug 'Feature "verity" is already enabled on the filesystem.'
 	else
 		if tune2fs -O verity "${root_dev}"; then
 			msg 'Enabling "verity" feature on the filesystem succeeded.'
@@ -129,7 +129,7 @@ composefs_ensure_fsverity() {
 	# "cfs.enabled" could be set to false|true|signed or any other value accepted
 	# by "ostree-prepare-root".
 	if [ -n "${bootparam_cfs_enabled}" ]; then
-		info "Overriding composefs.enabled: setting to ${bootparam_cfs_enabled}"
+		debug "Overriding composefs.enabled: setting to ${bootparam_cfs_enabled}"
 		sed -i -e "/^\[composefs\]/,/^\[.*\]/ {s/^enabled[[:space:]]*=.*\$/enabled = ${bootparam_cfs_enabled}/}" "${PREPARE_ROOT_CFG}"
 	fi
 
@@ -139,18 +139,18 @@ composefs_ensure_fsverity() {
 	debug "composefs.enabled=${enabled}"
 
 	if [ "${enabled}" = "no" ]; then
-		info "composefs is not enabled in ${PREPARE_ROOT_CFG}"
+		debug "composefs is not enabled in ${PREPARE_ROOT_CFG}"
 		return 0
 	fi
 
 	# Enable fsverity at the filesystem level.
 	if ! composefs_enable_fsverity_fs; then
-		info "Could not enable fsverity on the fs - avoid enabling it on individual files"
+		debug "Could not enable fsverity on the fs - avoid enabling it on individual files"
 		return 1
 	fi
 
 	if [ -z "${bootparam_ostree}" ]; then
-		info "Parameter ostree= not passed in kernel cmdline"
+		debug "Parameter ostree= not passed in kernel cmdline"
 		return 1
 	fi
 
@@ -165,7 +165,7 @@ composefs_ensure_fsverity() {
 	lockfile="${SYSROOT_DIR}/ostree/repo/enable-verity.lock"
 
 	if [ ! -f "${cfsfile}" ]; then
-		info "File '${cfsfile}' does not exist"
+		debug "File '${cfsfile}' does not exist"
 	fi
 
 	# Handle the case where fsverity is partially enabled on the repository; this would normally
@@ -193,15 +193,15 @@ composefs_ensure_fsverity() {
 	#   files (this is optional and enabled by setting CFS_UPGRADE_ENABLE="1").
 	#
 	if [ -f "${lockfile}" ]; then
-		info "Lockfile exists - continue fsverity enabling"
+		debug "Lockfile exists - continue fsverity enabling"
 	elif [ -f "${cfsfile}" ] && ! fsverity measure "${cfsfile}" >/dev/null 2>/dev/null; then
-		info "File '${cfsfile}' does not have fsverity info - start fsverity enabling"
+		debug "File '${cfsfile}' does not have fsverity info - start fsverity enabling"
 	elif [ "${enable_verity_on_upgrade}" = "1" ]; then
-		info "Some deployment does not have fsverity info - start fsverity enabling"
+		debug "Some deployment does not have fsverity info - start fsverity enabling"
 	elif [ "${CFS_ALWAYS_ENABLE}" = "1" ]; then
-		info "CFS_ALWAYS_ENABLE is set - start fsverity enabling"
+		debug "CFS_ALWAYS_ENABLE is set - start fsverity enabling"
 	else
-		info "Enabling fsverity on repository is not needed"
+		debug "Enabling fsverity on repository is not needed"
 		return 0
 	fi
 
@@ -243,7 +243,7 @@ composefs_run() {
 		ln -sf "${ROOTFS_DIR}" "${SYSROOT_DIR}"
 		composefs_ensure_fsverity
 	else
-		info "No rootfs has been set"
+		debug "No rootfs has been set"
 		return 1
 	fi
 }

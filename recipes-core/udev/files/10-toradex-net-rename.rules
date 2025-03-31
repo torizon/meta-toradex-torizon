@@ -1,2 +1,0 @@
-#Assign predictable names to Toradex net devices
-SUBSYSTEM=="net", ATTR{address}=="00:14:2d*", ACTION=="add", PROGRAM="/usr/bin/toradex-net-rename.sh %k", NAME="%c{1}"

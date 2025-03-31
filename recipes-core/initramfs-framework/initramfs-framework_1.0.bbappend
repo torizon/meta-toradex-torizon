@@ -34,7 +34,6 @@ FILES:initramfs-module-ostree = "/init.d/95-ostree"
 SUMMARY:initramfs-module-composefs = "initramfs support for booting composefs images"
 RDEPENDS:initramfs-module-composefs = "${PN}-base"
 RDEPENDS:initramfs-module-composefs:append:cfs-signed = " fsverity-utils e2fsprogs-tune2fs"
-RRECOMMENDS:initramfs-module-composefs = "kernel-module-erofs kernel-module-overlay"
 FILES:initramfs-module-composefs = "\
     /init.d/94-composefs \
     ${nonarch_libdir}/ostree/prepare-root.conf \
@@ -60,8 +59,13 @@ require recipes-extended/ostree/ostree-prepare-root.inc
 
 CFS_UPGRADE_ENABLE ?= "0"
 
+RRECOMMENDS:initramfs-module-kmod:append:cfs-support = " \
+    kernel-module-erofs \
+    kernel-module-overlay \
+"
+
 do_install:append:cfs-support() {
-    # Bundled into initramfs-module-kmod package:
+    # Bundled into initramfs-module-kmod:
     install -d ${D}/etc/modules-load.d/
     install -m 0755 ${UNPACKDIR}/80-composefs.conf ${D}/etc/modules-load.d/80-composefs.conf
 
@@ -69,6 +73,7 @@ do_install:append:cfs-support() {
     install -m 0755 ${UNPACKDIR}/composefs ${D}/init.d/94-composefs
     sed -i -e 's/@@CFS_UPGRADE_ENABLE@@/${CFS_UPGRADE_ENABLE}/g' ${D}/init.d/94-composefs
 
+    # Bundled into initramfs-module-composefs:
     install -d ${D}${nonarch_libdir}/ostree/
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
@@ -98,7 +103,7 @@ do_install[depends] += "${CFS_INSTALL_DEPENDS}"
 do_install[file-checksums] += "${CFS_INSTALL_FILE_CHECKSUMS}"
 
 do_install:append:cfs-signed() {
-    # Bundled into initramfs-module-composefs package:
+    # Bundled into initramfs-module-composefs:
     install -d ${D}${sysconfdir}/ostree/
     install -m 0644 ${CFS_SIGN_KEYDIR}/${CFS_SIGN_KEYNAME}.pub \
     	            ${D}${sysconfdir}/ostree/initramfs-root-binding.key
@@ -122,20 +127,18 @@ do_install:append:mx8-nxp-bsp() {
 SRC_URI:append:ti-soc = " file://50-am62-graphics.conf"
 RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
     kernel-module-pwm-tiehrpwm \
-    kernel-module-fb-sys-fops \
-    kernel-module-sysimgblt \
-    kernel-module-sysfillrect \
-    kernel-module-syscopyarea \
-    kernel-module-drm-kms-helper \
-    kernel-module-drm-dma-helper \
     kernel-module-tidss \
     kernel-module-display-connector \
     kernel-module-tc358768 \
     kernel-module-ti-sn65dsi83 \
     kernel-module-lontium-lt8912b \
+    kernel-module-sii902x \
 "
 
 do_install:append:ti-soc() {
     install -d ${D}/etc/modules-load.d/
     install -m 0755 ${UNPACKDIR}/50-am62-graphics.conf ${D}/etc/modules-load.d/50-am62-graphics.conf
 }
+
+# Required to ensure runtime SPDX data is updated when kernel modules change
+do_create_runtime_spdx[rdeptask] = "virtual/kernel:do_create_runtime_spdx"

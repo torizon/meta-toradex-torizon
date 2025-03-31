@@ -1,5 +1,15 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+SRC_URI:append:common-torizon = " \
+    file://torizon.scc \
+"
+
+# NXP's Kernel recipe needs the cfg fragment in order to merge with
+# with the generated .config. Otherwise the fragments won't apply.
+SRC_URI:append:common-torizon:imx95-19x19-verdin = "\
+    file://torizon.cfg \
+"
+
 SRC_URI:append:cfs-support = "\
     file://composefs.scc \
 "
