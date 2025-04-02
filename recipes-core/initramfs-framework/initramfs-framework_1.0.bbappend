@@ -133,12 +133,16 @@ RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
     kernel-module-ti-sn65dsi83 \
     kernel-module-lontium-lt8912b \
     kernel-module-sii902x \
-    kernel-module-ite-it66121 \
 "
 
 do_install:append:ti-soc() {
     install -d ${D}/etc/modules-load.d/
     install -m 0755 ${WORKDIR}/50-ti-graphics.conf ${D}/etc/modules-load.d/50-ti-graphics.conf
+}
+
+RDEPENDS:initramfs-module-kmod:append:beagley-ai = " kernel-module-ite-it66121"
+do_install:append:beagley-ai() {
+    echo "ite_it66121" >> ${D}/etc/modules-load.d/50-ti-graphics.conf
 }
 
 # Required to ensure runtime SPDX data is updated when kernel modules change
