@@ -1,0 +1,17 @@
+[Unit]
+Description=Hostapd IEEE 802.11 AP, IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/hostapd.pid
+# Create virtual interface uap0 used for access point and make wlan0 down
+ExecStartPre=@SBINDIR@/iw dev wlan0 interface add uap0 type __ap
+ExecStartPre=@SBINDIR@/ip link set wlan0 down
+ExecStart=@SBINDIR@/hostapd @SYSCONFDIR@/hostapd.conf -P /run/hostapd.pid -B
+# Remove uap0 and bring wlan0 up after stopping
+ExecStopPost=@SBINDIR@/iw dev uap0 del
+ExecStopPost=@SBINDIR@/ip link set wlan0 up
+
+[Install]
+WantedBy=multi-user.target
