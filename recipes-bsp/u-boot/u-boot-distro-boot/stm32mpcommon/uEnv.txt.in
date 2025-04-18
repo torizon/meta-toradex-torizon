@@ -1,0 +1,229 @@
+kernel_image_type=@@KERNEL_IMAGETYPE@@
+overlays_file="overlays.txt"
+otaroot=@@OTAROOT_PARTITION_NUMBER@@
+fitconf_fdt_overlays="@@FITCONF_FDT_OVERLAYS@@"
+
+set_bootargs=env set bootcmd_args env set bootargs ${defargs} root=PARTUUID=${distro_bootpart_uuid} rootfstype=ext4 ${bootargs} ${tdxargs}
+
+# this will set the kernel load address
+# dispite KERNEL_IMAGETYPE is set to Image.gz for STM32MP2 targets, vmlinux is
+# used actually, so cancel the unzip command
+set_kernel_load_addr=env set bootcmd_unzip_k ';'; env set kernel_addr_load ${kernel_addr_r}
+
+load_overlay=load ${devtype} ${devnum}:${otaroot} ${loadaddr} /boot${fdtdir}/${overlays_file}; env import -t ${loadaddr} ${filesize}
+apply_overlays=if test ${kernel_image_type} = "fitImage"; then \
+                   env set fdt_high; \
+                   env set fdt_resize true; \
+                   for overlay_file in ${fdt_overlays}; do \
+                       echo "Applying Overlay: ${overlay_file}"; \
+                       env set fitconf_fdt_overlays "${fitconf_fdt_overlays}"#conf-"${overlay_file}"; \
+                   done; \
+               else \
+                   fdt addr ${fdt_addr_r} && fdt resize 0x20000 && \
+                   fdt mknode /chosen overlays && \
+                   for overlay_file in ${fdt_overlays}; do \
+                       echo "Applying Overlay: ${overlay_file}" && \
+                       load ${devtype} ${devnum}:${otaroot} ${loadaddr} /boot${fdtdir}/overlays/${overlay_file} && fdt apply ${loadaddr}; \
+                       fdt set /chosen/overlays ${overlay_file} $?; \
+                   done; \
+               fi
+
+bootcmd_load_k=load ${devtype} ${devnum}:${otaroot} ${kernel_addr_load} "/boot"${kernel_image}
+bootcmd_load_r=if test ${kernel_image_type} != "fitImage"; then \
+                   load ${devtype} ${devnum}:${otaroot} ${ramdisk_addr_r} "/boot"${ramdisk_image}; env set ramdisk_size ${filesize}; \
+               fi || true
+
+# check kernel_image2 to avoid booting from other then default emmc in case of
+# bootlimit is reached and there is no other deployed image
+check_rollback_needed=if test -n "${kernel_image2}" && test "${rollback}" = "1"; then \
+    echo "Rollback enabled. Booting previously deployed version."; \
+    env set kernel_image ${kernel_image2}; \
+    env set ramdisk_image ${ramdisk_image2}; \
+    env set bootargs ${bootargs2}; \
+    env set fdtdir ${fdtdir2}; \
+    env set fdt_file ${fdt_file2}; \
+    env set fdtfile ${fdtfile2}; \
+    test -n "${kernel_image_type2}" && env set kernel_image_type ${kernel_image_type2}; \
+fi || true
+
+set_fdt_path=if test -n "${fdtdir}"; then \
+                env set fdt_path /boot${fdtdir}/${fdtfile}; \
+             else \
+                env set fdt_path /boot${fdt_file}; \
+             fi || true
+
+bootcmd_dtb=if test ${kernel_image_type} != "fitImage"; then \
+                load ${devtype} ${devnum}:${otaroot} ${fdt_addr_r} ${fdt_path}; \
+            fi || true; \
+            if test ${skip_fdt_overlays} != 1; then \
+                    if test -e ${devtype} ${devnum}:${otaroot} /boot${fdtdir}/${overlays_file}; then \
+                        run load_overlay && run apply_overlays || true; \
+                    fi || true; \
+            fi || true
+
+set_bootargs_custom=if test -n "${fdt_overlays}"; then \
+                        for overlay_file in ${fdt_overlays}; do \
+                            if test "${overlay_file}" = "custom-kargs_overlay.dtbo"; then \
+                                if fdt get value custom_kargs /chosen/ bootargs_custom; then \
+                                    env set bootargs ${bootargs} ${custom_kargs}; \
+                                fi; \
+                            fi; \
+                        done; \
+                    fi || true
+
+board_fixups=if test "${board}" = "verdin-imx8mm"; then \
+                 if test "${fdtfile}" = "imx8mm-verdin-nonwifi-v1.1-dahlia.dtb"; then \
+                     env set fdtfile imx8mm-verdin-nonwifi-dahlia.dtb; \
+                 elif test "${fdtfile}" = "imx8mm-verdin-nonwifi-v1.1-dev.dtb"; then \
+                     env set fdtfile imx8mm-verdin-nonwifi-dev.dtb; \
+                 elif test "${fdtfile}" = "imx8mm-verdin-wifi-v1.1-dahlia.dtb"; then \
+                     env set fdtfile imx8mm-verdin-wifi-dahlia.dtb; \
+                 elif test "${fdtfile}" = "imx8mm-verdin-wifi-v1.1-dev.dtb"; then \
+                     env set fdtfile imx8mm-verdin-wifi-dev.dtb; \
+                 fi; \
+             fi || true
+
+bootcmd_boot=if test ${bootscript_debug} != 1; then \
+                 if test ${kernel_image_type} = "fitImage"; then \
+                     if test -n "${fdtdir}"; then \
+                         bootm ${fitimage_addr_r}#conf-@@KERNEL_DTB_PREFIX@@${fdtfile}${fitconf_fdt_overlays} ; \
+                     else \
+                         bootm ${fitimage_addr_r}#conf-@@KERNEL_DTB_PREFIX@@${fdt_file}${fitconf_fdt_overlays} ; \
+                     fi; \
+                 else \
+                     @@KERNEL_BOOTCMD@@ ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr_r}; \
+                 fi; \
+             fi || true
+
+#+START_FUSING_BLOCK_NXP
+@@BANK_WORD@@
+fuse_num=@@FUSE_NUM@@
+vars_to_del=@@VARS_TO_DEL@@
+
+prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" || test "${fuse_status}" = "need-reboot"; then \
+               if test "${fuse_status}" = "pending"; then \
+                   env set index 1; \
+                   for fuse_val in ${fuse_prog_list}; do \
+                       if test "${fuse_status}" != "failed"; then \
+                           if test "${fuse_dry_run}" = "1"; then \
+                               env set temp echo DRY RUN: fuse prog \\$fuse_bank_word_$index ${fuse_val}; \
+                           else \
+                               env set temp fuse prog -y \\$fuse_bank_word_$index ${fuse_val}; \
+                           fi; \
+                           run temp; \
+                           if test $? != "0"; then \
+                               env set fuse_status failed; \
+                           fi; \
+                           if test "${fuse_dry_run}" = "1"; then \
+                               env set temp echo DRY RUN: fuse cmp \\$fuse_bank_word_$index ${fuse_val}; \
+                           else \
+                               env set temp fuse cmp \\$fuse_bank_word_$index ${fuse_val}; \
+                           fi; \
+                           run temp; \
+                           if test $? != "0"; then \
+                               env set fuse_status failed; \
+                           fi; \
+                       fi ; \
+                       setexpr index $index + 1; \
+                       if test "${index}" = "a"; then \
+                           env set index "10"; \
+                       fi; \
+                   done; \
+               elif test "${fuse_status}" = "need-reboot"; then \
+                   @@STATUS_CMD@@; \
+                   if test $? != "0"; then \
+                       env set fuse_status failed; \
+                   fi; \
+                   if test "${fuse_prog_close}" = "1" && test "${fuse_status}" != "failed"; then \
+                       if test "${fuse_dry_run}" = "1"; then \
+                           echo "DRY RUN: Closing is set"; \
+                       else \
+                           @@CLOSE_CMD@@; \
+                       fi; \
+                       if test $? != "0"; then \
+                           env set fuse_status failed; \
+                       fi; \
+                   fi; \
+               fi; \
+               env set save_vars 1; \
+               if test "${fuse_status}" = "pending"; then \
+                   env set fuse_status need-reboot; \
+               elif test "${fuse_status}" = "need-reboot"; then \
+                   env set fuse_status success; \
+               fi; \
+           fi || true
+
+read_fuses=if tdx_secboot_get "bld.secboot" temp && test "${temp}" = "1"; then \
+               echo "## NOTE: Bootloader seems to support secure boot."; \
+               true; \
+           else \
+               echo "## WARNING: Fusing feature not supported by the bootloader."; \
+               for num in ${fuse_num}; do \
+                   if env exists fuse_val_${num}; then \
+                       env delete fuse_val_${num}; \
+                       env set save_vars 1; \
+                   fi; \
+               done; \
+               false; \
+           fi; \
+           \
+           if test $? = "0" && test -n "${fuse_num}"; then \
+               for num in ${fuse_num}; do \
+                   if env exists fuse_val_${num}; then \
+                       env set temp fuse cmp -q \\$fuse_bank_word_${num} \\$fuse_val_${num}; \
+                       run temp; \
+                   else \
+                       false; \
+                   fi; \
+                   if test $? != "0"; then \
+                       env set temp fuse readv -q \\$fuse_bank_word_${num} fuse_val_${num}; \
+                       if run temp; then \
+                           env set temp env set fuse_val_${num} 0x\\$fuse_val_${num}; \
+                           run temp; \
+                       else \
+                           env delete fuse_val_${num}; \
+                       fi; \
+                       env set save_vars 1; \
+                   fi; \
+               done; \
+               if tdx_secboot_get "dev.closed" temp; then \
+                   if test "${fuse_val_close}" != "${temp}"; then \
+                       env set fuse_val_close "${temp}"; \
+                       env set save_vars 1; \
+                   fi; \
+               fi; \
+           fi || true
+
+set_vars=if test "${save_vars}" = "1"; then \
+             for var in ${vars_to_del}; do \
+                 env set temp saved_$var=\\$$var; \
+                 run temp; \
+                 env delete ${var}; \
+             done; \
+             env delete save_vars; \
+             env save; \
+             for var in ${saved_vars_to_del}; do \
+                 env set temp "env set $var \\"\\$saved_${var}\\""; \
+                 run temp; \
+             done; \
+         fi || true
+
+reset_dev=if test "${fuse_status}" = "need-reboot"; then \
+              reset; \
+          fi || true
+#+END_FUSING_BLOCK_NXP
+#+START_FUSING_BLOCK_DUMMY
+# Dummy fuse functions:
+prog_fuses=true
+read_fuses=true
+set_vars=true
+reset_dev=true
+#+END_FUSING_BLOCK_DUMMY
+
+uenv_extra_configs=@@UENV_EXTRA_CONFIGS@@
+
+# Ensure "prog_fuses", "read_fuses", "set_vars", and "reset_dev" are ran first here.
+bootcmd_run=run prog_fuses && run read_fuses && run set_vars && run reset_dev && \
+            run board_fixups && run check_rollback_needed && run uenv_extra_configs && run set_bootargs && run set_fdt_path && \
+            run bootcmd_dtb && run bootcmd_args && run set_bootargs_custom && run set_kernel_load_addr && \
+            run bootcmd_load_k && run bootcmd_unzip_k && run bootcmd_load_r && run bootcmd_boot
