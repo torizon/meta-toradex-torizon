@@ -119,6 +119,7 @@ CFS_OSTREECOMMIT_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
 do_image_ostreecommit[prefuncs] += "${CFS_OSTREECOMMIT_PREFUNCS}"
 do_image_ostreecommit[depends] += "${CFS_OSTREECOMMIT_DEPENDS}"
 do_image_ostreecommit[file-checksums] += "${CFS_OSTREECOMMIT_FILE_CHECKSUMS}"
+do_image_ostreecommit[nostamp] = "1"
 
 EXTRA_OSTREE_COMMIT:append:cfs-signed = "\
     --generate-composefs-metadata \
