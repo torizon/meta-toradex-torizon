@@ -7,7 +7,7 @@ inherit cargo systemd
 # Main source respository
 SRC_URI = " \
     git://github.com/torizon/rac.git;protocol=https;branch=main;name=rac \
-    git://github.com/toradex/tough;protocol=https;branch=rac;name=tough;destsuffix=tough \
+    git://github.com/toradex/tough.git;protocol=https;branch=rac;name=tough;destsuffix=tough \
     file://remote-access.service \
     file://client.toml \
 "
