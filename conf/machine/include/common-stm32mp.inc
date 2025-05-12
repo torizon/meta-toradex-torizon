@@ -21,6 +21,11 @@ PARTITIONS_IMAGES[rootfs] = "${STM32MP_ROOTFS_IMAGE},${STM32MP_ROOTFS_LABEL},,${
 PREFERRED_PROVIDER_u-boot-default-script = "u-boot-distro-boot"
 UBOOT_BOOT_PARTITION_NUMBER = "${distro_bootpart}"
 UENV_EXTRA_CONFIGS = "env set otaroot ${distro_bootpart}"
+# Even though KERNEL_IMAGETYPE is set to Image.gz for STM32MP2 targets, vmlinux is
+# used actually, so override the set_kernel_load_addr command to cancel the unzip
+# command and use the proper kernel address
+UENV_EXTRA_CONFIGS += "; env set set_kernel_load_addr true; env set bootcmd_unzip_k true; env set kernel_addr_load ${kernel_addr_r}"
+BOOTARG_ROOT = "PARTUUID=${distro_bootpart_uuid}"
 KERNEL_BOOTCMD:stm32mp1common = "bootm"
 
 IMAGE_ROOTFS_MAXSIZE = "2500000"
