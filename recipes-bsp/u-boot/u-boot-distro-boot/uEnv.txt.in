@@ -3,7 +3,7 @@ overlays_file="overlays.txt"
 otaroot=@@OTAROOT_PARTITION_NUMBER@@
 fitconf_fdt_overlays="@@FITCONF_FDT_OVERLAYS@@"
 
-set_bootargs=env set bootcmd_args env set bootargs ${defargs} root=LABEL=otaroot rootfstype=ext4 ${bootargs} ${tdxargs}
+set_bootargs=env set bootcmd_args env set bootargs ${defargs} root=@@BOOTARG_ROOT@@ rootfstype=ext4 ${bootargs} ${tdxargs}
 
 # this will set the kernel load address
 # in case of booting a FIT image, the kernel load address will point to the
