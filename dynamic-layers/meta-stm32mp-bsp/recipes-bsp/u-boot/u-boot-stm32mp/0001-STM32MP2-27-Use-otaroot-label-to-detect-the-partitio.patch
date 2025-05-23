@@ -1,0 +1,37 @@
+From f465f869a1f215d43214151d6dd26d5b80a471f5 Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Mon, 28 Apr 2025 13:51:37 +0300
+Subject: [PATCH] STM32MP2-27: Use otaroot label to detect the partition with
+ the Torizon boot images.
+
+Originally U-Boot on STM32MP targets uses the partition attributes
+to detect the bootable partition from which to run the boot
+script. It expects the bootable flag is set on the partition. But the
+resize-helper service in Torizon cleans this flag, so the target
+board can't boot after reboot.
+
+This patch updates U-Boot ENV to use special label "otaroot" to detect
+the partition with boot files. This allows not to rely on partition
+flags and so use the resize-helper service in Torizon.
+
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ include/config_distro_bootcmd.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/config_distro_bootcmd.h b/include/config_distro_bootcmd.h
+index 2a136b96a6d..fe9c20bb400 100644
+--- a/include/config_distro_bootcmd.h
++++ b/include/config_distro_bootcmd.h
+@@ -538,7 +538,7 @@
+ 		"\0"                                                      \
+ 	\
+ 	"scan_dev_for_boot_part="                                         \
+-		"part list ${devtype} ${devnum} -bootable devplist; "     \
++		"part number ${devtype} ${devnum} otaroot devplist; "     \
+ 		"env exists devplist || setenv devplist 1; "              \
+ 		"for distro_bootpart in ${devplist}; do "                 \
+ 			"if fstype ${devtype} "                           \
+-- 
+2.34.1
+

@@ -69,7 +69,10 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "beagley-ai"         "meta-beagle" \
                  "intel-corei7-64"    "meta-intel" \
                  "imx95-19x19-verdin" "meta-imx" \
-                 "smarc-rzv2l"        "rz-community-bsp")
+                 "smarc-rzv2l"        "rz-community-bsp" \
+                 "stm32mp25-eval"     "meta-st-stm32mp" \
+                 "stm32mp15-disco"     "meta-st-stm32mp" \
+                 "stm32mp25-disco"     "meta-st-stm32mp")
 
 if [ "$(whoami)" = "root" ]; then
     echo "ERROR: do not build Torizon OS as root. Exiting..." >&2
@@ -160,6 +163,9 @@ else
         ;;
         smarc-rzv2l)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-renesas
+        ;;
+        stm32mp25-eval|stm32mp15-disco|stm32mp25-disco)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-stm32mp
         ;;
         *)
             echo "Unknown machine ${MACHINE}!"
