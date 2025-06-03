@@ -12,4 +12,3 @@ OSTREE_DEVICETREE = "\
     ti/k3-am62l3-evm-dsi-rpi-7inch-panel.dtbo \
 "
 
-IMAGE_BOOT_FILES:append = " tiboot3-am62lx-hs-fs-evm.bin"
