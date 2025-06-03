@@ -32,7 +32,7 @@ SYSTEMD_SERVICE:${PN} = "aktualizr-torizon.service"
 # For find_package(Git)
 OECMAKE_FIND_ROOT_PATH_MODE_PROGRAM = "BOTH"
 
-PACKAGECONFIG ?= "ostree ${@bb.utils.filter('SOTA_CLIENT_FEATURES', 'hsm serialcan ubootenv', d)}"
+PACKAGECONFIG ?= "ostree dbus ${@bb.utils.filter('SOTA_CLIENT_FEATURES', 'hsm serialcan ubootenv', d)}"
 PACKAGECONFIG[warning-as-error] = "-DWARNING_AS_ERROR=ON,-DWARNING_AS_ERROR=OFF,"
 PACKAGECONFIG[ostree] = "-DBUILD_OSTREE=ON,-DBUILD_OSTREE=OFF,ostree,"
 PACKAGECONFIG[ubootenv] = ",,u-boot-fw-utils,u-boot-fw-utils"
@@ -43,6 +43,7 @@ PACKAGECONFIG[sota-tools] = "\
   -DBUILD_SOTA_TOOLS=OFF, \
   glib-2.0 python3-native python3-requests-native, \
 "
+PACKAGECONFIG[dbus] = "-DBUILD_DBUS=ON,-DBUILD_DBUS=OFF,systemd"
 
 PROVIDES += "aktualizr"
 RPROVIDES:${PN} += "aktualizr aktualizr-info aktualizr-shared-prov"
@@ -69,6 +70,7 @@ FILES:${PN} += " \
   ${libdir}/libaktualizr.so \
   ${systemd_unitdir}/system/aktualizr-torizon.service \
   ${sysconfdir}/sota/* \
+  ${datadir}/dbus-1/system.d \
   ${libdir}/sota/* \
   ${libdir}/sota/conf.d \
   ${libdir}/sota/conf.d/20-sota-device-cred.toml \
