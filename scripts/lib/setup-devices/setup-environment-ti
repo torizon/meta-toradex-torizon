@@ -92,6 +92,9 @@ if ! grep -q "# Torizon" conf/local.conf; then
 # Where to save the packages and images
 TI_COMMON_DEPLOY = "\${TOPDIR}/deploy"
 
+# ease up disk space requirements
+INHERIT += "rm_work"
+
 # Torizon
 include conf/machine/include/\${MACHINE}.inc
 EOF
