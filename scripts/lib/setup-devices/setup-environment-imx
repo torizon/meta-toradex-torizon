@@ -28,6 +28,9 @@ TMPDIR = "${_TDX_BUILDDIR}/tmp"
 TI_COMMON_DEPLOY = "${_TDX_BUILDDIR}/deploy"
 DEPLOY_DIR = "\${TI_COMMON_DEPLOY}\${@'' if d.getVar('BB_CURRENT_MC') == 'default' else '/\${BB_CURRENT_MC}'}"
 
+# ease up disk space requirements
+INHERIT += "rm_work"
+
 # Torizon
 include conf/machine/include/\${MACHINE}.inc
 EOF
