@@ -59,6 +59,8 @@ _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "colibri-imx8x"        "meta-toradex-nxp" \
                   "genericx86-64"        "meta-yocto/meta-yocto-bsp" \
                   "qemuarm64"            "openembedded-core/meta" \
+                  "toradex-smarc-imx8mp" "meta-toradex-nxp" \
+                  "toradex-smarc-imx95"  "meta-toradex-nxp" \
                   "verdin-am62"          "meta-toradex-ti" \
                   "verdin-imx8mm"        "meta-toradex-nxp" \
                   "verdin-imx8mp"        "meta-toradex")
