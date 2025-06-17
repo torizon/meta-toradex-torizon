@@ -98,7 +98,7 @@ CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:mx95-nxp-bsp = " \
-    mali-imx \
+    ${@bb.utils.contains("DISTROOVERRIDES", "common-torizon-distro", "mali-imx", "",d)} \
 "
 
 nss_altfiles_set_users_groups () {
