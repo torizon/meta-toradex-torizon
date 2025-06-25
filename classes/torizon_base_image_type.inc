@@ -302,7 +302,7 @@ find_uboot_env_blob () {
 # Both of the above files are generated in the deployment directory.
 #
 gen_bootloader_ota_files () {
-    local deploydir binfile binfile_out \
+    local deploydir binfile binfile_out suffix \
           verfile otafile envfile \
           envinfo_msg envinfo_off envinfo_siz addjson
 
@@ -316,63 +316,74 @@ gen_bootloader_ota_files () {
     fi
 
     deploydir="${DEPLOY_DIR_IMAGE}"
-    binfile="${deploydir}/${UBOOT_BINARY_OTA}"
     verfile="${deploydir}/u-boot-version.json"
+    envfile="${deploydir}/u-boot-initial-env.raw"
 
-    if [ ! -f "${binfile}" ]; then
-        bbfatal "Could not find bootloader binary file '${binfile}'"
-    fi
     if [ ! -f "${verfile}" ]; then
         bbfatal "Could not find bootloader version file '${verfile}'"
     fi
+    if [ ! -f "${envfile}" ]; then
+        bbfatal "Could not find bootloader environment file '${envfile}'"
+    fi
 
-    binfile_out="${deploydir}/u-boot-ota.bin"
-    ln -sfnr $(readlink -f ${binfile}) ${binfile_out}
+    for binfile in ${UBOOT_BINARY_OTA}; do
+        suffix=""
+        if echo "${binfile}" | grep -q ":"; then
+            suffix="-${binfile#*:}"
+            binfile="${binfile%:*}"
+        fi
 
-    otafile="${deploydir}/u-boot-ota.json"
-    envfile="${deploydir}/u-boot-initial-env.raw"
+        binfile="${deploydir}/${binfile}"
+        binfile_out="${deploydir}/u-boot-ota${suffix}.bin"
+        otafile="${deploydir}/u-boot-ota${suffix}.json"
 
-    # Determine environment location and size inside u-boot binary.
-    envinfo_msg=$(find_uboot_env_blob "${binfile_out}" "${envfile}")
-    envinfo_off=$(echo "${envinfo_msg}" | sed 's/.* offset=\([0-9]\+\).*/\1/')
-    envinfo_siz=$(echo "${envinfo_msg}" | sed 's/.* size=\([0-9]\+\).*/\1/')
+        if [ ! -f "${binfile}" ]; then
+            bbfatal "Could not find bootloader binary file '${binfile}'"
+        fi
+        ln -vsfnr $(readlink -f ${binfile}) ${binfile_out}
 
-    # Sanity check (arbitrary limits):
-    [ "${envinfo_off}" -gt 64 -a "${envinfo_siz}" -gt 32 ]
+        # Determine environment location and size inside U-Boot binary.
+        envinfo_msg=$(find_uboot_env_blob "${binfile_out}" "${envfile}")
+        envinfo_off=$(echo "${envinfo_msg}" | sed 's/.* offset=\([0-9]\+\).*/\1/')
+        envinfo_siz=$(echo "${envinfo_msg}" | sed 's/.* size=\([0-9]\+\).*/\1/')
 
-    # Augment the information file with the u-boot environment location and size.
-    rm -f ${otafile}
-    cp -TLp ${verfile} ${otafile}
+        # Sanity check (arbitrary limits):
+        [ "${envinfo_off}" -gt 64 -a "${envinfo_siz}" -gt 32 ]
 
-    # Following sed command will take a JSON file like this:
-    # {
-    #   "key1": "value1",
-    #   "key2": "value2"
-    # }
-    # and turn it into something like this:
-    # {
-    #   "key1": "value1",
-    #   "key2": "value2",
-    # @@INSERT@@
-    # }
-    sed -i -n -e '
-        N;             # Pattern space contains current and next line
-        h;             # Save pattern space into hold space
-        s/ *\n//g;     # Remove new lines and spaces at end of line from pattern space
-        /[^,]}/ {      # Add comma and insertion point text
-            x;
-            s/ *\n/,\n@@INSERT@@\n/;
-            p;
-            d;
-        };
-        x;             # Get the pattern space with new lines back
-        P;             # Print first line
-        D;             # Delete first line and restart
-    ' ${otafile}
+        # Augment the information file with the U-Boot environment location and size.
+        rm -f ${otafile}
+        cp -TLp ${verfile} ${otafile}
 
-    # Add new keys at insertion point.
-    addjson="  \"envoffset\": ${envinfo_off},\n  \"envsize\": ${envinfo_siz}"
-    sed -i -e "s/@@INSERT@@/${addjson}/" ${otafile}
+        # Following sed command will take a JSON file like this:
+        # {
+        #   "key1": "value1",
+        #   "key2": "value2"
+        # }
+        # and turn it into something like this:
+        # {
+        #   "key1": "value1",
+        #   "key2": "value2",
+        # @@INSERT@@
+        # }
+        sed -i -n -e '
+            N;             # Pattern space contains current and next line
+            h;             # Save pattern space into hold space
+            s/ *\n//g;     # Remove new lines and spaces at end of line from pattern space
+            /[^,]}/ {      # Add comma and insertion point text
+                x;
+                s/ *\n/,\n@@INSERT@@\n/;
+                p;
+                d;
+            };
+            x;             # Get the pattern space with new lines back
+            P;             # Print first line
+            D;             # Delete first line and restart
+        ' ${otafile}
+
+        # Add new keys at insertion point.
+        addjson="  \"envoffset\": ${envinfo_off},\n  \"envsize\": ${envinfo_siz}"
+        sed -i -e "s/@@INSERT@@/${addjson}/" ${otafile}
+    done
 }
 
 IMAGE_PREPROCESS_COMMAND += "adjust_rootfs_datetime;"
