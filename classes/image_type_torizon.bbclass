@@ -91,16 +91,21 @@ UBOOT_BINARY_OTA:apalis-imx8 = "imx-boot"
 UBOOT_BINARY_OTA:colibri-imx8x = "imx-boot"
 UBOOT_BINARY_OTA:verdin-imx8mm = "imx-boot"
 UBOOT_BINARY_OTA:verdin-imx8mp = "imx-boot"
-UBOOT_BINARY_OTA:verdin-am62 = "u-boot.img"
-UBOOT_BINARY_OTA:verdin-am62p = "u-boot.img"
+UBOOT_BINARY_OTA:verdin-am62 = " \
+    firmware-verdin-am62-gp.bin:gp \
+    firmware-verdin-am62-hs-fs.bin:hs-fs \
+    firmware-verdin-am62-hs.bin:hs \
+"
+UBOOT_BINARY_OTA:verdin-am62p = " \
+    firmware-verdin-am62px-hs-fs.bin:hs-fs \
+    firmware-verdin-am62px-hs.bin:hs \
+"
 UBOOT_BINARY_OTA:aquila-am69 = "u-boot.img"
 UBOOT_BINARY_OTA:toradex-smarc-imx8mp = "u-boot.bin"
 UBOOT_BINARY_OTA:toradex-smarc-imx95 = "u-boot.bin"
 UBOOT_BINARY_OTA:qemuarm64 = "u-boot.bin"
 
 # disable for now while we investigate build issues
-UBOOT_BINARY_OTA_IGNORE:verdin-am62 = "1"
-UBOOT_BINARY_OTA_IGNORE:verdin-am62p = "1"
 UBOOT_BINARY_OTA_IGNORE:aquila-am69 = "1"
 UBOOT_BINARY_OTA_IGNORE:toradex-smarc-imx8mp = "1"
 UBOOT_BINARY_OTA_IGNORE:toradex-smarc-imx95 = "1"
