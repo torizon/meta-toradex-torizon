@@ -25,6 +25,9 @@ DEPLOY_DIR = "\${TI_COMMON_DEPLOY}\${@'' if d.getVar('BB_CURRENT_MC') == 'defaul
 # Accept Synaptics FW license
 LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
 
+# ease up disk space requirements
+INHERIT += "rm_work"
+
 # Torizon
 include conf/machine/include/\${MACHINE}.inc
 EOF

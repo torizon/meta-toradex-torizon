@@ -101,6 +101,7 @@ CFS_INSTALL_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
 do_install[prefuncs] += "${CFS_INSTALL_PREFUNCS}"
 do_install[depends] += "${CFS_INSTALL_DEPENDS}"
 do_install[file-checksums] += "${CFS_INSTALL_FILE_CHECKSUMS}"
+do_install[nostamp] = "1"
 
 do_install:append:cfs-signed() {
     # Bundled into initramfs-module-composefs:
@@ -112,6 +113,7 @@ do_install:append:cfs-signed() {
 # Adding modules so plymouth can show the splash screen during boot
 SRC_URI:append:mx8-nxp-bsp = " file://50-imx8-graphics.conf"
 RDEPENDS:initramfs-module-kmod:append:mx8-nxp-bsp = " \
+    kernel-module-irq-imx-irqsteer \
     kernel-module-display-connector \
     kernel-module-lontium-lt8912b \
     kernel-module-sec-dsim \
@@ -124,7 +126,7 @@ do_install:append:mx8-nxp-bsp() {
     install -m 0755 ${WORKDIR}/50-imx8-graphics.conf ${D}/etc/modules-load.d/50-imx8-graphics.conf
 }
 
-SRC_URI:append:ti-soc = " file://50-am62-graphics.conf"
+SRC_URI:append:ti-soc = " file://50-ti-graphics.conf"
 RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
     kernel-module-pwm-tiehrpwm \
     kernel-module-tidss \
@@ -137,7 +139,12 @@ RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
 
 do_install:append:ti-soc() {
     install -d ${D}/etc/modules-load.d/
-    install -m 0755 ${WORKDIR}/50-am62-graphics.conf ${D}/etc/modules-load.d/50-am62-graphics.conf
+    install -m 0755 ${WORKDIR}/50-ti-graphics.conf ${D}/etc/modules-load.d/50-ti-graphics.conf
+}
+
+RDEPENDS:initramfs-module-kmod:append:beagley-ai = " kernel-module-ite-it66121"
+do_install:append:beagley-ai() {
+    echo "ite_it66121" >> ${D}/etc/modules-load.d/50-ti-graphics.conf
 }
 
 # Required to ensure runtime SPDX data is updated when kernel modules change

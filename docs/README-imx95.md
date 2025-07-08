@@ -43,6 +43,10 @@ Flash the Device
 2. Download [uuu](https://github.com/nxp-imx/mfgtools/releases/tag/uuu_1.5.201) or build it from [source](https://github.com/nxp-imx/mfgtools)
 3. Download image:
 ```bash
-sudo ./uuu -b emmc_all <your sdcard image>
+sudo ./uuu -b emmc_all <bootloader> <wic image>
+```
+For example, flashing a local build we've generated:
+```bash
+sudo ./uuu -v -b emmc_all imx-boot-imx95-19x19-verdin-sd.bin-flash_all torizon-docker-imx95-19x19-verdin-7.0.0-devel-20250602173442+build.0.wic.zst
 ```
 4. Change boot switch to `ON OFF ON OFF` (CM33 eMMC) to boot from eMMC.

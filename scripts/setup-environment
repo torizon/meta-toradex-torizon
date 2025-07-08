@@ -59,15 +59,23 @@ _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "colibri-imx8x"        "meta-toradex-nxp" \
                   "genericx86-64"        "meta-yocto/meta-yocto-bsp" \
                   "qemuarm64"            "openembedded-core/meta" \
+                  "toradex-smarc-imx8mp" "meta-toradex-nxp" \
+                  "toradex-smarc-imx95"  "meta-toradex-nxp" \
                   "verdin-am62"          "meta-toradex-ti" \
+                  "verdin-am62p"         "meta-toradex-ti" \
                   "verdin-imx8mm"        "meta-toradex-nxp" \
                   "verdin-imx8mp"        "meta-toradex")
 
-_TDX_COMMON_MACHINES=("am62pxx-evm"    "meta-ti-bsp" \
-                 "am62xx-evm"    "meta-ti-bsp" \
+_TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
+                 "am62pxx-evm"        "meta-ti-bsp" \
+                 "am62xx-evm"         "meta-ti-bsp" \
+                 "beagley-ai"         "meta-beagle" \
                  "intel-corei7-64"    "meta-intel" \
                  "imx95-19x19-verdin" "meta-imx" \
-                 "smarc-rzv2l"        "rz-community-bsp")
+                 "smarc-rzv2l"        "rz-community-bsp" \
+                 "stm32mp25-eval"     "meta-st-stm32mp" \
+                 "stm32mp15-disco"     "meta-st-stm32mp" \
+                 "stm32mp25-disco"     "meta-st-stm32mp")
 
 if [ "$(whoami)" = "root" ]; then
     echo "ERROR: do not build Torizon OS as root. Exiting..." >&2
@@ -140,7 +148,7 @@ if echo "${_TDX_TORADEX_MACHINES[@]}" | grep -q "$MACHINE"; then
 else
     # Common Torizon machines
     case "${MACHINE}" in
-        am62xx-evm|am62pxx-evm)
+        am62xx-evm|am62pxx-evm|am62lxx-evm|beagley-ai)
             # for TI boards there's only common-torizon as possible DISTRO
             MACHINE="${MACHINE}" DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-ti $@
         ;;
@@ -158,6 +166,9 @@ else
         ;;
         smarc-rzv2l)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-renesas
+        ;;
+        stm32mp25-eval|stm32mp15-disco|stm32mp25-disco)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-stm32mp
         ;;
         *)
             echo "Unknown machine ${MACHINE}!"

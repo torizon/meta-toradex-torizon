@@ -40,6 +40,17 @@ $ sudo dd if=<image-name>.wic of=/dev/<sdcard-device-name> bs=4M status=progress
 $ picocom -b 115200 /dev/ttyUSB0
 ```
 
+Alternate way to flash the SD Card
+======
+With the generated `.wic` file, you could use bmaptool. If you don't have it installed, you could get it by running `sudo apt install bmap-tools`.
+But first, run `lsblk` and make sure that you SD Card is not mounted. If so, please unmount all partitions beforehand.
+```bash
+$ bmaptool create -o torizon.bmap torizon.wic
+$ sudo bmaptool copy --bmap torizon.bmap torizon.wic /dev/sdx
+
+```
+Where you should replace `/dev/sdx` with the SD Card you want to flash.
+
 ---
 
 Manual Setup

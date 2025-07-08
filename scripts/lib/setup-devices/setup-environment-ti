@@ -72,16 +72,28 @@ source conf/setenv
 sed -E -i "/(^|#|#.*( |#))DISTRO .*/c\DISTRO = '${DISTRO}'" conf/local.conf
 sed -E -i "/(^|#|#.*( |#))MACHINE .*/c\MACHINE = '${MACHINE}'" conf/local.conf
 
+# Check if meta-beagle should be added to bblayers.conf or not
+if [ "${MACHINE}" = "beagley-ai" ]; then
+  if ! grep -q "^BBLAYERS.*/meta-beagle" conf/bblayers.conf; then
+    cat <<EOF >>conf/bblayers.conf
+BBLAYERS += "\${OEROOT}/sources/meta-ti/meta-beagle"
+EOF
+  fi
+fi
+
 if ! grep -q "# Torizon" conf/local.conf; then
   echo "Adapting conf/local.conf for a Torizon OS build."
   sed -i "/^TMPDIR .*/c\TMPDIR = \"\${TOPDIR}/tmp\"" conf/local.conf
   sed -i "/^PACKAGE_CLASSES .*/c\# PACKAGE_CLASSES = \"package_deb\"" conf/local.conf
   sed -i "/^EXTRA_IMAGE_FEATURES = \"debug-tweaks\"/c\# EXTRA_IMAGE_FEATURES = \"debug-tweaks\"" conf/local.conf
-  sed -i "/^SSTATE_DIR .*/c\SSTATE_DIR= \"\${TOPDIR}/sstate-cache\"" conf/local.conf
+  sed -i "/^SSTATE_DIR .*/c\SSTATE_DIR= \"\${TOPDIR}/../sstate-cache\"" conf/local.conf
 
   cat <<EOF >>conf/local.conf
 # Where to save the packages and images
 TI_COMMON_DEPLOY = "\${TOPDIR}/deploy"
+
+# ease up disk space requirements
+INHERIT += "rm_work"
 
 # Torizon
 include conf/machine/include/\${MACHINE}.inc

@@ -17,6 +17,9 @@ TMPDIR = "/build/tmp"
 # Where to save the packages and images
 DEPLOY_DIR = "/build/deploy"
 
+# ease up disk space requirements
+INHERIT += "rm_work"
+
 # Torizon
 include conf/machine/include/\${MACHINE}.inc
 EOF

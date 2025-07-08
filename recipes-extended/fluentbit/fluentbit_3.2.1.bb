@@ -17,13 +17,14 @@ DEPENDS = "\
 "
 DEPENDS:append:libc-musl = " fts"
 
-SRCREV = "431fa79ae27edaef8d050a7af6f038f4400193a1"
+SRCREV = "600b5a955b5ef7b9d025e0c128432260d0c6a5f1"
 SRC_URI = "\
-    git://github.com/fluent/fluent-bit.git;branch=3.1;protocol=https \
+    git://github.com/fluent/fluent-bit.git;branch=master;protocol=https \
     file://0001-lib-Do-not-use-private-makefile-targets-in-CMakelist.patch \
     file://0002-flb_info.h.in-Do-not-hardcode-compilation-directorie.patch \
     file://0003-CMakeLists.txt-Revise-init-manager-deduction.patch \
     file://0004-wasm-avoid-cmake-try_run-when-cross-compiling.patch \
+    file://0005-cprof_encode_text.c-fix-wrong-pointer-assignment.patch \
 "
 SRC_URI:append:libc-musl = "\
     file://0004-chunkio-Link-with-fts-library-with-musl.patch \
@@ -42,6 +43,7 @@ PACKAGECONFIG ??= "\
     ipo \
     metrics \
     parser \
+    prefer-system-libs \
     proxy-go \
     record-accessor \
     regex \
@@ -54,6 +56,12 @@ PACKAGECONFIG ??= "\
 "
 # See https://github.com/fluent/fluent-bit/issues/7248#issuecomment-1631280496
 PACKAGECONFIG:remove:toolchain-clang = "ipo"
+
+# Use system libs
+PACKAGECONFIG[prefer-system-libs] = "-DFLB_PREFER_SYSTEM_LIBS=Yes,-DFLB_PREFER_SYSTEM_LIBS=No, nghttp2 c-ares"
+DEPENDS += " ${@bb.utils.contains('PACKAGECONFIG', 'prefer-system-libs backtrace', 'libbacktrace', '', d)}"
+DEPENDS += " ${@bb.utils.contains('PACKAGECONFIG', 'prefer-system-libs jemalloc', 'jemalloc', '', d)}"
+DEPENDS += " ${@bb.utils.contains('PACKAGECONFIG', 'prefer-system-libs luajit', 'luajit', '', d)}"
 
 PACKAGECONFIG[all] = "-DFLB_ALL=Yes,-DFLB_ALL=No"
 PACKAGECONFIG[arrow] = "-DFLB_ARROW=Yes,-DFLB_ARROW=No"
@@ -104,8 +112,8 @@ PACKAGECONFIG[windows-defaults] = "-DFLB_WINDOWS_DEFAULTS=Yes,-DFLB_WINDOWS_DEFA
 PACKAGECONFIG[minimal] = "-DFLB_MINIMAL=Yes,-DFLB_MINIMAL=No"
 
 # Without zstd dependency, kafka plugin build fails at link attempt against native libzstd.so
-PACKAGECONFIG[in-kafka] = "-DFLB_IN_KAFKA=ON,-DFLB_IN_KAFKA=OFF,librdkafka zstd"
-PACKAGECONFIG[out-kafka] = "-DFLB_OUT_KAFKA=ON,-DFLB_OUT_KAFKA=OFF,librdkafka zstd"
+PACKAGECONFIG[in-kafka] = "-DFLB_IN_KAFKA=ON,-DFLB_IN_KAFKA=OFF,librdkafka zstd curl"
+PACKAGECONFIG[out-kafka] = "-DFLB_OUT_KAFKA=ON,-DFLB_OUT_KAFKA=OFF,librdkafka zstd curl"
 
 SYSTEMD_SERVICE:${PN} = "fluent-bit.service"
 

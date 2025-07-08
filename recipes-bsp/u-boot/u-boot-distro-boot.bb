@@ -222,6 +222,7 @@ inherit deploy
 UBOOT_BOOT_PARTITION_NUMBER ?= "1"
 OTAROOT_PARTITION_NUMBER ?= "1"
 UENV_EXTRA_CONFIGS ?= "true"
+BOOTARG_ROOT ?= "LABEL=otaroot"
 
 do_compile() {
     sed -e 's/@@UBOOT_BOOT_PARTITION_NUMBER@@/${UBOOT_BOOT_PARTITION_NUMBER}/' \
@@ -239,6 +240,7 @@ do_compile() {
         -e 's/@@KERNEL_IMAGETYPE@@/${KERNEL_IMAGETYPE}/' \
         -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
         -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \
+        -e 's/@@BOOTARG_ROOT@@/${BOOTARG_ROOT}/' \
         ${WORKDIR}/uEnv.txt.in > ${WORKDIR}/uEnv.txt.temp
 
     if [ "${FUSE_SUPPORT}" = "1" ]; then
