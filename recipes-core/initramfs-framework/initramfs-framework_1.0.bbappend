@@ -113,6 +113,9 @@ do_install:append:cfs-signed() {
 # Adding modules so plymouth can show the splash screen during boot
 SRC_URI:append:mx8-nxp-bsp = " file://50-imx8-graphics.conf"
 RDEPENDS:initramfs-module-kmod:append:mx8-nxp-bsp = " \
+    kernel-module-fsl-imx-ldb \
+    kernel-module-imx8mp-ldb \
+    kernel-module-phy-fsl-imx8mp-lvds \
     kernel-module-irq-imx-irqsteer \
     kernel-module-display-connector \
     kernel-module-lontium-lt8912b \
