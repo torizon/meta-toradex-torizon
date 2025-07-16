@@ -40,42 +40,6 @@ OSTREE_CREATE_DIFF = "1"
 OSTREE_COMMIT_SUBJECT = "${DISTRO_VERSION}"
 OSTREE_COMMIT_SUBJECT[vardepsexclude] = "DISTRO_VERSION"
 
-# Get git hashes from all layers and print it as GLib g_variant_parse() string
-# inspiration taken from image-buildinfo
-def get_layer_revision_information(d):
-    import bb.process
-    import subprocess
-    try:
-        layers = []
-        paths = (d.getVar("BBLAYERS" or "")).split()
-
-        for path in paths:
-            # Use relative path from ${OEROOT}/layers/ as layer name
-            name = os.path.relpath(path, os.path.join(d.getVar('OEROOT'), "layers"))
-            rev, _ = bb.process.run('export PSEUDO_UNLOAD=1; git rev-parse HEAD', cwd=path)
-            branch, _ = bb.process.run('export PSEUDO_UNLOAD=1; git rev-parse --abbrev-ref HEAD', cwd=path)
-            try:
-                subprocess.check_output("""cd %s; export PSEUDO_UNLOAD=1; set -e;
-                                        git diff --quiet --no-ext-diff
-                                        git diff --quiet --no-ext-diff --cached""" % path,
-                                        shell=True,
-                                        stderr=subprocess.STDOUT)
-                modified = ""
-            except subprocess.CalledProcessError as ex:
-                modified = ":modified"
-            # Key/value pair per layer
-            layers.append("'{}': '{}:{}{}'".format(name, branch.strip(), rev.strip(), modified))
-
-        # Create GLib dictionary
-        return "{" + ",".join(layers) + "}"
-    except:
-        e = sys.exc_info()[0]
-        bb.warn("Failed to get layers information. Caused by layer at {}. Exception: {}".format(path, e))
-
-# Use immediate expansion here to avoid calling a somewhat costly function whenever
-# EXTRA_OSTREE_COMMIT is expanded.
-OSTREE_LAYER_REVISION_INFO := "${@get_layer_revision_information(d)}"
-
 EXTRA_OSTREE_COMMIT[vardepsexclude] = "OSTREE_KERNEL_SOURCE_META_DATA"
 EXTRA_OSTREE_COMMIT = " \
     --add-metadata-string=oe.machine="${MACHINE}" \
