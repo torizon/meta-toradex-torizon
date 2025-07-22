@@ -15,7 +15,7 @@ SRC_URI = " \
   file://aktualizr-tmpfiles.conf \
 "
 
-SRCREV = "9444e804662e7c6e38e5f615f3e368f4a78d1fdb"
+SRCREV = "a062e38af13ddeb6ce668e6c1889e43992f0c643"
 SRCREV:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
