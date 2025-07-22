@@ -139,6 +139,10 @@ SDKMACHINE ?= "${SDKMACHINE}"
 
 # Extra options that can be changed by the user
 INHERIT += "rm_work cyclonedx-export"
+
+# FIXME: Dirty hack to have CycloneDX SBOMs uploaded to artifactory
+CYCLONEDX_EXPORT_SBOM = "${_TDX_BUILDDIR}/deploy/images/${MACHINE}/cyclonedx_sbom.json"
+CYCLONEDX_EXPORT_VEX = "${_TDX_BUILDDIR}/deploy/images/${MACHINE}/cyclonedx_vex.json"
 EOF
 else
     sed -i "s/^DISTRO ?= \"[^\"]*\"$/DISTRO ?= \"${DISTRO}\"/" conf/auto.conf
