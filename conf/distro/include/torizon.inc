@@ -13,6 +13,8 @@ INHERIT += "toradex-sanity toradex-mirrors"
 # We do not need teziimg, ota-ext4 or wic images by default
 IMAGE_FSTYPES_REMOVE ?= "ota-ext4 wic wic.gz wic.bmap wic.xz"
 
+DISTRO_FEATURES_REMOVE ?= "3g alsa irda pcmcia nfc ldconfig pulseaudio wayland x11 ptest multiarch vulkan"
+
 # Compatibility with toradex layers
 BBMASK += " \
     /meta-toradex-bsp-common/recipes-core/systemd/systemd_%.bbappend \

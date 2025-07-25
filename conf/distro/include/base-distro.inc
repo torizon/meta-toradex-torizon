@@ -39,7 +39,7 @@ IMAGE_BOOT_FILES_REMOVE:sota = "boot.scr-${MACHINE};boot.scr overlays.txt overla
 IMAGE_BOOT_FILES_REMOVE:append:apalis-imx8 = " hdmitxfw.bin dpfw.bin"
 
 DISTRO_FEATURES:append = " virtualization stateless-system"
-DISTRO_FEATURES:remove = "3g alsa irda pcmcia nfc ldconfig pulseaudio wayland x11 ptest multiarch vulkan"
+DISTRO_FEATURES:remove = "${DISTRO_FEATURES_REMOVE}"
 DISTRO_FEATURES:imx-generic-bsp:remove = "opengl"
 
 # No need for x11 even for native
