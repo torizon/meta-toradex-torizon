@@ -1,3 +1,3 @@
 require common-stm32mp.inc
 
-hostname:pn-base-files = "torizon-stm32mp15-disco"
+hostname:pn-base-files = "stm32mp15-disco"

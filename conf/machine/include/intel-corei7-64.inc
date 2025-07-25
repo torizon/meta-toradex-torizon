@@ -19,7 +19,7 @@ UBOOT_BINARY_OTA_IGNORE:intel-corei7-64 = "1"
 IMAGE_FSTYPES_REMOVE = "hddimg teziimg"
 IMAGE_FSTYPES:append = " wic.vmdk wic.vdi"
 
-hostname:pn-base-files = "torizon-x86"
+hostname:pn-base-files = "intel-corei7-64"
 
 PREFERRED_PROVIDER_u-boot-default-script = ""
 PREFERRED_PROVIDER_u-boot-fw-utils = "grub-ota-fallback"
