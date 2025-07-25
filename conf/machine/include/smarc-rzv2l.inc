@@ -9,6 +9,6 @@ PREFERRED_PROVIDER_u-boot-default-script:sota = "u-boot-distro-boot"
 IMAGE_BOOT_FILES:append = " boot.scr-${MACHINE};boot.scr"
 WKS_FILE_DEPENDS:append = " u-boot-default-script"
 
-hostname:pn-base-files = "torizon-rzv2l"
+hostname:pn-base-files = "smarc-rzv2l"
 
 PREFERRED_PROVIDER_virtual/dtb = ""
