@@ -23,3 +23,5 @@ do_install:append () {
     install -d ${D}${bindir}
     install -m 0755 ${WORKDIR}/toradex-net-rename.sh ${D}${bindir}/
 }
+
+RDEPENDS:${PN} += "bash"
