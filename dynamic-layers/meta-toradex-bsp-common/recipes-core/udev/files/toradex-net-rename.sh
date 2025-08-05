@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Assign name "ethernetN" to net devices with Toradex OUI.
 # Supports Toradex boards with single/dual ethernet interfaces.
@@ -24,12 +24,12 @@ devaddr="${devpath}/address"
 case $oui in
   00:14:2d)
     max_range=16777216 # 16777215 = 0xFFFFFF, maximum valid serial for MAC OUI 1 (00:14:2D)
-    mac0_serial=$(( $(tr '\0' '\n' < /proc/device-tree/serial-number) + 0 ))
+    mac0_serial=$(( 10#$(tr '\0' '\n' < /proc/device-tree/serial-number) + 0 ))
     ;;
   8c:06:cb)
     max_range=33554432 # 33554431 = 0x1FFFFFF, maximum valid serial for MAC OUI 2 (8C:06:CB)
     # Correct MAC 0 serial, so we can derive the correct MAC address, by removing the second OUI range offset
-    mac0_serial=$(( $(tr '\0' '\n' < /proc/device-tree/serial-number) - 16777216))
+    mac0_serial=$(( 10#$(tr '\0' '\n' < /proc/device-tree/serial-number) - 16777216 ))
     ;;
 esac
 
@@ -47,7 +47,7 @@ fi
 # 0x100000(1048576) higher than the first MAC address
 mac1_offset=1048576
 # shellcheck disable=SC2034
-mac1_serial=$((mac0_serial + mac1_offset))
+mac1_serial=$(( 10#$mac0_serial + 10#$mac1_offset ))
 
 for i in $(seq 0 $((devs - 1)))
 do
