@@ -1,48 +1,57 @@
 meta-toradex-torizon
-===========================================
+====================
 Torizon OS is an embedded Linux distribution for the Torizon platform. It
 features, among other essential services, a container runtime and components
 for secure remote over-the-air (OTA) updates.
 
 This layer provides metadata to build two distinct Torizon OS flavors:
-- Torizon OS: built on top of Toradex's BSP.
-- Common Torizon: built on top of BSPs from third-parties.
+- **Torizon**: built on top of Toradex's BSP.
+- **Common Torizon**: built on top of BSPs from third-parties.
 
 Building Torizon OS
-========
+===================
 To build Torizon OS, see the following article:
 
 https://developer.toradex.com/knowledge-base/build-torizoncore
 
 Building Common Torizon OS
-========
-Download the BSP layers for your machine, the `meta-toradex-torizon` layer, and other layers that are required to build Common Torizon.
-To build Common Torizon on the `scarthgap` branch:
-```bash
-$ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y
-$ git clone https://github.com/uptane/meta-updater.git -b scarthgap
-$ git clone https://git.yoctoproject.org/git/meta-virtualization -b scarthgap
-```
+==========================
+Start with the machine-specific build instructions below:
 
-Then, source the appropriate script your BSP uses to setup the build environment and edit `conf/bblayers.conf` to add `meta-toradex-torizon` layer and its dependencies (and any other dependency that might be missing).
+| SoC Vendor         | Platform / Board                            | Documentation                                |
+| :----------------- | :------------------------------------------ | :------------------------------------------- |
+| Texas Instruments  | AM62x/AM62L/AM62P SK EVM and BeagleY-AI     | [README-ti.md](./docs/README-ti.md)          |
+| Toradex            | i.MX95 Verdin EVK                           | [README-imx95.md](./docs/README-imx95.md)    |
+| STMicroelectronics | STM32MP1/STM32MP2                           | [README-stm32mp.md](./docs/README-stm32mp.md)|
+| Renesas            | RZ/V2L EVKIT                                | [README-rzv2l.md](./docs/README-rzv2l.md)    |
+| Intel              | x86-64                                      | [README-x86.md](./docs/README-x86.md)        |
 
-After that, edit `conf/local.conf` file to set the MACHINE you wish to build (if not set already), and change the DISTRO to `DISTRO='common-torizon'`.
+If your machine is not listed above or you prefer a manual setup, you can follow these generic steps:
 
-Start building one of the available Torizon images:
-* torizon-docker
-* torizon-minimal
-* torizon-podman (**experimental**)
+1. **Download the layers** for the `scarthgap` branch:
 
-Below you'll find documentation to build Common Torizon to a selection of machines maintained in this layer.
+    ```bash
+    $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y
+    $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
+    $ git clone https://git.yoctoproject.org/git/meta-virtualization -b scarthgap
+    ```
 
-* [Texas Instruments AM62x/AM62L/AM62P SK EVM and BeagleY-AI](./docs/README-ti.md)
-* [Toradex i.MX95 Verdin EVK](./docs/README-imx95.md)
-* [Renesas RZ/V2L EVKIT](./docs/README-rzv2l.md)
-* [Intel x86](./docs/README-x86.md)
+2. **Set up the environment**: Source the appropriate script your BSP uses to set up the build environment.
+3. **Configure your build**:
+
+- Add the `meta-toradex-torizon` layer and its dependencies to your `conf/bblayers.conf` file.
+- Edit `conf/local.conf` to set the `MACHINE` you wish to build.
+- In the same file, set the distribution to `DISTRO='common-torizon'`.
+
+4. **Build an image**: Start building one of the available Torizon images:
+
+- `torizon-docker`
+- `torizon-minimal`
+- `torizon-podman` (**experimental**)
 
 Reporting Issues
 ================
-If you encounter any issues when using or developing Torizon OS, you can open a new issue in this repository's issue tracker or create a new Technical Support topic in the Toradex Developer Community: https://community.toradex.com/.
+If you encounter any issues when using or developing Torizon OS, you can open a new issue in this repository's issue tracker or create a new Technical Support topic in the [Toradex Developer Community](https://community.toradex.com/).
 
 Contributing
 ============
