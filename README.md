@@ -1,5 +1,5 @@
 meta-toradex-torizon
-===========================================
+====================
 Torizon OS is an embedded Linux distribution for the Torizon platform. It
 features, among other essential services, a container runtime and components
 for secure remote over-the-air (OTA) updates.
@@ -9,7 +9,7 @@ This layer provides metadata to build two distinct Torizon OS flavors:
 - **Common Torizon**: built on top of BSPs from third-parties.
 
 Building Torizon OS
-========
+===================
 To build Torizon OS, see the following article:
 
 https://developer.toradex.com/knowledge-base/build-torizoncore
@@ -51,7 +51,7 @@ If your machine is not listed above or you prefer a manual setup, you can follow
 
 Reporting Issues
 ================
-If you encounter any issues when using or developing Torizon OS, you can open a new issue in this repository's issue tracker or create a new Technical Support topic in the Toradex Developer Community: https://community.toradex.com/.
+If you encounter any issues when using or developing Torizon OS, you can open a new issue in this repository's issue tracker or create a new Technical Support topic in the [Toradex Developer Community](https://community.toradex.com/).
 
 Contributing
 ============
