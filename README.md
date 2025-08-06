@@ -5,8 +5,8 @@ features, among other essential services, a container runtime and components
 for secure remote over-the-air (OTA) updates.
 
 This layer provides metadata to build two distinct Torizon OS flavors:
-- Torizon OS: built on top of Toradex's BSP.
-- Common Torizon: built on top of BSPs from third-parties.
+- **Torizon**: built on top of Toradex's BSP.
+- **Common Torizon**: built on top of BSPs from third-parties.
 
 Building Torizon OS
 ========
