@@ -37,6 +37,7 @@ Below you'll find documentation to build Common Torizon to a selection of machin
 
 * [Texas Instruments AM62x/AM62L/AM62P SK EVM and BeagleY-AI](./docs/README-ti.md)
 * [Toradex i.MX95 Verdin EVK](./docs/README-imx95.md)
+* [STMicroelectronics STM32MP1/STM32MP2](./docs/README-stm32mp.md)
 * [Renesas RZ/V2L EVKIT](./docs/README-rzv2l.md)
 * [Intel x86](./docs/README-x86.md)
 
