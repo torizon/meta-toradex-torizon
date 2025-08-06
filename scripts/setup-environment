@@ -64,7 +64,8 @@ _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "verdin-am62"          "meta-toradex-ti" \
                   "verdin-am62p"         "meta-toradex-ti" \
                   "verdin-imx8mm"        "meta-toradex-nxp" \
-                  "verdin-imx8mp"        "meta-toradex")
+                  "verdin-imx8mp"        "meta-toradex-nxp" \
+                  "verdin-imx95"        "meta-toradex-nxp")
 
 _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "am62pxx-evm"        "meta-ti-bsp" \
