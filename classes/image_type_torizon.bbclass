@@ -109,6 +109,7 @@ UBOOT_BINARY_OTA:qemuarm64 = "u-boot.bin"
 UBOOT_BINARY_OTA_IGNORE:aquila-am69 = "1"
 UBOOT_BINARY_OTA_IGNORE:toradex-smarc-imx8mp = "1"
 UBOOT_BINARY_OTA_IGNORE:toradex-smarc-imx95 = "1"
+UBOOT_BINARY_OTA_IGNORE:verdin-imx95 = "1"
 UBOOT_BINARY_OTA_IGNORE:genericx86-64 = "1"
 
 TEZI_IMAGE_TEZIIMG_PREFUNCS:prepend = "gen_torizon_prov_data pack_tcb_signing_binaries_in_teziimg "

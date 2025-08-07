@@ -29,7 +29,7 @@ elif [ -n "$BASH_VERSION" ]; then
     set +o noclobber
 fi
 
-# DISTRO defaults to 'torizon' for am62(p)/imx8(m|p|SMARC)/imx95/am69/qemuarm64/genericx86-64 machines
+# DISTRO defaults to 'torizon' for am62(p)/imx8(m|p|SMARC)/imx95(verdin|SMARC)/am69/qemuarm64/genericx86-64 machines
 # DISTRO defaults to 'torizon-upstream' for other machines
 _TDX_DISTRO_DEFAULT="torizon-upstream" && echo "$MACHINE" | grep -E -q '(imx8|imx95|am62|am69|qemuarm64|genericx86-64)' && _TDX_DISTRO_DEFAULT="torizon"
 DISTRO=${DISTRO:-$_TDX_DISTRO_DEFAULT}
