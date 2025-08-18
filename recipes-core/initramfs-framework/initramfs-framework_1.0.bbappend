@@ -42,12 +42,14 @@ FILES:initramfs-module-composefs:append:cfs-signed = "\
     ${sysconfdir}/ostree/initramfs-root-binding.key \
 "
 
+require initramfs-graphics.inc
+
 SUMMARY:initramfs-module-kmod = "initramfs support for loading kernel modules"
-RDEPENDS:initramfs-module-kmod = "${PN}-base"
 FILES:initramfs-module-kmod = "\
     /init.d/01-kmod \
     /etc/modules-load.d/* \
 "
+RDEPENDS:initramfs-module-kmod = "${@get_initramfs_kmods(d)} ${PN}-base"
 
 do_install:append() {
     install -m 0755 ${WORKDIR}/plymouth ${D}/init.d/02-plymouth
@@ -110,44 +112,14 @@ do_install:append:cfs-signed() {
     	            ${D}${sysconfdir}/ostree/initramfs-root-binding.key
 }
 
-# Adding modules so plymouth can show the splash screen during boot
-SRC_URI:append:mx8-nxp-bsp = " file://50-imx8-graphics.conf"
-RDEPENDS:initramfs-module-kmod:append:mx8-nxp-bsp = " \
-    kernel-module-fsl-imx-ldb \
-    kernel-module-imx8mp-ldb \
-    kernel-module-phy-fsl-imx8mp-lvds \
-    kernel-module-irq-imx-irqsteer \
-    kernel-module-display-connector \
-    kernel-module-lontium-lt8912b \
-    kernel-module-sec-dsim \
-    kernel-module-sec-mipi-dsim-imx \
-    kernel-module-ti-sn65dsi83 \
-"
-
-do_install:append:mx8-nxp-bsp() {
-    install -d ${D}/etc/modules-load.d/
-    install -m 0755 ${WORKDIR}/50-imx8-graphics.conf ${D}/etc/modules-load.d/50-imx8-graphics.conf
-}
-
-SRC_URI:append:ti-soc = " file://50-ti-graphics.conf"
-RDEPENDS:initramfs-module-kmod:append:ti-soc = " \
-    kernel-module-pwm-tiehrpwm \
-    kernel-module-tidss \
-    kernel-module-display-connector \
-    kernel-module-tc358768 \
-    kernel-module-ti-sn65dsi83 \
-    kernel-module-lontium-lt8912b \
-    kernel-module-sii902x \
-"
-
-do_install:append:ti-soc() {
-    install -d ${D}/etc/modules-load.d/
-    install -m 0755 ${WORKDIR}/50-ti-graphics.conf ${D}/etc/modules-load.d/50-ti-graphics.conf
-}
-
-RDEPENDS:initramfs-module-kmod:append:beagley-ai = " kernel-module-ite-it66121"
-do_install:append:beagley-ai() {
-    echo "ite_it66121" >> ${D}/etc/modules-load.d/50-ti-graphics.conf
+do_install:append() {
+    if [ -n "${INITRAMFS_EXTRA_KMODS}" ]; then
+        install -d ${D}${sysconfdir}/modules-load.d/
+        install -m 0755 /dev/null ${D}${sysconfdir}/modules-load.d/50-graphics.conf
+        for i in ${INITRAMFS_EXTRA_KMODS}; do
+            echo "${i}" >> ${D}${sysconfdir}/modules-load.d/50-graphics.conf
+        done
+    fi
 }
 
 # Required to ensure runtime SPDX data is updated when kernel modules change
