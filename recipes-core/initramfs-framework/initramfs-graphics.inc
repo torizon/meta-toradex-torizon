@@ -15,6 +15,8 @@ INITRAMFS_EXTRA_KMODS:mx8-nxp-bsp = "\
     ti_sn65dsi83 \
     lontium_lt8912b \
 "
+# On Toradex SMARC iMX8MP we need this extra module, before the rest of iMX8 modules
+INITRAMFS_EXTRA_KMODS:prepend:toradex-smarc-imx8mp = "i2c_mux_pca954x "
 
 # Modules necessary for our TI modules to display splash screen.
 INITRAMFS_EXTRA_KMODS:ti-soc = "\
