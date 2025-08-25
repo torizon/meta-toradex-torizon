@@ -6,9 +6,30 @@ BUILDDIR="${1:-build-ti-$DISTRO}"
 mkdir -p "${BUILDDIR}/conf"
 cd "${BUILDDIR}"
 
+function wget_retry {
+  local url="$1"
+  local output="$2"
+  local max_retries=5
+  local count=0
+  local delay=5
+
+  while [ $count -lt $max_retries ]; do
+    if wget "$url" -O "$output"; then
+      return 0
+    else
+      echo "Download failed. Retrying in $delay seconds..."
+      sleep $delay
+      count=$((count + 1))
+    fi
+  done
+
+  echo "Failed to download $url after $max_retries attempts."
+  return 1
+}
+
 if [ ! -e "conf/bblayers.conf" ]; then
   echo "Downloading sample bblayers.conf from git.ti.com..."
-  wget "https://git.ti.com/cgit/arago-project/oe-layersetup/plain/sample-files/bblayers.conf.sample" -O conf/bblayers.conf
+  wget_retry "https://git.ti.com/cgit/arago-project/oe-layersetup/plain/sample-files/bblayers.conf.sample" "conf/bblayers.conf"
   cat <<EOF >>conf/bblayers.conf
 BBLAYERS += " \\
     \${OEROOT}/sources/meta-virtualization \\
@@ -29,7 +50,7 @@ fi
 
 if [ ! -e "conf/local.conf" ]; then
   echo "Downloading sample local.conf from git.ti.com..."
-  wget "https://git.ti.com/cgit/arago-project/oe-layersetup/plain/sample-files/local-arago64-v2.conf.sample" -O conf/local.conf
+  wget_retry "https://git.ti.com/cgit/arago-project/oe-layersetup/plain/sample-files/local-arago64-v2.conf.sample" "conf/local.conf"
 fi
 
 # Adapted from the TI oe-layersetup repo, oe-layertool-setup.sh file
