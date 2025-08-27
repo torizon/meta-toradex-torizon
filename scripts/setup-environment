@@ -73,6 +73,7 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "beagley-ai"         "meta-beagle" \
                  "intel-corei7-64"    "meta-intel" \
                  "imx95-19x19-verdin" "meta-imx" \
+                 "sl1680"             "meta-synaptics" \
                  "smarc-rzv2l"        "rz-community-bsp" \
                  "stm32mp25-eval"     "meta-st-stm32mp" \
                  "stm32mp15-disco"     "meta-st-stm32mp" \
@@ -139,7 +140,7 @@ if [ -z "${MACHINE}" ]; then
     fi
 fi
 
-_TDX_LAYERS_DIR=$(find . -maxdepth 2 -type d -name meta-toradex-torizon)
+_TDX_LAYERS_DIR=$(find ~+ -maxdepth 2 -type d -name meta-toradex-torizon)
 _TDX_LAYERS_DIR=$(dirname "${_TDX_LAYERS_DIR}")
 _TDX_SCRIPTS_PATH="${_TDX_LAYERS_DIR}"/meta-toradex-torizon/scripts/lib/setup-devices
 
@@ -167,6 +168,9 @@ else
         ;;
         smarc-rzv2l)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-renesas
+        ;;
+        sl1680)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-synaptics $@
         ;;
         stm32mp25-eval|stm32mp15-disco|stm32mp25-disco)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-stm32mp
