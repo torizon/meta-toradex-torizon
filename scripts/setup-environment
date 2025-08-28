@@ -95,7 +95,7 @@ if which whiptail > /dev/null 2>&1; then
 else
     # check for dialog
     if which dialog > /dev/null 2>&1; then
-        _TDX_DIALOG_UTIL=$(which whiptail)
+        _TDX_DIALOG_UTIL=$(which dialog)
     fi
 fi
 
