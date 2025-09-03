@@ -1,0 +1,33 @@
+From 5afd424276b0cb03918238b9b818ad417abaeabc Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Tue, 30 Sep 2025 14:25:55 +0000
+Subject: [PATCH] uboot:build.sh: change build script to accept extra cfg file
+
+Change the script, so we can pass a .cfg file from u-boot Yocto
+recipe, and have it merged into the u-boot configs.
+
+Upstream-Status: Pending
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ module/uboot/build.sh | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/module/uboot/build.sh b/module/uboot/build.sh
+index 88e3615..1ea8035 100755
+--- a/module/uboot/build.sh
++++ b/module/uboot/build.sh
+@@ -28,6 +28,10 @@ build_uboot() {
+     echo "CONFIG_BOOTCOMMAND=\"bootemmc android\"" >> $tmpfile
+   fi
+ 
++  if [ -n "${extra_uboot_config}" ]; then
++    cat "${extra_uboot_config}" >> configs/${CONFIG_UBOOT_DEFCONFIG}
++  fi
++
+   ./scripts/kconfig/merge_config.sh -m configs/${CONFIG_UBOOT_DEFCONFIG} $tmpfile
+   mv .config configs/${TARGET_CONFIG}
+   rm -fv $tmpfile
+-- 
+2.34.1
+
