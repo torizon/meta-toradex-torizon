@@ -6,3 +6,6 @@ SRC_URI:append:sota = " file://0001-rpcbind.service-run-after-systemd-tmpfiles-s
 # /usr/lib/
 PACKAGECONFIG:append = ' ${@bb.utils.contains("DISTRO_FEATURES", "stateless-system", "nss-altfiles", "", d)}'
 PACKAGECONFIG[nss-altfiles] = '--with-nss-modules="files altfiles",,,'
+
+# We do not want rpcbind listening on 0.0.0.0 by default
+SYSTEMD_AUTO_ENABLE:${PN} = "disable"
