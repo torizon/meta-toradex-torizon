@@ -98,6 +98,10 @@ CORE_IMAGE_BASE_INSTALL:append:verdin-am62p = " \
     ti-img-rogue-driver \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:aquila-am69 = " \
+    ti-img-rogue-driver \
+"
+
 CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
     kernel-module-isp-vvcam \
 "
