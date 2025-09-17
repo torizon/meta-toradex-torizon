@@ -110,6 +110,10 @@ CORE_IMAGE_BASE_INSTALL:append:mx95-nxp-bsp = " \
     ${@bb.utils.contains("DISTROOVERRIDES", "common-torizon-distro", "mali-imx", "",d)} \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:verdin-imx95 = " \
+    mali-imx \
+"
+
 nss_altfiles_set_users_groups () {
 	# Make a temporary directory to be used by pseudo to find the real /etc/passwd,/etc/group
 	pseudo_dir=${WORKDIR}/pseudo-rootfs${sysconfdir}
