@@ -94,12 +94,24 @@ CORE_IMAGE_BASE_INSTALL:append:am62xx = " \
     ti-img-rogue-driver \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:verdin-am62p = " \
+    ti-img-rogue-driver \
+"
+
+CORE_IMAGE_BASE_INSTALL:append:aquila-am69 = " \
+    ti-img-rogue-driver \
+"
+
 CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
     kernel-module-isp-vvcam \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:mx95-nxp-bsp = " \
     ${@bb.utils.contains("DISTROOVERRIDES", "common-torizon-distro", "mali-imx", "",d)} \
+"
+
+CORE_IMAGE_BASE_INSTALL:append:verdin-imx95 = " \
+    mali-imx \
 "
 
 nss_altfiles_set_users_groups () {
