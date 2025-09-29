@@ -1,0 +1,130 @@
+From 04139d80c78c66a5d1e8a2ff90a1ca0c1e43d3eb Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Wed, 1 Oct 2025 09:16:16 +0000
+Subject: [PATCH] dolphin-rdk.dts: enable sdio connection
+
+Upstream-Status: Pending
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ arch/arm64/boot/dts/synaptics/dolphin-rdk.dts | 73 ++++---------------
+ 1 file changed, 14 insertions(+), 59 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts b/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts
+index 094583bdc726..6e95dad0e2cb 100644
+--- a/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts
++++ b/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts
+@@ -109,6 +109,12 @@ reg_usb0_vbus: usb0_vbus {
+ 		};
+ 	};
+ 
++	sdhci1_pwrseq: sdhci1-pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		reset-gpios = <&expander1 2 GPIO_ACTIVE_LOW>;
++		post-power-on-delay-ms = <50>;
++	};
++
+ 	bt_reg_on: bt_reg_on {
+ 		compatible = "syna,rfkill";
+ 		bt-power-gpio = <&expander1 5 GPIO_ACTIVE_HIGH>;
+@@ -181,16 +187,6 @@ expander1: gpio@44 {
+ 				gpio-controller;
+ 				#gpio-cells = <2>;
+ 			};
+-
+-			ina220@40 {
+-				compatible = "ti,ina220";
+-				reg = <0x40>;
+-			};
+-
+-			ina220@41 {
+-				compatible = "ti,ina220";
+-				reg = <0x41>;
+-			};
+ 		};
+ 
+ 		i2c@1 {
+@@ -357,13 +353,16 @@ &sdhci1 {
+ 	status = "okay";
+ 	pinctrl-0 = <&sdhci1_pmux>, <&sdhci1_gpio_pmux>;
+ 	pinctrl-names = "default";
+-	no-sdio;
+-	no-mmc;
+-	disable-wp;
++	bus-width = <4>;
+ 	sdclkdl-dc = /bits/ 8 <75>;
+ 	pad-sp = /bits/ 8 <4>;
+ 	pad-sn = /bits/ 8 <4>;
+-	vmmc-supply = <&vmmc_sdhci1>;
++	no-sd;
++	no-mmc;
++	non-removable;
++	mmc-pwrseq = <&sdhci1_pwrseq>;
++	mode1-tune;
++	keep-power-in-suspend;
+ };
+ 
+ &pcie_phy0 {
+@@ -372,7 +371,7 @@ &pcie_phy0 {
+ 
+ &pcie0 {
+ 	status = "okay";
+-	reset-gpios = <&expander1 1 GPIO_ACTIVE_LOW>;
++	/* reset-gpios = <&expander1 1 GPIO_ACTIVE_LOW>; */
+ };
+ 
+ &i2c0 {
+@@ -382,50 +381,6 @@ &i2c0 {
+ 	no-irq-suspend;
+ 	clock-frequency = <100000>;
+ 
+-	ina3221@40{
+-		compatible = "ti,ina3221";
+-		reg = <0x40>;
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		input@0 {
+-			reg = <0x0>;
+-			label = "VCORE";
+-		};
+-
+-		input@1 {
+-			reg = <0x1>;
+-			label = "VCPU";
+-		};
+-
+-		input@2 {
+-			reg = <0x2>;
+-			label = "VDDM";
+-		};
+-	};
+-
+-	ina3221@41{
+-		compatible = "ti,ina3221";
+-		reg = <0x41>;
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		input@0 {
+-			reg = <0x0>;
+-			label = "PWR_3V3";
+-		};
+-
+-		input@1 {
+-			reg = <0x1>;
+-			label = "VDDM_1V8";
+-		};
+-
+-		input@2 {
+-			reg = <0x2>;
+-			label = "VDDM_1V1";
+-		};
+-	};
+-
+ 	rpi_panel_regulator: rpi_panel_regulator@45 {
+ 		compatible = "raspberrypi,7inch-touchscreen-panel-regulator";
+ 		reg = <0x45>;
+-- 
+2.44.1
+
