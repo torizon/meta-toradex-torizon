@@ -42,6 +42,12 @@ INITRAMFS_EXTRA_KMODS:append:aquila-am69 = "\
     cdns_mhdp8546 \
 "
 
+# Additional modules needed for splash screen on Verdin AM62P
+INITRAMFS_EXTRA_KMODS:append:verdin-am62p = "\
+    cdns_dphy \
+    cdns_dsi \
+"
+
 def get_initramfs_kmods(d):
     kmods = d.getVar("INITRAMFS_EXTRA_KMODS").split()
     build_modules = [f"kernel-module-{m.replace('_', '-')}" for m in kmods]
