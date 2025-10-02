@@ -19,6 +19,12 @@ BBMASK += " \
     /meta-freescale/recipes-graphics/cairo \
 "
 
+MACHINE_FIRMWARE:append:imx-generic-bsp = " \
+    linux-firmware-rtl8723 \
+    linux-firmware-rtl8821 \
+    linux-firmware-rtl8822 \
+"
+
 # machines where Torizon is experimental
 EXPERIMENTALOVERRIDES = ""
 # Currently Torizon does not support any experimental machines, in future such machines can be added like below:
