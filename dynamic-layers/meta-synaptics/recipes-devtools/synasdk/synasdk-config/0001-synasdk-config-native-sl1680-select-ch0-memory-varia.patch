@@ -1,0 +1,58 @@
+From 9b51d68a9009bbb459674a7ffa850d1ec0034c14 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Wed, 1 Oct 2025 08:28:29 +0000
+Subject: [PATCH] synasdk-config-native:sl1680: select ch0 memory variant
+
+Select 'ch0' memory variant for Winglet
+
+Upstream-Status: Pending
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ .../sl1680_poky_aarch64_rdk/sl1680_poky_aarch64_rdk_defconfig   | 2 +-
+ .../sl1680_spi_poky_aarch64_rdk_defconfig                       | 2 +-
+ .../sl1680_usb_poky_aarch64_rdk_defconfig                       | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/product/sl1680_poky_aarch64_rdk/sl1680_poky_aarch64_rdk_defconfig b/product/sl1680_poky_aarch64_rdk/sl1680_poky_aarch64_rdk_defconfig
+index a2dfeea..8e0eb3a 100755
+--- a/product/sl1680_poky_aarch64_rdk/sl1680_poky_aarch64_rdk_defconfig
++++ b/product/sl1680_poky_aarch64_rdk/sl1680_poky_aarch64_rdk_defconfig
+@@ -128,7 +128,7 @@ CONFIG_PREBOOT_REL_PATH="preboot"
+ CONFIG_PREBOOT_DDR_TYPE="lpddr4x"
+ CONFIG_PREBOOT_MEMORY_SPEED=3733
+ CONFIG_PREBOOT_MEMORY_SIZE="4GB"
+-CONFIG_PREBOOT_MEMORY_VARIANT="default/default"
++CONFIG_PREBOOT_MEMORY_VARIANT="ch0"
+ CONFIG_PREBOOT_DDR_PHY_FW=y
+ CONFIG_PREBOOT_TEE_ENABLE=y
+ CONFIG_PREBOOT_PROFILE="generic"
+diff --git a/product/sl1680_spi_poky_aarch64_rdk/sl1680_spi_poky_aarch64_rdk_defconfig b/product/sl1680_spi_poky_aarch64_rdk/sl1680_spi_poky_aarch64_rdk_defconfig
+index 61d9b18..4a3e1c7 100755
+--- a/product/sl1680_spi_poky_aarch64_rdk/sl1680_spi_poky_aarch64_rdk_defconfig
++++ b/product/sl1680_spi_poky_aarch64_rdk/sl1680_spi_poky_aarch64_rdk_defconfig
+@@ -128,7 +128,7 @@ CONFIG_PREBOOT_REL_PATH="preboot"
+ CONFIG_PREBOOT_DDR_TYPE="lpddr4x"
+ CONFIG_PREBOOT_MEMORY_SPEED=3733
+ CONFIG_PREBOOT_MEMORY_SIZE="4GB"
+-CONFIG_PREBOOT_MEMORY_VARIANT="default/default"
++CONFIG_PREBOOT_MEMORY_VARIANT="ch0"
+ CONFIG_PREBOOT_DDR_PHY_FW=y
+ CONFIG_PREBOOT_TEE_ENABLE=y
+ CONFIG_PREBOOT_PROFILE="generic"
+diff --git a/product/sl1680_usb_poky_aarch64_rdk/sl1680_usb_poky_aarch64_rdk_defconfig b/product/sl1680_usb_poky_aarch64_rdk/sl1680_usb_poky_aarch64_rdk_defconfig
+index 3482c10..d89e30f 100755
+--- a/product/sl1680_usb_poky_aarch64_rdk/sl1680_usb_poky_aarch64_rdk_defconfig
++++ b/product/sl1680_usb_poky_aarch64_rdk/sl1680_usb_poky_aarch64_rdk_defconfig
+@@ -128,7 +128,7 @@ CONFIG_PREBOOT_REL_PATH="preboot"
+ CONFIG_PREBOOT_DDR_TYPE="lpddr4x"
+ CONFIG_PREBOOT_MEMORY_SPEED=3733
+ CONFIG_PREBOOT_MEMORY_SIZE="4GB"
+-CONFIG_PREBOOT_MEMORY_VARIANT="default/default"
++CONFIG_PREBOOT_MEMORY_VARIANT="ch0"
+ CONFIG_PREBOOT_DDR_PHY_FW=y
+ CONFIG_PREBOOT_TEE_ENABLE=y
+ CONFIG_PREBOOT_PROFILE="generic"
+-- 
+2.34.1
+
