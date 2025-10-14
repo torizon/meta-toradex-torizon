@@ -6,6 +6,7 @@ SRC_URI += "\
     file://kmod \
     file://0001-Mount-run-with-tmpfs.patch \
     file://0002-only-scan-for-block-devices.patch \
+    file://0003-notify-newroot-for-plymouth.patch \
 "
 
 SRC_URI:append:cfs-support = "\
