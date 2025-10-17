@@ -1,3 +1,7 @@
+# This file is to be provided by Torizon Yocto users to make distro level changes
+# It it does not exist, this include silently does nothing.
+include conf/distro/include/torizon-user-distro.inc
+
 MAINTAINER = "Toradex Torizon OS Team <torizon.os@toradex.com>"
 
 TCLIBCAPPEND = ""
