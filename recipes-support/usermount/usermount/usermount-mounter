@@ -17,6 +17,12 @@ for dev in `fdisk -l 2>/dev/null | grep -o "^/dev/[[:alnum:]]*"`; do
                 continue
             fi
 
+            # do not mount if the partition is in the ignore list
+            if grep -xqs ${dev} /etc/usermount/ignorelist; then
+                echo "Partition $dev is in the ignore list and will not be mounted."
+                continue
+            fi
+
             # mount partition
             echo "Mounting $dev partition."
             udisksctl mount -b $dev 2>/dev/null || true
