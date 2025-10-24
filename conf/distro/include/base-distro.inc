@@ -85,3 +85,7 @@ TOS_SECBOOT_REQUIRED_BOOTARGS ?= "${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
 TOS_SECBOOT_REQUIRED_BOOTARGS:qemuarm64 ?= ""
 # Override BSP configuration:
 TDX_SECBOOT_REQUIRED_BOOTARGS:tdx-signed = "${TOS_SECBOOT_REQUIRED_BOOTARGS}"
+
+# Export some extra build information (takes place if class image-buildinfo is used).
+TDX_SIGNING_CLASS ?= ""
+IMAGE_BUILDINFO_VARS:append = " TDX_SIGNING_CLASS OVERRIDES"
