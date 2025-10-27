@@ -46,3 +46,11 @@ kernel_do_configure:append() {
 		kernel_configure_variable LOCALVERSION_AUTO n
 	fi
 }
+
+def get_linux_base_version(d):
+    linux_version = d.getVar('LINUX_VERSION')
+    if '-rt' in linux_version:
+        return linux_version.split('-rt')[0]
+    return linux_version
+
+CVE_VERSION = "${@get_linux_base_version(d)}"
