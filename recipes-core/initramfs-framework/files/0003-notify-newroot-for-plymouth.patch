@@ -1,0 +1,30 @@
+From 9d25861082f74010bd37194c8b4bf8409034f828 Mon Sep 17 00:00:00 2001
+From: Beat Hofer <beat.hofer@camillebauer.com>
+Date: Tue, 14 Oct 2025 10:14:58 +0200
+Subject: [PATCH] notify-newroot-for-plymouth
+
+The Plymouth daemon must be notified that the ROOTFS has been mounted. 
+Otherwise, the required plugin files will not be found.
+
+Upstream-Status: Inappropriate [TorizonCore Specific]
+
+---
+ finish | 5 ++++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/finish b/finish
+index ac0de9f996..598bf5c790 100755
+--- a/finish
++++ b/finish
+@@ -41,6 +41,11 @@
+ 		mount --move /sys $ROOTFS_DIR/sys
+ 		mount --move /run $ROOTFS_DIR/run
+ 
++		if [ -f /usr/bin/plymouth ]; then
++			debug "Notifying plymouth about the rootfs dir change..."
++			/usr/bin/plymouth update-root-fs --new-root-dir=$ROOTFS_DIR
++		fi
++
+ 		cd $ROOTFS_DIR
+ 		exec switch_root -c /dev/console $ROOTFS_DIR ${bootparam_init:-/sbin/init}
+ 	else
