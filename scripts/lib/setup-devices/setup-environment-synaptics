@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+
+source ${_TDX_LAYERS_DIR}/poky/oe-init-build-env "${1:-build-$DISTRO}" >/dev/null 2>&1
+
+# check if this <build> folder was already configured
+_TDX_EULA_ACCEPTED=""
+_TDX_SYN_EULA_STR="Synaptics-EULA"
+_TDX_LICENSE_FLAGS_STR="$(grep LICENSE_FLAGS_ACCEPTED conf/local.conf)"
+# checks if EULA was already accepted and present in conf files
+if echo "$_TDX_LICENSE_FLAGS_STR" | grep -q "$_TDX_SYN_EULA_STR"; then
+    _TDX_EULA_ACCEPTED=1
+fi
+
+# if EULA was not previously accepted, prompt user
+if [ "$_TDX_EULA_ACCEPTED" != "1" ]; then
+    # if EULA environment var is set to 1, accept EULA without prompting user
+    if [ "$EULA" == "1" ]; then
+        cat <<EOF >> conf/local.conf
+
+LICENSE_FLAGS_ACCEPTED += "${_TDX_SYN_EULA_STR} commercial"
+EOF
+    else
+        _TDX_EULA_FILE="${_TDX_LAYERS_DIR}/meta-synaptics/EULA.rst"
+        if [ ! -f "$_TDX_EULA_FILE" ]; then
+            echo "The Synaptics End User License Agreement file is missing! Please check your environment."
+        else
+            more -d "$_TDX_EULA_FILE"
+            _TDX_RESPONSE=
+            while [ -z "$_TDX_RESPONSE" ]; do
+                echo -n "Do you accept the terms of the Synaptics End User License Agreement? (y/n) "
+                read -r _TDX_RESPONSE
+                case "$_TDX_RESPONSE" in
+                    y|Y)
+                        echo "The terms of the Synaptics End User License Agreement have been accepted."
+                        _TDX_LICENSE_FLAGS_ACCEPTED="${_TDX_SYN_EULA_STR}"
+                        ;;
+                    n|N)
+                        echo "The terms of the Synaptics End User License Agreement have been declined."
+                        _TDX_EULA_ACCEPTED=0
+                        ;;
+                    *)
+                        echo "Invalid Response, please try again"
+                        _TDX_RESPONSE=
+                        ;;
+                esac
+            done
+        fi
+        _TDX_RESPONSE=
+        while [ -z "$_TDX_RESPONSE" ]; do
+            echo -n "VSSDK contains some proprietary components, do you accept the commercial license? (y/n) "
+            read -r _TDX_RESPONSE
+            case "$_TDX_RESPONSE" in
+                y|Y)
+                    echo "The commercial license has been accepted."
+                    _TDX_LICENSE_FLAGS_ACCEPTED="${_TDX_LICENSE_FLAGS_ACCEPTED} commercial"
+                    ;;
+                n|N)
+                    echo "The commercial has been declined."
+                    _TDX_EULA_ACCEPTED=0
+                    ;;
+                *)
+                    echo "Invalid Response, please try again"
+                    _TDX_RESPONSE=
+                    ;;
+            esac
+        done
+        if [ -n "$_TDX_LICENSE_FLAGS_ACCEPTED" ]; then
+            cat <<EOF >> conf/local.conf
+
+LICENSE_FLAGS_ACCEPTED += "${_TDX_LICENSE_FLAGS_ACCEPTED}"
+EOF
+        fi
+    fi
+fi
+
+# encrypt OPTEE TA with production key by default
+if [ "${OPTEE_TA_ENC}" != "dev" ]; then
+    OPTEE_TA_ENC="prod"
+fi
+
+if ! grep -q "#OPTEE TA encryption" conf/local.conf; then
+    if [ -n "$OPTEE_TA_ENC" ]; then
+        cat <<EOF >>conf/local.conf
+
+#OPTEE TA encryption
+OPTEE_TA_ENC = "${OPTEE_TA_ENC}"
+EOF
+    fi
+fi
+
+# Change settings according environment
+sed -e "s/##MACHINE##/${MACHINE}/g" \
+    -e "s/##OPTEE_TA_ENC##/\"${OPTEE_TA_ENC}\"/" \
+    -i conf/local.conf
+
+# Add source mirror configuration according to environment
+if [[ "${SOURCE_MIRROR_URL}" != "" ]]; then
+
+    echo -e "\nSetting source mirror url to ${SOURCE_MIRROR_URL}\n"
+
+    cat >> conf/local.conf <<EOF
+
+INHERIT += "own-mirrors"
+SOURCE_MIRROR_URL ?= "${SOURCE_MIRROR_URL}"
+EOF
+fi
+
+if ! grep -q "# Torizon" conf/local.conf; then
+    _TDX_OEROOT=$(dirname "$(pwd)")
+  _TDX_BUILDDIR=$(pwd)
+
+  sed -i "/^MACHINE .*/c\MACHINE = '$MACHINE'" conf/local.conf
+  sed -i "/^DISTRO .*/c\DISTRO = '$DISTRO'" conf/local.conf
+  sed -i "/^#DL_DIR .*/c\DL_DIR = '${_TDX_OEROOT}/downloads'" conf/local.conf
+  sed -i "/^#SSTATE_DIR .*/c\SSTATE_DIR = '${_TDX_OEROOT}/sstate-cache'" conf/local.conf
+  sed -i "/^#TMPDIR .*/c\TMPDIR = '${_TDX_BUILDDIR}/tmp'" conf/local.conf
+
+  cat <<EOF >>conf/local.conf
+
+# Where to save the packages and images
+DEPLOY_DIR = "${_TDX_BUILDDIR}/deploy"
+
+# ease up disk space requirements
+INHERIT += "rm_work"
+
+# Torizon
+include conf/machine/include/\${MACHINE}.inc
+
+EOF
+fi
+
+if ! grep -q "# Torizon" conf/bblayers.conf; then
+  cat <<EOF >>conf/bblayers.conf
+
+BBLAYERS += " \\
+  ${_TDX_LAYERS_DIR}/meta-openembedded/meta-oe \\
+  ${_TDX_LAYERS_DIR}/meta-openembedded/meta-python \\
+  ${_TDX_LAYERS_DIR}/meta-openembedded/meta-multimedia \\
+  ${_TDX_LAYERS_DIR}/meta-openembedded/meta-networking \\
+  ${_TDX_LAYERS_DIR}/meta-openembedded/meta-filesystems \\
+  ${_TDX_LAYERS_DIR}/meta-clang \\
+  ${_TDX_LAYERS_DIR}/meta-lts-mixins \\
+  ${_TDX_LAYERS_DIR}/meta-qt5 \\
+  ${_TDX_LAYERS_DIR}/meta-synaptics \\
+  ${_TDX_LAYERS_DIR}/meta-swupdate \\
+  ${_TDX_LAYERS_DIR}/meta-virtualization \\
+"
+
+# Torizon
+BBLAYERS += "${_TDX_LAYERS_DIR}/meta-toradex-torizon"
+# Torizon deps
+BBLAYERS += "${_TDX_LAYERS_DIR}/meta-updater"
+
+OEROOT := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)))}/../.."
+
+EOF
+fi
+
+cat <<EOF
+
+Welcome to Common Torizon OS
+
+For more information about OpenEmbedded see their website:
+
+    http://www.openembedded.org/
+
+Your build environment has been configured with:
+
+    MACHINE = ${MACHINE}
+    DISTRO = ${DISTRO}
+
+You can now run 'bitbake <target>'
+
+Some of common targets are:
+
+    torizon-docker
+    torizon-minimal
+    torizon-podman
+
+EOF
