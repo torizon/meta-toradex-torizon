@@ -23,6 +23,7 @@ Start with the machine-specific build instructions below:
 | Texas Instruments  | AM62x/AM62L/AM62P SK EVM and BeagleY-AI     | [README-ti.md](./docs/README-ti.md)          |
 | Toradex            | i.MX95 Verdin EVK                           | [README-imx95.md](./docs/README-imx95.md)    |
 | STMicroelectronics | STM32MP1/STM32MP2                           | [README-stm32mp.md](./docs/README-stm32mp.md)|
+| Synaptics          | Astra SL1680/Winglet                        | [README-syn.md](./docs/README-syn.md)        |
 | Renesas            | RZ/V2L EVKIT                                | [README-rzv2l.md](./docs/README-rzv2l.md)    |
 | Intel              | x86-64                                      | [README-x86.md](./docs/README-x86.md)        |
 
