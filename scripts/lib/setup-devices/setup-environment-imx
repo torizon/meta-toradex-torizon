@@ -4,7 +4,12 @@
 _TDX_MACHINE="${MACHINE}"
 _TDX_DISTRO="${_TDX_DISTRO_SELECT}"
 
-source imx-setup-release.sh -b "${1:-build-$_TDX_DISTRO}"
+if [ "${_TDX_MACHINE}" = "imx93frdm" ]; then
+    _IMX_SETUP_SCRIPT=imx-frdm-setup.sh
+else
+    _IMX_SETUP_SCRIPT=imx-setup-release.sh
+fi
+source ${_IMX_SETUP_SCRIPT} -b "${1:-build-$_TDX_DISTRO}"
 
 if ! grep -q "# Torizon" conf/local.conf; then
   sed -i "/^DISTRO .*/c\DISTRO ?= '${_TDX_DISTRO}'" conf/local.conf

@@ -1,0 +1,6 @@
+# short-description: Create OTA-enabled SD card image
+# long-description: Creates a partitioned SD card image with OSTree
+# physical sysroot as a payload. Boot files are located in the
+# first vfat partition.
+part u-boot --source rawcopy --sourceparams="file=imx-boot.tagged" --ondisk mmcblk --no-table --align 32
+part / --source otaimage --ondisk mmcblk --fstype=ext4 --align 8192
