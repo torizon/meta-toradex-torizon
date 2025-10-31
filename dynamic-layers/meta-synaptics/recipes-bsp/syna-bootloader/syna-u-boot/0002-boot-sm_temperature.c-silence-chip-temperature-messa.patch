@@ -1,0 +1,30 @@
+From fdcf9adc4c0786c64b7476f90a059965de7acd63 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Tue, 30 Sep 2025 14:56:19 +0000
+Subject: [PATCH] boot:sm_temperature.c: silence chip temperature messages
+
+Upstream-Status: Pending
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ bootloader/sm_cm3/syna/src/sm_temperature.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/bootloader/sm_cm3/syna/src/sm_temperature.c b/bootloader/sm_cm3/syna/src/sm_temperature.c
+index d1d2960..182241b 100644
+--- a/bootloader/sm_cm3/syna/src/sm_temperature.c
++++ b/bootloader/sm_cm3/syna/src/sm_temperature.c
+@@ -281,8 +281,8 @@ static int mv_sm_temp_task(void * data)
+ /* print temperature every 30s(defined as task interval) */
+ static int mv_sm_temp_print_task(void * data)
+ {
+-	PRT_RES("Chip Temperature: %d degC(raw_data = %d)\n",
+-		calibrate_data, raw_data);
++	//PRT_RES("Chip Temperature: %d degC(raw_data = %d)\n",
++	//	calibrate_data, raw_data);
+ 	return S_OK;
+ }
+ 
+-- 
+2.34.1
+
