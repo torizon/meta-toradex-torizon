@@ -25,7 +25,7 @@ PACKAGES:append:cfs-support = "\
 "
 
 SUMMARY:initramfs-module-plymouth = "initramfs support for plymouth"
-RDEPENDS:initramfs-module-plymouth = "${PN}-base plymouth ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd-udev-rules', '', d)}"
+RDEPENDS:initramfs-module-plymouth = "${PN}-base plymouth ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd-udev-rules', '', d)} cantarell-fonts"
 FILES:initramfs-module-plymouth = "/init.d/02-plymouth"
 
 SUMMARY:initramfs-module-ostree = "initramfs support for ostree based filesystems"
