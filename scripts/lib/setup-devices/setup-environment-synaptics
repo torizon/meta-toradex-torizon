@@ -5,7 +5,7 @@ source ${_TDX_LAYERS_DIR}/poky/oe-init-build-env "${1:-build-$DISTRO}" >/dev/nul
 # check if this <build> folder was already configured
 _TDX_EULA_ACCEPTED=""
 _TDX_SYN_EULA_STR="Synaptics-EULA"
-_TDX_LICENSE_FLAGS_STR="$(grep LICENSE_FLAGS_ACCEPTED conf/local.conf)"
+_TDX_LICENSE_FLAGS_STR="$(grep LICENSE_FLAGS_ACCEPTED conf/local.conf || true)"
 # checks if EULA was already accepted and present in conf files
 if echo "$_TDX_LICENSE_FLAGS_STR" | grep -q "$_TDX_SYN_EULA_STR"; then
     _TDX_EULA_ACCEPTED=1
