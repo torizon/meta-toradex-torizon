@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 shopt -s expand_aliases
 source "/usr/bin/common_actions.sh"
