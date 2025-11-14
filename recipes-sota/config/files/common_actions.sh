@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 REBOOT_SENTINEL_FILE="/run/need-reboot"
 
