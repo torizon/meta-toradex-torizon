@@ -53,6 +53,7 @@ _TDX_AVAILABLE_DISTROS=("torizon"                 "(for Toradex devices)" \
 _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "apalis-imx8"          "meta-toradex-nxp" \
                   "aquila-am69"          "meta-toradex-ti" \
+                  "aquila-imx95"         "meta-toradex-nxp" \
                   "colibri-imx6"         "meta-freescale-3rdparty" \
                   "colibri-imx6ull-emmc" "meta-toradex-nxp" \
                   "colibri-imx7-emmc"    "meta-freescale-3rdparty" \
