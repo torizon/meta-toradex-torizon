@@ -894,6 +894,10 @@ SRC_URI[zvariant_utils-2.0.0.sha256sum] = "fc242db087efc22bd9ade7aa7809e4ba82813
 CARGO_BUILD_FLAGS:remove = "--frozen"
 CARGO_BUILD_FLAGS:append = " --offline"
 
+# Remove -fcanon-prefix-map from CFLAGS since it's not supported by all GCC versions.
+# The functionality is already provided by -fdebug-prefix-map and -fmacro-prefix-map.
+CFLAGS:remove = "-fcanon-prefix-map"
+
 # There is a postfunc that runs after do_configure. This fixing logic needs to run after this postfunc.
 # It is because of this ordering this is do_compile:prepend instead of do_configure:append.
 cargo_add_rac_patch_paths() {
