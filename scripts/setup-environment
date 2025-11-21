@@ -75,6 +75,7 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "intel-corei7-64"    "meta-intel" \
                  "imx95-19x19-verdin" "meta-imx" \
                  "sl1680"             "meta-synaptics" \
+                 "imx93frdm"          "meta-imx-frdm/meta-imx-bsp" \
                  "smarc-rzv2l"        "rz-community-bsp" \
                  "stm32mp25-eval"     "meta-st-stm32mp" \
                  "stm32mp15-disco"     "meta-st-stm32mp" \
@@ -159,6 +160,12 @@ else
         imx95-19x19-verdin)
             # for iMX95, there's only common-torizon as possible DISTRO
             _TDX_DISTRO_SELECT="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-imx $@
+        ;;
+        imx93frdm)
+            # If no distro was passed explicitly, we default to Common Torizon
+            if [ -z "${_TDX_DISTRO_SELECT}" ]; then
+                _TDX_DISTRO_SELECT="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-imx $@
+            fi
         ;;
         intel-corei7-64)
             # If no distro was passed explicitly, we default to Common Torizon
