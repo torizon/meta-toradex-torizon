@@ -106,14 +106,14 @@ EOF
 fi
 
 if ! grep -q "# Torizon" conf/local.conf; then
-    _TDX_OEROOT=$(dirname "$(pwd)")
+  _TDX_OEROOT=$(dirname "$(pwd)")
   _TDX_BUILDDIR=$(pwd)
 
-  sed -i "/^MACHINE .*/c\MACHINE = '$MACHINE'" conf/local.conf
-  sed -i "/^DISTRO .*/c\DISTRO = '$DISTRO'" conf/local.conf
-  sed -i "/^#DL_DIR .*/c\DL_DIR = '${_TDX_OEROOT}/downloads'" conf/local.conf
-  sed -i "/^#SSTATE_DIR .*/c\SSTATE_DIR = '${_TDX_OEROOT}/sstate-cache'" conf/local.conf
-  sed -i "/^#TMPDIR .*/c\TMPDIR = '${_TDX_BUILDDIR}/tmp'" conf/local.conf
+  sed -i "/^MACHINE .*/c\MACHINE = \"${MACHINE}\"" conf/local.conf
+  sed -i "/^DISTRO .*/c\DISTRO = \"${DISTRO}\"" conf/local.conf
+  sed -i "/^#DL_DIR .*/c\DL_DIR ?= \"${_TDX_OEROOT}/downloads\"" conf/local.conf
+  sed -i "/^#SSTATE_DIR .*/c\SSTATE_DIR ?= \"${_TDX_OEROOT}/sstate-cache\"" conf/local.conf
+  sed -i "/^#TMPDIR .*/c\TMPDIR = \"${_TDX_BUILDDIR}/tmp\"" conf/local.conf
 
   cat <<EOF >>conf/local.conf
 
