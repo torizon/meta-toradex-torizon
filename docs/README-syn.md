@@ -13,7 +13,7 @@ $ repo sync -j 10
 
 Note that `integration.xml` is a development manifest used internally and it might contain development features and thus be considered unstable.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Common Torizon OS is only available on branches `scarthgap-7.x.y` or newer!
 
 Alternatively, you can manually clone all layers one by one. Refer to the section [_Manual Setup_](#manual-setup) at the end of this document to learn how.
@@ -45,12 +45,12 @@ Recovery Mode
 On the device, press the `USB-Boot` button, and while holding it down either power on the device or press the `RESET` button.
 
 #### Winglet
-To the right of the USB-C connector there is a jumper, that's the board `USB-Boot` jumper. Power off the device on the `Power Switch`, short this jumper and then power it on again.  
+To the right of the USB-C connector there is a jumper, that's the board `USB-Boot` jumper. Power off the device on the `Power Switch`, short this jumper and then power it on again.
 After the flashing is done, remove the short on that jumper so the device can boot normally.
 
 Flashing eMMC
 ======
-1. For flashing, you'll need the latest release of Synaptics' `usb-tool`. Please refer to their [usb-tool GitHub repository](https://github.com/synaptics-astra/usb-tool/releases) and download the latest `astra-update`.  
+1. For flashing, you'll need the latest release of Synaptics' `usb-tool`. Please refer to their [usb-tool GitHub repository](https://github.com/synaptics-astra/usb-tool/releases) and download the latest `astra-update`.
 On `Winglet`, make sure to check the _important note_ at the bottom of this section.
 
 2. Unpack its contents somewhere, go into that folder and copy `SYNAIMG` from the generated artifacts of your build.
@@ -77,10 +77,10 @@ $ pip install shyaml
 $ sudo ./bin/linux/x86_64/astra-update -c sl1680 -m 4gb -d lpddr4x -t emmc -i "$(cat astra-usbboot-images/sl1680_suboot/manifest.yaml | shyaml get-value id)"
 ```
 
-> [!IMPORTANT]  
-> For `Winglet`, you'll need to replace the folder `astra-usbboot-images` with the one provided here.  
-> Just rename the current one something else, for instance `astra-usbboot-images-sl1680` and add the provided `astra-usbboot-images` in `usb-tool`  
-> And if you'll need to flash Astra SL1680, you'll need to switch back to the original binaries, so keep that in mind!  
+> [!IMPORTANT]
+> For `Winglet`, you'll need to replace the folder `astra-usbboot-images` with the one provided here.
+> Just rename the current one something else, for instance `astra-usbboot-images-sl1680` and add the provided `astra-usbboot-images` in `usb-tool`
+> And if you'll need to flash Astra SL1680, you'll need to switch back to the original binaries, so keep that in mind!
 > TODO: Make Winglet specific binaries available
 
 Manual Setup
