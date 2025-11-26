@@ -44,7 +44,7 @@ VBoxManage modifyvm Common-Torizon --cpus 2 --memory 2048 --vram 256 --graphicsc
 VBoxManage storagectl Common-Torizon --name "SATA Controller" --add sata --bootable on
 VBoxManage storageattach Common-Torizon --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "torizon-docker-intel-corei7-64.wic.vdi"
 # Port forwarding for SSH on port 2222
-VBoxManage modifyvm Common-Torizon --nat-pf1=ssh,tcp,,2222,,3791 --nat-pf1=ssh_tor,tcp,,2223,,22
+VBoxManage modifyvm Common-Torizon --nat-pf1=ssh,tcp,,2222,,3791 --nat-pf2=ssh_tor,tcp,,2223,,22
 
 VBoxManage startvm Common-Torizon
 ```
