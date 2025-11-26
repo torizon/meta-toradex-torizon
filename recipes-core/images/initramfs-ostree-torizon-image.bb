@@ -9,6 +9,11 @@ PACKAGE_INSTALL:append:cfs-support = "\
     initramfs-module-composefs \
 "
 
+# Additional firmware needed for splash screen on DisplayPort with Aquila AM69
+PACKAGE_INSTALL:append:aquila-am69 = "\
+    cadence-mhdp-fw \
+"
+
 SYSTEMD_DEFAULT_TARGET = "initrd.target"
 
 IMAGE_NAME_SUFFIX = ""
