@@ -31,6 +31,40 @@ INITRAMFS_EXTRA_KMODS:ti-soc = "\
 # On BeagleY AI we need this extra module on top of TI modules
 INITRAMFS_EXTRA_KMODS:append:beagley-ai = " ite_it66121"
 
+# On Aquila AM69, we need this extra module to be loaded before the rest
+# This is only needed when using at least V1.3 of the Aquila Development Board
+INITRAMFS_EXTRA_KMODS:prepend:aquila-am69 = "i2c_mux_pca954x "
+
+# Additional modules needed for splash screen on Aquila AM69
+INITRAMFS_EXTRA_KMODS:append:aquila-am69 = "\
+    cdns_dphy \
+    cdns_dsi \
+    cdns_mhdp8546 \
+"
+
+# Additional modules needed for splash screen on Verdin AM62P
+INITRAMFS_EXTRA_KMODS:append:verdin-am62p = "\
+    cdns_dphy \
+    cdns_dsi \
+"
+
+# Modules necessary for our i.MX95 SoMs to display splash screen.
+INITRAMFS_EXTRA_KMODS:mx95-nxp-bsp = "\
+    phy_fsl_imx8mp_lvds \
+    pwm_imx_tpm \
+    imx95_ldb \
+    imx_ldb_helper \
+    ti_sn65dsi83 \
+    imx95_dpu_drm \
+    lontium_lt8912b \
+    irq_imx_irqsteer \
+    imx95_pixel_link \
+    imx95_pixel_interleaver \
+    imx95_mipi_dsi \
+    dw_mipi_dsi \
+    display_connector \
+"
+
 def get_initramfs_kmods(d):
     kmods = d.getVar("INITRAMFS_EXTRA_KMODS").split()
     build_modules = [f"kernel-module-{m.replace('_', '-')}" for m in kmods]
