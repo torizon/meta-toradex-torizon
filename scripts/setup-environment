@@ -75,6 +75,8 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "imx93frdm"          "meta-imx-frdm/meta-imx-bsp" \
                  "imx95-19x19-verdin" "meta-imx" \
                  "intel-corei7-64"    "meta-intel" \
+                 "jetson-orin-nano-devkit" "meta-tegra" \
+                 "jetson-orin-nano-devkit-nvme" "meta-tegra" \
                  "sl1680"             "meta-synaptics" \
                  "sl2619"             "meta-synaptics" \
                  "smarc-rzv2l"        "rz-community-bsp" \
@@ -175,6 +177,9 @@ else
             fi
             # Both Common Torizon and Common Xenomai share the same setup script, only the Distro is different
             DISTRO="$_TDX_DISTRO_SELECT" . ${_TDX_SCRIPTS_PATH}/setup-environment-intel $@
+        ;;
+        jetson-orin-nano-devkit|jetson-orin-nano-devkit-nvme)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-nvidia
         ;;
         smarc-rzv2l)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-renesas
