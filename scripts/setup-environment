@@ -80,7 +80,9 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "stm32mp25-eval"     "meta-st-stm32mp" \
                  "stm32mp15-disco"     "meta-st-stm32mp" \
                  "stm32mp25-disco"     "meta-st-stm32mp" \
-                 "winglet"            "meta-synaptics")
+                 "winglet"            "meta-synaptics" \
+                 "jetson-orin-nano-devkit" "meta-tegra" \
+                 "jetson-orin-nano-devkit-nvme" "meta-tegra")
 
 if [ "$(whoami)" = "root" ]; then
     echo "ERROR: do not build Torizon OS as root. Exiting..." >&2
@@ -183,6 +185,9 @@ else
         ;;
         stm32mp25-eval|stm32mp15-disco|stm32mp25-disco)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-stm32mp
+        ;;
+        jetson-orin-nano-devkit|jetson-orin-nano-devkit-nvme)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-nvidia
         ;;
         *)
             echo "Unknown machine ${MACHINE}!"
