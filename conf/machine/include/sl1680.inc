@@ -122,4 +122,13 @@ EOF
         partition_count=$(expr $partition_count + 1)
     done
     cp ${DEPLOY_DIR_IMAGE}/emmc_image_list ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_image_list
+    # Create a SYNAIMG-flash.tar.gz file with SYNAIMG, usb-tool and recovery folder inside.
+    install -d ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}-flash
+    (
+        cd ${DEPLOY_DIR_IMAGE}
+        cp -L -R syna-metadata/* syna-usb-tool/* ${SYNAIMG_DEPLOY_SUBDIR} ${SYNAIMG_DEPLOY_SUBDIR}-flash
+        tar -czf ${SYNAIMG_DEPLOY_SUBDIR}-flash.tar.gz -C ${DEPLOY_DIR_IMAGE} ${SYNAIMG_DEPLOY_SUBDIR}-flash
+    )
 }
+
+do_image_ota_ext4[depends] += "syna-metadata:do_deploy syna-usb-tool:do_deploy"
