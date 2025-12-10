@@ -27,6 +27,12 @@ $ docker run --rm -it --name=syn-crops-common -v <path/to/common-torizon>:/workd
 
 Build
 ======
+
+| Board | MACHINE | Status |
+|---|---|---|
+| Winglet | winglet | Supported  |
+| Astra SL1680 | sl1680 | Supported |
+
 1. Source `setup-environment`, specifying the machine to build with the MACHINE variable e.g.:
 ```bash
 $ MACHINE=sl1680 . setup-environment <build-directory>
