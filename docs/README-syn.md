@@ -56,32 +56,45 @@ After the flashing is done, remove the short on that jumper so the device can bo
 
 Flashing eMMC
 ======
-1. For flashing, you'll need the latest release of Synaptics' `usb-tool`. Please refer to their [usb-tool GitHub repository](https://github.com/synaptics-astra/usb-tool/releases) and download the latest `astra-update`.
-On `Winglet`, make sure to check the _important note_ at the bottom of this section.
+For flashing, there are two possible ways: use the helper script `flash-image.sh` or doing the steps manually.
 
-2. Unpack its contents somewhere, go into that folder and copy `SYNAIMG` from the generated artifacts of your build.
-```bash
-$ cd usb-tool
-$ cp -r <build-directory>/deploy/images/${MACHINE}/SYNAIMG SYNAIMG
-```
- * Or make a symlink to it
-```bash
-$ cd usb-tool
-$ ln -s <build-directory>/deploy/images/${MACHINE}/SYNAIMG SYNAIMG
-```
-3. Grab the manifest ID:
-```bash
-$ cat astra-usbboot-images/sl1680_suboot/manifest.yaml | grep ^id:
-```
-4. Run `astra-update`
-```bash
-$ sudo ./bin/linux/x86_64/astra-update -c sl1680 -m 4gb -d lpddr4x -t emmc -i <manifest ID from previous step>
-```
-Or, if you like you could make it in one line using `shyaml`
-```bash
-$ pip install shyaml
-$ sudo ./bin/linux/x86_64/astra-update -c sl1680 -m 4gb -d lpddr4x -t emmc -i "$(cat astra-usbboot-images/sl1680_suboot/manifest.yaml | shyaml get-value id)"
-```
+> [!WARNING]  
+> This helper script does NOT yet work with the Winglet board, it only works with the Astra SL1680 board.
+
+1. The easiest way is to use the helper script:
+
+    a. After the build is done, get the file called `SYNAIMG-flash.tar.gz` from the `deploy/images/${MACHINE}` folder.  
+    b. Unpack it into a proper folder, using the tar command: `tar -xf SYNAIMG-flash.tar.gz`.  
+    c. With the board in recovery mode, execute the script: `./flash-image.sh`.  
+
+2. Another option is to do all the steps manually:
+
+    a. For flashing, you'll need the latest release of Synaptics' `usb-tool`. Please refer to their [usb-tool GitHub repository](https://github.com/synaptics-astra/usb-tool/releases) and download the latest `astra-update`.
+    On `Winglet`, make sure to check the _important note_ at the bottom of this section.
+
+    b. Unpack its contents somewhere, go into that folder and copy `SYNAIMG` from the generated artifacts of your build.
+    ```bash
+    $ cd usb-tool
+    $ cp -r <build-directory>/deploy/images/${MACHINE}/SYNAIMG SYNAIMG
+    ```
+     * Or make a symlink to it
+    ```bash
+    $ cd usb-tool
+    $ ln -s <build-directory>/deploy/images/${MACHINE}/SYNAIMG SYNAIMG
+    ```
+    c. Grab the manifest ID:
+    ```bash
+    $ cat astra-usbboot-images/sl1680_suboot/manifest.yaml | grep ^id:
+    ```
+    d. Run `astra-update`
+    ```bash
+    $ sudo ./bin/linux/x86_64/astra-update -c sl1680 -m 4gb -d lpddr4x -t emmc -i <manifest ID from previous step>
+    ```
+    Or, if you like you could make it in one line using `shyaml`
+    ```bash
+    $ pip install shyaml
+    $ sudo ./bin/linux/x86_64/astra-update -c sl1680 -m 4gb -d lpddr4x -t emmc -i "$(cat astra-usbboot-images/sl1680_suboot/manifest.yaml | shyaml get-value id)"
+    ```
 
 > [!IMPORTANT]
 > For `Winglet`, you'll need to replace the folder `astra-usbboot-images` with the one provided here.
