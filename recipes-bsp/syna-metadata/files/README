@@ -1,0 +1,6 @@
+The script file flash-image.sh allows flashing your Astra SL1680 board
+using a USB connection, while running GNU/Linux distro on your host computer.
+
+To run the script:
+
+$ ./flash-image.sh
