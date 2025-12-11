@@ -6,15 +6,10 @@ SRC_URI:append:common-torizon = " \
 
 # Synaptics sl1680 and Toradex Winglet (sl1680 based) need the cfg fragment
 # in order to merge with the generated .config. Otherwise the fragments won't apply.
-SRC_URI:append:sl1680 = " \
-    file://torizon.cfg \
-"
-
+# 
 # NXP's Kernel recipe needs the cfg fragment in order to merge with
 # with the generated .config. Otherwise the fragments won't apply.
-SRC_URI:append:common-torizon:imx95-19x19-verdin = "\
-    file://torizon.cfg \
-"
+SRC_URI:append = "${@bb.utils.contains_any('MACHINE', 'sl1680 imx95-19x19-verdin imx93frdm', 'file://torizon.cfg', '', d)}"
 
 SRC_URI:append:cfs-support = "\
     file://composefs.scc \
