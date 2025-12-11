@@ -324,9 +324,12 @@ gen_bootloader_ota_files () {
     done
 }
 
+ARCH_OTA_FILES_DEPENDS = "virtual/bootloader:do_deploy"
+ARCH_OTA_FILES_DEPENDS:x86-64 = ""
 # Dependencies for gen_bootloader_ota_files():
 GEN_BOOTLOADER_OTA_FILES_DEPENDS ?= "\
     jq-native:do_populate_sysroot \
+    ${ARCH_OTA_FILES_DEPENDS} \
 "
 
 IMAGE_PREPROCESS_COMMAND += "adjust_rootfs_datetime;"
