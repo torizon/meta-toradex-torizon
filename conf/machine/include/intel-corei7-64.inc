@@ -22,8 +22,6 @@ IMAGE_FSTYPES:append = " wic.vmdk wic.vdi"
 hostname:pn-base-files = "torizon-x86"
 
 PREFERRED_PROVIDER_u-boot-default-script = ""
-PREFERRED_PROVIDER_u-boot-fw-utils = "grub-ota-fallback"
-PREFERRED_RPROVIDER_u-boot-fw-utils = "grub-ota-fallback"
 PREFERRED_PROVIDER_virtual/dtb = ""
 
 PREFERRED_PROVIDER_virtual/kernel:xenomai3 = "linux-xenomai-3"
@@ -32,6 +30,7 @@ PREFERRED_VERSION_linux-xenomai-3 ?= "5.10.%"
 PREFERRED_PROVIDER_virtual/kernel:xenomai4 = "linux-xenomai-4"
 PREFERRED_VERSION_linux-xenomai-4 = "5.10.%"
 
+IMAGE_INSTALL:append = " grub-ota-fallback"
 IMAGE_INSTALL:remove = " minnowboard-efi-startup network-configuration"
 LINUX_VERSION_EXTENSION ?= "-torizon-${LINUX_KERNEL_TYPE}"
 LINUX_VERSION_EXTENSION:xenomai3 ?= "-torizon-${LINUX_KERNEL_TYPE}-xenomai3"
