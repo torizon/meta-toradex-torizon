@@ -41,6 +41,7 @@ IMAGE_BOOT_FILES_REMOVE:append:apalis-imx8 = " hdmitxfw.bin dpfw.bin"
 DISTRO_FEATURES:append = " virtualization stateless-system"
 DISTRO_FEATURES_REMOVE ?= "3g alsa irda pcmcia nfc ldconfig pulseaudio wayland x11 ptest multiarch vulkan"
 DISTRO_FEATURES_REMOVE:remove:verdin-imx95 = "vulkan"
+DISTRO_FEATURES_REMOVE:remove:toradex-smarc-imx95 = "vulkan"
 DISTRO_FEATURES_REMOVE:append:imx-generic-bsp = " opengl"
 DISTRO_FEATURES:remove = "${DISTRO_FEATURES_REMOVE}"
 
@@ -81,9 +82,10 @@ SKIP_META_SECURITY_SANITY_CHECK = "1"
 # the tdx-signed class is in use).
 TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON ?= "root=LABEL=otaroot rootfstype=ext4 ${OSTREE_KERNEL_ARGS}"
 TOS_SECBOOT_REQUIRED_BOOTARGS ?= "${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
-TOS_SECBOOT_REQUIRED_BOOTARGS:apalis-imx6 ?= "enable_wait_mode=off vmalloc=400M ${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
-TOS_SECBOOT_REQUIRED_BOOTARGS:colibri-imx6 ?= "enable_wait_mode=off galcore.contiguousSize=50331648 ${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
-TOS_SECBOOT_REQUIRED_BOOTARGS:colibri-imx6ull-emmc ?= "user_debug=30 ${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
 TOS_SECBOOT_REQUIRED_BOOTARGS:qemuarm64 ?= ""
 # Override BSP configuration:
 TDX_SECBOOT_REQUIRED_BOOTARGS:tdx-signed = "${TOS_SECBOOT_REQUIRED_BOOTARGS}"
+
+# Export some extra build information (takes place if class image-buildinfo is used).
+TDX_SIGNING_CLASS ?= ""
+IMAGE_BUILDINFO_VARS:append = " TDX_SIGNING_CLASS OVERRIDES"

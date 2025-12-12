@@ -4,6 +4,7 @@ ALTERNATIVE_PRIORITY[resolv-conf] = "300"
 
 SRC_URI:append = " \
     file://0001-tmpfiles-tmp.conf-reduce-cleanup-age-to-half.patch \
+    file://0002-systemd-networkd-wait-online.service.in-use-any-by-d.patch \
     file://0003-emergency-rescue.service.in-Use-torizon-specific-scr.patch \
     file://systemd-timesyncd-update.service \
     file://torizon-recover \
@@ -11,8 +12,7 @@ SRC_URI:append = " \
 
 SRC_URI:append:genericx86-64 = " file://0001-rules-whitelist-hd-devices.patch"
 
-PACKAGECONFIG:append = " resolved"
-PACKAGECONFIG:remove = "networkd"
+PACKAGECONFIG:append = " resolved networkd"
 RRECOMMENDS:${PN}:remove = "os-release"
 
 # /var is expected to be rw, so drop volatile-binds service files
@@ -37,6 +37,10 @@ pkg_postinst:${PN}:append () {
 		fi
 		# Disable reboot when Ctrl+Alt+Del is pressed on a USB keyboard
 		systemctl $OPTS mask ctrl-alt-del.target
+
+		# Mask systemd-networkd-wait-online.service to avoid long boot times
+		# when networking is unplugged
+		systemctl $OPTS mask systemd-networkd-wait-online.service
 	fi
 }
 

@@ -46,6 +46,7 @@ kvm:x:102:
 render:x:103:
 sgx:x:104:
 ptest:x:529:
+teeclnt:x:982:
 tss:x:983:
 systemd-bus-proxy:x:984:
 systemd-timesync:x:985:

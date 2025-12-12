@@ -44,8 +44,7 @@ def get_layer_revision_information(d):
 
         # Create GLib dictionary
         return "{" + ",".join(layers) + "}"
-    except:
-        e = sys.exc_info()[0]
+    except Exception as e:
         bb.warn("Failed to get layers information. Caused by layer at {}. Exception: {}".format(path, e))
 
 # Use immediate expansion here to avoid calling a somewhat costly function whenever
