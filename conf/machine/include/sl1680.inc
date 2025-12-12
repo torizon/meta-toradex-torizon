@@ -81,23 +81,29 @@ IMAGE_CMD:ota-ext4:append () {
     img2simg ${DEPLOY_DIR_IMAGE}/rootfs_ota.subimg ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg 4096
     simg2simg ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg 314572800
 
-    # Remove unused partitions from emmc_part_list and copy to SYNAIMG folder
-    sed -i '/key_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/tzk_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/bl_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/boot_a/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/boot_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/firmware_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/rootfs_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/fastlogo_a/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/fastlogo_b/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/devinfo/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/misc/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
-    sed -i '/home/d' ${DEPLOY_DIR_IMAGE}/emmc_part_list
+    # Prepare emmc_part_list and emmc_image_list for SYNAIMG. We make copies first to avoid modifying the original files and conflicting on subsequent builds
     cp ${DEPLOY_DIR_IMAGE}/emmc_part_list ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_part_list
+    EMMC_PART_LIST_FILE="${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_part_list"
+
+    cp ${DEPLOY_DIR_IMAGE}/emmc_image_list ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_image_list
+    EMMC_IMAGE_LIST_FILE="${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_image_list"
+
+    # Remove unused partitions from emmc_part_list and copy to SYNAIMG folder
+    sed -i '/key_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/tzk_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/bl_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/boot_a/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/boot_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/firmware_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/rootfs_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/fastlogo_a/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/fastlogo_b/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/devinfo/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/misc/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/home/d' ${EMMC_PART_LIST_FILE}
 
     # Re-create emmc_image_list and copy to SYNAIMG folder
-    cat <<EOF >${DEPLOY_DIR_IMAGE}/emmc_image_list
+    cat <<EOF >${EMMC_IMAGE_LIST_FILE}
 preboot.subimg.gz,b1
 preboot.subimg.gz,b2
 format,sd1
@@ -105,7 +111,7 @@ EOF
 
     # sd1 is the factory_setting partition, already being formatted
     partition_count=2
-    for partition in $(grep -v '#' ${DEPLOY_DIR_IMAGE}/emmc_part_list | cut -d'_' -f 1); do
+    for partition in $(grep -v '#' ${EMMC_PART_LIST_FILE} | cut -d'_' -f 1); do
         # factory_setting has nothing to flash and is already being formatted
         [ "${partition}" = "factory" ] && continue
         if [ "${partition}" = "rootfs" ]; then
@@ -113,14 +119,13 @@ EOF
             [ "${UBOOT_BOOT_PARTITION_NUMBER}" != "${partition_count}" ] && bbfatal "U-Boot UBOOT_BOOT_PARTITION_NUMBER (= ${UBOOT_BOOT_PARTITION_NUMBER}) is set to a value different than the rootfs partition (= ${partition_count})"
             subimg_cnt=$(ls ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg.[0-9]* | wc -w)
             for subimg in $(seq 0 $(expr $subimg_cnt - 1)); do
-                echo "rootfs_ota_s.subimg.${subimg},sd${partition_count}" >> ${DEPLOY_DIR_IMAGE}/emmc_image_list
+                echo "rootfs_ota_s.subimg.${subimg},sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
             done
         else
-            echo "${partition}.subimg.gz,sd${partition_count}" >> ${DEPLOY_DIR_IMAGE}/emmc_image_list
+            echo "${partition}.subimg.gz,sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
         fi
         partition_count=$(expr $partition_count + 1)
     done
-    cp ${DEPLOY_DIR_IMAGE}/emmc_image_list ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_image_list
     # Create a SYNAIMG-flash.tar.gz file with SYNAIMG, usb-tool and recovery folder inside.
     install -d ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}-flash
     (
