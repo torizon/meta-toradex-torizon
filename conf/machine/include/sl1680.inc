@@ -137,3 +137,7 @@ EOF
 }
 
 do_image_ota_ext4[depends] += "syna-metadata:do_deploy syna-usb-tool:do_deploy"
+
+# Ensure do_image_synaimg runs after do_image_ostree completes since both copy from IMAGE_ROOTFS,
+# and if they run simultaneously it can cause FileNotFoundError on temporary files created by rsync/tar.
+do_image_synaimg[depends] += "${PN}:do_image_ostree"
