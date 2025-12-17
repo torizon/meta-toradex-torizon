@@ -30,6 +30,7 @@ IMAGE_INSTALL:append = " \
     synasdk-v4l2isp-daemon \
     synasdk-vpu-plugin \
     synasdk-v4l2isp-qtapp \
+    synasdk-synap-module \
     v4l-utils \
 "
 

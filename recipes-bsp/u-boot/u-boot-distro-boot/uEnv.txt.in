@@ -58,6 +58,7 @@ check_rollback_needed=if test -n "${kernel_image2}" && test "${rollback}" = "1";
     env set fdt_file ${fdt_file2}; \
     env set fdtfile ${fdtfile2}; \
     test -n "${kernel_image_type2}" && env set kernel_image_type ${kernel_image_type2}; \
+    test -n "${torizon_boot_args2}" && env set torizon_boot_args ${torizon_boot_args2}; \
 fi || true
 
 set_fdt_path=if test -n "${fdtdir}"; then \
@@ -75,7 +76,7 @@ bootcmd_dtb=if test ${kernel_image_type} != "fitImage"; then \
                     fi || true; \
             fi || true
 
-set_bootargs_custom=if test -n "${fdt_overlays}"; then \
+set_bootargs_custom=if test -n "${fdt_overlays}" && test -z "${torizon_boot_args}"; then \
                         for overlay_file in ${fdt_overlays}; do \
                             if test "${overlay_file}" = "custom-kargs_overlay.dtbo"; then \
                                 if fdt get value custom_kargs /chosen/ bootargs_custom; then \
@@ -84,6 +85,10 @@ set_bootargs_custom=if test -n "${fdt_overlays}"; then \
                             fi; \
                         done; \
                     fi || true
+
+set_bootargs_torizon=if test -n "${torizon_boot_args}"; then \
+                         env set bootargs ${bootargs} ${torizon_boot_args}; \
+                     fi || true
 
 board_fixups=if test "${board}" = "verdin-imx8mm"; then \
                  if test "${fdtfile}" = "imx8mm-verdin-nonwifi-v1.1-dahlia.dtb"; then \
@@ -239,5 +244,5 @@ uenv_extra_configs=@@UENV_EXTRA_CONFIGS@@
 # Ensure "prog_fuses", "read_fuses", "set_vars", and "reset_dev" are ran first here.
 bootcmd_run=run prog_fuses && run read_fuses && run set_vars && run reset_dev && \
             run board_fixups && run check_rollback_needed && run uenv_extra_configs && run set_bootargs && run set_fdt_path && \
-            run bootcmd_dtb && run bootcmd_args && run set_bootargs_custom && run set_kernel_load_addr && \
-            run bootcmd_load_k && run bootcmd_unzip_k && run bootcmd_load_r && run bootcmd_boot
+            run bootcmd_dtb && run bootcmd_args && run set_bootargs_custom && run set_bootargs_torizon && \
+            run set_kernel_load_addr && run bootcmd_load_k && run bootcmd_unzip_k && run bootcmd_load_r && run bootcmd_boot

@@ -103,7 +103,8 @@ sha512sum "${_TDX_SCRIPTS}"/lib/setup-devices/setup-environment-toradex 2>&1 > c
 if [ ! -f "conf/local.conf" ]; then
     cp "${_TDX_SCRIPTS}"/../conf/template/local.conf conf/local.conf
 fi
-ln -sf "${_TDX_SCRIPTS}"/../conf/template/bblayers.conf conf/bblayers.conf
+cp "${_TDX_SCRIPTS}/../conf/template/bblayers.conf" conf/bblayers.conf
+sed -i "s|@OEROOT@|${_TDX_OEROOT}|g" conf/bblayers.conf
 ln -sf "${_TDX_MANIFESTS}"/README.md README.md
 ln -sf "${_TDX_MANIFESTS}" "${_TDX_OEROOT}"/layers/
 

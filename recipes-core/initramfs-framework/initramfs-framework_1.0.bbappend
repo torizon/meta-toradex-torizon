@@ -6,6 +6,7 @@ SRC_URI += "\
     file://kmod \
     file://0001-Mount-run-with-tmpfs.patch \
     file://0002-only-scan-for-block-devices.patch \
+    file://0003-notify-newroot-for-plymouth.patch \
 "
 
 SRC_URI:append:cfs-support = "\
@@ -103,6 +104,7 @@ CFS_INSTALL_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
 do_install[prefuncs] += "${CFS_INSTALL_PREFUNCS}"
 do_install[depends] += "${CFS_INSTALL_DEPENDS}"
 do_install[file-checksums] += "${CFS_INSTALL_FILE_CHECKSUMS}"
+do_install[nostamp] = "1"
 
 do_install:append:cfs-signed() {
     # Bundled into initramfs-module-composefs:
