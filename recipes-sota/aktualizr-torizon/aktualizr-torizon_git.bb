@@ -18,8 +18,6 @@ SRC_URI = " \
 SRCREV = "29a7d4bd073f762d24cb0968b814dcb488a98847"
 SRCREV:use-head-next = "${AUTOREV}"
 
-S = "${WORKDIR}/git"
-
 PV = "1.0+git${SRCPV}"
 
 DEPENDS = "boost curl openssl libarchive libsodium sqlite3 asn1c-native ostree"

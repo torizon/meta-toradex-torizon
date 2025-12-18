@@ -21,8 +21,6 @@ SRC_URI = " \
 SRCREV = "55fdfc7d3fcc0e7121c2ed9f01d0ab1271bb5fd3"
 PV = "1.0.0+git${SRCPV}"
 
-S = "${WORKDIR}/git"
-
 inherit pkgconfig systemd
 
 EXTRA_OEMAKE += "ENABLE_LIBNOTIFY=0"

@@ -18,8 +18,6 @@ SRC_URI = "\
     file://01_log_rollback_info.sh \
     "
 
-S = "${WORKDIR}/git"
-
 SRCREV = "2552ba5584a96f1d7930c74f199b816c19e20129"
 PV = "0.15.8+git${SRCPV}"
 

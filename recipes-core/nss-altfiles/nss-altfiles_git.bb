@@ -9,8 +9,6 @@ SRC_URI = "git://github.com/flatcar-linux/nss-altfiles.git;protocol=https;branch
 PV = "2.23.0+git${SRCPV}"
 SRCREV = "f640895a9f893390375ce5aa26ab22b5e8b14b1f"
 
-S = "${WORKDIR}/git"
-
 # Name Service Switch is provided by GNU C library for Linux
 python __anonymous () {
     if d.getVar('TCLIBC') != "glibc":

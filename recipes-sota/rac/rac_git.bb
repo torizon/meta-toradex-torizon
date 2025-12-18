@@ -26,8 +26,6 @@ SRCREV_tough = "69e51d241b950951907b439a9996692967a9e82b"
 # SRCREV_rac:use-head-next = "${AUTOREV}"
 # SRCREV_tough:use-head-next = "${AUTOREV}"
 
-S = "${WORKDIR}/git"
-
 SYSTEMD_SERVICE:${PN} = "remote-access.service"
 
 PV = "0.0+git${SRCPV}"

@@ -18,8 +18,6 @@ SRC_URI = "git://github.com/fastfetch-cli/fastfetch.git;protocol=https;branch=ma
 
 SRCREV = "1b219a9d5c2a6f96b06b723152e43fed7b220cbf"
 
-S = "${WORKDIR}/git"
-
 inherit cmake
 
 do_install(){
