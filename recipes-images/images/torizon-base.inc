@@ -64,7 +64,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:tdx = " \
-    alsa-ucm-conf-tdx \
+    alsa-ucm-conf \
     set-hostname \
     tdx-info \
     udev-toradex-rules \
