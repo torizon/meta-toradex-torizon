@@ -4,8 +4,8 @@ SRCREV_torizon-meta:use-head-next = "${AUTOREV}"
 KMETABRANCH = "scarthgap-7.x.y"
 KMETATORIZON = "torizon-kernel-meta"
 
-KMETAREPOSITORY="github.com/toradex/toradex-kernel-cache.git"
-KMETAPROTOCOL="https"
+KMETAREPOSITORY = "github.com/toradex/toradex-kernel-cache.git"
+KMETAPROTOCOL = "https"
 
 SRC_URI += "git://${KMETAREPOSITORY};protocol=${KMETAPROTOCOL};type=kmeta;name=torizon-meta;branch=${KMETABRANCH};destsuffix=${KMETATORIZON}"
 

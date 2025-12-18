@@ -3,7 +3,7 @@ DESCRIPTION = "usermount is a small C program that interacts with UDisks2 \
 via D-Bus to automount removable devices as a normal user."
 SECTION = "applications"
 PRIORITY = "optional"
-HOMEPAGE="https://github.com/tom5760/usermount"
+HOMEPAGE = "https://github.com/tom5760/usermount"
 LICENSE = "MIT"
 
 DEPENDS = "udisks2"

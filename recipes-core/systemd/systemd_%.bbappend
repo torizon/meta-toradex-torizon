@@ -19,7 +19,7 @@ RRECOMMENDS:${PN}:remove = "os-release"
 RDEPENDS:${PN}:remove = "volatile-binds"
 RDEPENDS:${PN} += "bash"
 
-DEF_FALLBACK_NTP_SERVERS="time.cloudflare.com time1.google.com time2.google.com time3.google.com time4.google.com"
+DEF_FALLBACK_NTP_SERVERS = "time.cloudflare.com time1.google.com time2.google.com time3.google.com time4.google.com"
 
 # Since 'sota.conf.inc' is export '0' into SOURCE_DATE_EPOCH, we populate this variable locally with the default
 # value calculated by Yocto, as this value is used to do an initial system clock setup.
