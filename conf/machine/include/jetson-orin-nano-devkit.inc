@@ -9,3 +9,5 @@ IMAGE_TEGRAFLASH_KERNEL = "${DEPLOY_DIR_IMAGE}/tegra-minimal-initramfs-${MACHINE
 IMAGE_TEGRAFLASH_FS_TYPE = "ota-ext4"
 
 BBMASK += "meta-tegra/external/sota/recipes-bsp/uefi/edk2-firmware-tegra_%.bbappend"
+
+MACHINE_EXTRA_RDEPENDS:remove = " tegra-redundant-boot"
