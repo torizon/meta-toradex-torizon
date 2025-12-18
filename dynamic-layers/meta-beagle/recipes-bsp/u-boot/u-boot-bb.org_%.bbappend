@@ -4,6 +4,7 @@ FILESEXTRAPATHS:prepend:beagley-ai := "${THISDIR}/beagley-ai:"
 
 SRC_URI:append:beagley-ai = "\
     file://bootcommand.cfg \
+    file://env_mmc.cfg \
 "
 
 # Reapply all *.cfg fragments in SRC_URI, as u-boot-mergeconfig.inc from meta-ti-bsp has
