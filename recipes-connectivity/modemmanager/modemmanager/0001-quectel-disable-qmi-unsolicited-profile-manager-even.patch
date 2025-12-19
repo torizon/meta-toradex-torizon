@@ -3,6 +3,7 @@ From: Lukas Voegl <lvoegl@tdt.de>
 Date: Fri, 19 Apr 2024 11:33:06 +0200
 Subject: [PATCH] quectel: disable qmi unsolicited profile manager events
 
+Upstream-Status: Backport [e3024ec620f2d4087c1d03579c8575b6cb988503]
 Signed-off-by: Lukas Voegl <lvoegl@tdt.de>
 ---
  .../quectel/mm-broadband-modem-qmi-quectel.c  | 105 ++++++++++++++++--
