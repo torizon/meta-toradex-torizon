@@ -1,7 +1,7 @@
-From b4d9d03fab62cbd7ac78bc003eda830dc519b6f0 Mon Sep 17 00:00:00 2001
+From 39144d77c13334c531d7abd99d4f2d5dff08fe0f Mon Sep 17 00:00:00 2001
 From: Lucas Morishita <lucas.morishita@toradex.com>
 Date: Mon, 31 Jul 2023 09:30:15 -0300
-Subject: [PATCH 3/3] ostree-fetcher-curl: set max parallel connections
+Subject: [PATCH 3/6] ostree-fetcher-curl: set max parallel connections
 
 Allow the maximum number of parallel downloads to
 be set by an environment variable. The code was
@@ -37,5 +37,5 @@ index e9b9672b..88e37d4e 100644
    /* This version mirrors the version at which we're enabling HTTP2 support.
     * See also https://github.com/curl/curl/blob/curl-7_53_0/docs/examples/http2-download.c
 -- 
-2.25.1
+2.34.1
 

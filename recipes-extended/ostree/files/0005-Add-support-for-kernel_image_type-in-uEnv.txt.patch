@@ -1,7 +1,7 @@
-From 4ba5b9e295e4dd5db69e10215859d68b5512da25 Mon Sep 17 00:00:00 2001
+From 7fd485d4dc99c9384cf966475708250a318befa1 Mon Sep 17 00:00:00 2001
 From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
 Date: Tue, 3 Dec 2024 18:08:12 -0300
-Subject: [PATCH 2/2] Add support for kernel_image_type in uEnv.txt
+Subject: [PATCH 5/6] Add support for kernel_image_type in uEnv.txt
 
 Save uEnv.txt variable "kernel_image_type" from the previous deployment
 to allow rollbacks to work when an OS update changes the kernel image
@@ -18,7 +18,7 @@ Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
  1 file changed, 11 insertions(+)
 
 diff --git a/src/libostree/ostree-bootloader-uboot.c b/src/libostree/ostree-bootloader-uboot.c
-index 6eb41e4e..a566b997 100644
+index 9d198f7d..19ef89de 100644
 --- a/src/libostree/ostree-bootloader-uboot.c
 +++ b/src/libostree/ostree-bootloader-uboot.c
 @@ -193,6 +193,17 @@ create_config_from_boot_loader_entries (OstreeBootloaderUboot *self, int bootver
