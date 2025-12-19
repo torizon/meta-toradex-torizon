@@ -37,16 +37,7 @@ IMAGE_INSTALL:append = " \
 SYNA_SDK_CONFIG_NAME = "sl1680_poky_aarch64_rdk"
 SYNA_SDK_CONFIG_FILE = "sl1680_poky_aarch64_rdk_defconfig"
 
-PREFERRED_PROVIDER_u-boot-fw-utils = "libubootenv"
-PREFERRED_RPROVIDER_u-boot-fw-utils = "libubootenv"
-PREFERRED_PROVIDER_u-boot-default-script = "u-boot-distro-boot"
-PREFERRED_PROVIDER_u-boot-default-script:sota = "u-boot-distro-boot"
-IMAGE_BOOT_FILES:append = " boot.scr-${MACHINE};boot.scr"
-WKS_FILE_DEPENDS:append = " u-boot-default-script"
-
 UBOOT_BOOT_PARTITION_NUMBER = "6"
-OTAROOT_PARTITION_NUMBER = "${UBOOT_BOOT_PARTITION_NUMBER}"
-export UBOOT_BOOT_PARTITION_NUMBER
 
 UENV_EXTRA_CONFIGS = "\
     env set skip_fdt_overlays 1; \
@@ -58,86 +49,6 @@ UENV_EXTRA_CONFIGS = "\
     env set initrd_high 0xffffffffffffffff; \
 "
 
-OSTREE_DEVICETREE = " \
-    ${SYNA_KERNEL_DTS_FILE} \
-    ${SYNA_KERNEL_DTBO_FILE} \
-"
-
-BBMASK += "/meta-synaptics/dynamic-layers/virtualization-layer/recipes-containers/docker/docker-moby_git.bbappend"
-
 hostname:pn-base-files = "torizon-sl1680"
 
-PREFERRED_PROVIDER_virtual/dtb = ""
-
-IMAGE_CMD:ota-ext4:append () {
-    # Clean up
-    [ -f "${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs.subimg" ] && rm ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs.subimg
-    [ -f "${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_s.subimg.0" ] && rm ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_s.subimg.*
-
-    # Align ROOTFS_SIZE to 4KB (4096 bytes) to avoid img2simg assertion errors
-    ROOTFS_SIZE_ALIGNED=$(echo "scale=0; ((${ROOTFS_SIZE} + 4095) / 4096) * 4096" | bc)
-    synaimg_mkext234fs ${OTA_SYSROOT} rootfs_ota ext4 ${ROOTFS_SIZE_ALIGNED} ${EXTRA_IMAGECMD}
-
-    # Convert rootfs_ota.subimg to sparse image with 300MB size limit per sub-image
-    img2simg ${DEPLOY_DIR_IMAGE}/rootfs_ota.subimg ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg 4096
-    simg2simg ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg 314572800
-
-    # Prepare emmc_part_list and emmc_image_list for SYNAIMG. We make copies first to avoid modifying the original files and conflicting on subsequent builds
-    cp ${DEPLOY_DIR_IMAGE}/emmc_part_list ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_part_list
-    EMMC_PART_LIST_FILE="${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_part_list"
-
-    cp ${DEPLOY_DIR_IMAGE}/emmc_image_list ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_image_list
-    EMMC_IMAGE_LIST_FILE="${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/emmc_image_list"
-
-    # Remove unused partitions from emmc_part_list and copy to SYNAIMG folder
-    sed -i '/key_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/tzk_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/bl_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/boot_a/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/boot_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/firmware_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/rootfs_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/fastlogo_a/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/fastlogo_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/devinfo/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/misc/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/home/d' ${EMMC_PART_LIST_FILE}
-
-    # Re-create emmc_image_list and copy to SYNAIMG folder
-    cat <<EOF >${EMMC_IMAGE_LIST_FILE}
-preboot.subimg.gz,b1
-preboot.subimg.gz,b2
-format,sd1
-EOF
-
-    # sd1 is the factory_setting partition, already being formatted
-    partition_count=2
-    for partition in $(grep -v '#' ${EMMC_PART_LIST_FILE} | cut -d'_' -f 1); do
-        # factory_setting has nothing to flash and is already being formatted
-        [ "${partition}" = "factory" ] && continue
-        if [ "${partition}" = "rootfs" ]; then
-            # Check if our partitioning is aligned with expected U-Boot env settings
-            [ "${UBOOT_BOOT_PARTITION_NUMBER}" != "${partition_count}" ] && bbfatal "U-Boot UBOOT_BOOT_PARTITION_NUMBER (= ${UBOOT_BOOT_PARTITION_NUMBER}) is set to a value different than the rootfs partition (= ${partition_count})"
-            subimg_cnt=$(ls ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs_ota_s.subimg.[0-9]* | wc -w)
-            for subimg in $(seq 0 $(expr $subimg_cnt - 1)); do
-                echo "rootfs_ota_s.subimg.${subimg},sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
-            done
-        else
-            echo "${partition}.subimg.gz,sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
-        fi
-        partition_count=$(expr $partition_count + 1)
-    done
-    # Create a SYNAIMG-flash.tar.gz file with SYNAIMG, usb-tool and recovery folder inside.
-    install -d ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}-flash
-    (
-        cd ${DEPLOY_DIR_IMAGE}
-        cp -L -R syna-metadata/* syna-usb-tool/* ${SYNAIMG_DEPLOY_SUBDIR} ${SYNAIMG_DEPLOY_SUBDIR}-flash
-        tar -czf ${SYNAIMG_DEPLOY_SUBDIR}-flash.tar.gz -C ${DEPLOY_DIR_IMAGE} ${SYNAIMG_DEPLOY_SUBDIR}-flash
-    )
-}
-
-do_image_ota_ext4[depends] += "syna-metadata:do_deploy syna-usb-tool:do_deploy"
-
-# Ensure do_image_synaimg runs after do_image_ostree completes since both copy from IMAGE_ROOTFS,
-# and if they run simultaneously it can cause FileNotFoundError on temporary files created by rsync/tar.
-do_image_synaimg[depends] += "${PN}:do_image_ostree"
+require sl-common.inc
