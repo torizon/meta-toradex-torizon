@@ -1,22 +1,22 @@
-From 9d25861082f74010bd37194c8b4bf8409034f828 Mon Sep 17 00:00:00 2001
+From b025081d8ba7116b584c9ea5fdc2bfdc88a6d01f Mon Sep 17 00:00:00 2001
 From: Beat Hofer <beat.hofer@camillebauer.com>
 Date: Tue, 14 Oct 2025 10:14:58 +0200
 Subject: [PATCH] notify-newroot-for-plymouth
 
-The Plymouth daemon must be notified that the ROOTFS has been mounted. 
+The Plymouth daemon must be notified that the ROOTFS has been mounted.
 Otherwise, the required plugin files will not be found.
 
-Upstream-Status: Inappropriate [TorizonCore Specific]
-
+Upstream-Status: Inappropriate [Torizon Specific]
+Signed-off-by: Hiago De Franco <hiago.franco@toradex.com>
 ---
- finish | 5 ++++++
+ finish | 5 +++++
  1 file changed, 5 insertions(+)
 
 diff --git a/finish b/finish
-index ac0de9f996..598bf5c790 100755
+index 21eaa5739343..1c954067b629 100755
 --- a/finish
 +++ b/finish
-@@ -41,6 +41,11 @@
+@@ -41,6 +41,11 @@ finish_run() {
  		mount --move /sys $ROOTFS_DIR/sys
  		mount --move /run $ROOTFS_DIR/run
  
@@ -26,5 +26,5 @@ index ac0de9f996..598bf5c790 100755
 +		fi
 +
  		cd $ROOTFS_DIR
- 		exec switch_root -c /dev/console $ROOTFS_DIR ${bootparam_init:-/sbin/init}
+ 		exec switch_root $ROOTFS_DIR ${bootparam_init:-/sbin/init}
  	else
