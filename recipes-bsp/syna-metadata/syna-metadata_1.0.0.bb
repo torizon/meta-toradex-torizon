@@ -20,4 +20,4 @@ do_deploy() {
 
 addtask deploy after do_install
 
-COMPATIBLE_MACHINE = "(sl1680|winglet)"
+COMPATIBLE_MACHINE = "(sl1680|sl2619|winglet)"
