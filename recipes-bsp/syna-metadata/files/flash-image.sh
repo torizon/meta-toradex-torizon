@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# WARNING: This script DOES not yet work with the Winglet board, it works
+# WARNING: This script DOES not yet work with the Winglet/SL2619 boards, it works
 # only with the Astra SL1680 board.
 #
 echo "Flashing Astra SL1680 board using astra update..."
