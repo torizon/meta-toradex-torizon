@@ -111,3 +111,14 @@ jetson-orin-nano-devkit-nvme login:
 
 ```
 4. Login to the board using the `torizon/torizon` credentials.
+
+Run NVIDIA docker
+======
+
+The NVIDIA container runtime is included in the `jetson-orin-nano-devkit` and `jetson-orin-nano-devkit-nvme` configurations for Torizon.
+
+Use `docker run --runtime nvidia` to run containerized NVIDIA applications. For example, to run the `stable-diffusion` tutorial from the NVIDIA Jetson AI Lab (https://www.jetson-ai-lab.com/archive/tutorial_stable-diffusion.html) use the following command in Torizon:
+
+```
+sudo docker run --runtime nvidia -it --rm --network=host dustynv/stable-diffusion-webui:r36.2.0
+```
