@@ -1,0 +1,73 @@
+From c6bd9883ef86fdb5ce3d506fac3fd89a79871fbd Mon Sep 17 00:00:00 2001
+From: Jeremias Cordoba <js.cordoba8321@gmail.com>
+Date: Thu, 6 Nov 2025 14:51:57 -0800
+Subject: [PATCH 5/5] Add support for custom bootargs in uEnv.txt
+
+Message for v1:
+
+Save variable "torizon_boot_args" from previous OSTree deployment.
+This allows the setting of custom boot args by external tooling,
+in a way that OSTree can track.
+
+Message for v2:
+
+Save variables "torizon_bootargs_l" and "torizon_bootargs_r" from the
+previous OSTree deployment. The former is prepended and the latter
+appended to the "bootargs" variable which U-Boot passes to the Linux
+kernel. As with v1, this allows the setting of custom boot arguments by
+external tooling (esp. TorizonCore Builder).
+
+The ability to prepend and append provides greater flexibility in
+general and is required for dealing with Secure Boot images having the
+kernel command-line protection feature enabled. With that feature, the
+command-line is broken into a fixed part (at the beginning of the
+bootargs string) and a variable part (coming after the fixed part) and
+user-supplied arguments must be at the fixed part (otherwise they would
+need to create a custom version of U-Boot to parse and validate the
+variable part).
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Related-to: TOR-4066, TCB-763
+Signed-off-by: Jeremias Cordoba <jeremias.cordoba@toradex.com>
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ src/libostree/ostree-bootloader-uboot.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/src/libostree/ostree-bootloader-uboot.c b/src/libostree/ostree-bootloader-uboot.c
+index 19ef89de..d34bd3e8 100644
+--- a/src/libostree/ostree-bootloader-uboot.c
++++ b/src/libostree/ostree-bootloader-uboot.c
+@@ -204,6 +204,28 @@ create_config_from_boot_loader_entries (OstreeBootloaderUboot *self, int bootver
+               g_free (val);
+             }
+         }
++
++      if (i)
++        {
++          val = uboot_config_get ("torizon_bootargs_l", cancellable, error);
++          if (val)
++            {
++              g_ptr_array_add (new_lines,
++                               g_strdup_printf ("torizon_bootargs_l%s=%s", index_suffix, val));
++              g_free (val);
++            }
++        }
++
++      if (i)
++        {
++          val = uboot_config_get ("torizon_bootargs_r", cancellable, error);
++          if (val)
++            {
++              g_ptr_array_add (new_lines,
++                               g_strdup_printf ("torizon_bootargs_r%s=%s", index_suffix, val));
++              g_free (val);
++            }
++        }
+     }
+ 
+   return TRUE;
+-- 
+2.34.1
+

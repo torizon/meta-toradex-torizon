@@ -1,7 +1,7 @@
-From 743ddf0c250176fd042a741a059d5d63a6e1ab37 Mon Sep 17 00:00:00 2001
+From 8917fbe8285a28bfc93dab1092e6fb1857129d13 Mon Sep 17 00:00:00 2001
 From: Sergio Prado <sergio.prado@toradex.com>
 Date: Wed, 13 Jul 2022 14:52:33 -0300
-Subject: [PATCH 1/2] Add support for the fdtfile variable in uEnv.txt
+Subject: [PATCH 2/5] Add support for the fdtfile variable in uEnv.txt
 
 Comments for v1:
 
@@ -97,5 +97,5 @@ index 41280cf1..9d198f7d 100644
        if (val)
          {
 -- 
-2.30.2
+2.34.1
 
