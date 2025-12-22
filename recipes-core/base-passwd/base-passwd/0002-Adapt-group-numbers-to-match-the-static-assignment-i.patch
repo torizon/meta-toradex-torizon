@@ -1,4 +1,4 @@
-From 83a5272353249b1ea06638eaa6b421bee7cab43a Mon Sep 17 00:00:00 2001
+From 66ab3264e3c10e9c7bf4cd2c40eb24eeb9179fac Mon Sep 17 00:00:00 2001
 From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
 Date: Sat, 24 Aug 2024 15:11:09 -0300
 Subject: [PATCH 2/2] Adapt group numbers to match the static assignment in
@@ -13,14 +13,14 @@ file; this is also helpful to ensure that group numbers remain the same
 as in previous releases of the OS.
 
 Upstream-Status: Inappropriate [configuration]
-
 Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Signed-off-by: Hiago De Franco <hiago.franco@toradex.com>
 ---
  group.master | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/group.master b/group.master
-index 0fa81a3..33d9ec7 100644
+index 73b6d286c82f..55a77b810a01 100644
 --- a/group.master
 +++ b/group.master
 @@ -12,7 +12,6 @@ uucp:*:10:
@@ -40,9 +40,9 @@ index 0fa81a3..33d9ec7 100644
  gpio:*:49:
  staff:*:50:
  i2cdev:*:51:
-@@ -45,5 +42,8 @@ shutdown:*:70:
- wheel:*:80:
+@@ -46,5 +43,8 @@ wheel:*:80:
  nobody:*:99:
+ clock:*:81:
  users:*:100:
 +input:*:101:
 +kvm:*:102:
@@ -50,5 +50,5 @@ index 0fa81a3..33d9ec7 100644
 +sgx:*:104:
  nogroup:*:65534:
 -- 
-2.25.1
+2.51.0
 

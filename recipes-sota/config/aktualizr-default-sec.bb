@@ -16,9 +16,6 @@ SRC_URI:append:imx-generic-bsp = " \
                                    file://fuse_actions-in.sh \
                                    "
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
-
 RDEPENDS:${PN} += "bash coreutils jq util-linux mmc-utils sed u-boot-fw-utils"
 RDEPENDS:${PN}:remove:genericx86-64 = "u-boot-fw-utils"
 RDEPENDS:${PN}:remove:intel-corei7-64 = "u-boot-fw-utils"

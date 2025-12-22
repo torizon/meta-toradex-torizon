@@ -8,8 +8,7 @@ SRC_URI = " \
     file://docker-watchdog.sh \
 "
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}/sources"
 
 inherit systemd
 

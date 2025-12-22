@@ -9,8 +9,7 @@ SRC_URI = " \
     file://auto-provisioning.sh \
 "
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}/sources"
 
 RDEPENDS:${PN} = "bash jq"
 

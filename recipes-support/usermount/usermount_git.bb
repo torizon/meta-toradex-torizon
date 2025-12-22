@@ -3,7 +3,7 @@ DESCRIPTION = "usermount is a small C program that interacts with UDisks2 \
 via D-Bus to automount removable devices as a normal user."
 SECTION = "applications"
 PRIORITY = "optional"
-HOMEPAGE="https://github.com/tom5760/usermount"
+HOMEPAGE = "https://github.com/tom5760/usermount"
 LICENSE = "MIT"
 
 DEPENDS = "udisks2"
@@ -20,8 +20,6 @@ SRC_URI = " \
 
 SRCREV = "55fdfc7d3fcc0e7121c2ed9f01d0ab1271bb5fd3"
 PV = "1.0.0+git${SRCPV}"
-
-S = "${WORKDIR}/git"
 
 inherit pkgconfig systemd
 

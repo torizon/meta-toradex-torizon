@@ -5,6 +5,7 @@ Subject: [PATCH] broadband-modem-qmi-quectel: fix task completion when not
  enabling profile manager events
 
 Fixes e3024ec620f2d4087c1d03579c8575b6cb988503
+Upstream-Status: Backport [1e26e16168d4815a48ab77610e1c282dfc345567]
 ---
  src/plugins/quectel/mm-broadband-modem-qmi-quectel.c | 1 +
  1 file changed, 1 insertion(+)

@@ -7,8 +7,7 @@ SRC_URI = " \
     file://docker-compose.service \
 "
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
 inherit systemd
 
