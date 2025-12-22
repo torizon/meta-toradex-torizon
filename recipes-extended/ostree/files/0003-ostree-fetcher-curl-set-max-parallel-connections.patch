@@ -1,7 +1,7 @@
-From 13376d2cdd92a0759da66ef8b329908a05f388c1 Mon Sep 17 00:00:00 2001
+From a856ef3a0b93bc38f4cd1e4700f64405a778c34e Mon Sep 17 00:00:00 2001
 From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 Date: Mon, 2 Dec 2024 18:05:51 +0000
-Subject: [PATCH] ostree-fetcher-curl: set max parallel connections
+Subject: [PATCH 3/5] ostree-fetcher-curl: set max parallel connections
 
 Allow the maximum number of parallel downloads to
 be set by an environment variable. The code was
@@ -18,7 +18,7 @@ Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/src/libostree/ostree-fetcher-curl.c b/src/libostree/ostree-fetcher-curl.c
-index aadf6f6..502c051 100644
+index 5c3bdd9a..ac7afae3 100644
 --- a/src/libostree/ostree-fetcher-curl.c
 +++ b/src/libostree/ostree-fetcher-curl.c
 @@ -251,8 +251,14 @@ _ostree_fetcher_init (OstreeFetcher *self)

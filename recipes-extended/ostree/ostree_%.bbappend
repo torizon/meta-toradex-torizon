@@ -7,7 +7,7 @@ SRC_URI:append = " \
     file://0002-Add-support-for-the-fdtfile-variable-in-uEnv.txt.patch \
     file://0003-ostree-fetcher-curl-set-max-parallel-connections.patch \
     file://0004-Add-support-for-kernel_image_type-in-uEnv.txt.patch \
-    file://0006-Add-support-for-torizon_boot_args-in-uEnv.txt.patch \
+    file://0005-Add-support-for-custom-bootargs-in-uEnv.txt.patch \
     file://ostree-pending-reboot.service \
     file://ostree-pending-reboot.path \
     file://ostree-repo-config.sh \
