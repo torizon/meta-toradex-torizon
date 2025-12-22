@@ -276,6 +276,9 @@ do_compile() {
         bbfatal "Some build-time variables have not been replaced in uEnv.txt: ${missing}."
     fi
 
+    # Drop full-line comments from the file.
+    sed -e "/^#\([[:blank:]].*\|\)$/d" -i ${WORKDIR}/uEnv.txt.temp
+
     cp ${WORKDIR}/uEnv.txt.temp uEnv.txt
 }
 

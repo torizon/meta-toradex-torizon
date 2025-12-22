@@ -1,7 +1,7 @@
-From 4d755a85225ea0a02d4580d088bb8a97138cb040 Mon Sep 17 00:00:00 2001
+From 8f536bda701732ace3ea03058ea8bb085b9853b5 Mon Sep 17 00:00:00 2001
 From: Colin Walters <walters@verbum.org>
 Date: Wed, 18 Sep 2024 13:41:59 -0400
-Subject: [PATCH] curl: Make socket callback during cleanup into no-op
+Subject: [PATCH 4/6] curl: Make socket callback during cleanup into no-op
 
 Because curl_multi_cleanup may invoke callbacks, we effectively have
 some circular references going on here. See discussion in
@@ -22,7 +22,7 @@ Signed-off-by: Colin Walters <walters@verbum.org>
  1 file changed, 14 insertions(+)
 
 diff --git a/src/libostree/ostree-fetcher-curl.c b/src/libostree/ostree-fetcher-curl.c
-index d6902893ff..8054812f57 100644
+index 88e37d4e..021e0817 100644
 --- a/src/libostree/ostree-fetcher-curl.c
 +++ b/src/libostree/ostree-fetcher-curl.c
 @@ -78,6 +78,7 @@ struct OstreeFetcher
@@ -49,7 +49,7 @@ index d6902893ff..8054812f57 100644
    curl_multi_cleanup (self->multi);
    g_free (self->remote_name);
    g_free (self->tls_ca_db_path);
-@@ -528,6 +538,10 @@ sock_cb (CURL *easy, curl_socket_t s, int what, void *cbp, void *sockp)
+@@ -534,6 +544,10 @@ sock_cb (CURL *easy, curl_socket_t s, int what, void *cbp, void *sockp)
    OstreeFetcher *fetcher = cbp;
    SockInfo *fdp = (SockInfo *)sockp;
  
@@ -60,3 +60,6 @@ index d6902893ff..8054812f57 100644
    if (what == CURL_POLL_REMOVE)
      {
        if (!g_hash_table_remove (fetcher->sockets, fdp))
+-- 
+2.34.1
+

@@ -57,8 +57,9 @@ check_rollback_needed=if test -n "${kernel_image2}" && test "${rollback}" = "1";
     env set fdtdir ${fdtdir2}; \
     env set fdt_file ${fdt_file2}; \
     env set fdtfile ${fdtfile2}; \
+    env set torizon_bootargs_l ${torizon_bootargs_l2}; \
+    env set torizon_bootargs_r ${torizon_bootargs_r2}; \
     test -n "${kernel_image_type2}" && env set kernel_image_type ${kernel_image_type2}; \
-    test -n "${torizon_boot_args2}" && env set torizon_boot_args ${torizon_boot_args2}; \
 fi || true
 
 set_fdt_path=if test -n "${fdtdir}"; then \
@@ -76,7 +77,7 @@ bootcmd_dtb=if test ${kernel_image_type} != "fitImage"; then \
                     fi || true; \
             fi || true
 
-set_bootargs_custom=if test -n "${fdt_overlays}" && test -z "${torizon_boot_args}"; then \
+set_bootargs_custom=if test -n "${fdt_overlays}" && test -z "${torizon_bootargs_l}${torizon_bootargs_r}"; then \
                         for overlay_file in ${fdt_overlays}; do \
                             if test "${overlay_file}" = "custom-kargs_overlay.dtbo"; then \
                                 if fdt get value custom_kargs /chosen/ bootargs_custom; then \
@@ -86,8 +87,21 @@ set_bootargs_custom=if test -n "${fdt_overlays}" && test -z "${torizon_boot_args
                         done; \
                     fi || true
 
-set_bootargs_torizon=if test -n "${torizon_boot_args}"; then \
-                         env set bootargs ${bootargs} ${torizon_boot_args}; \
+# New version of set_bootargs_custom:
+#
+# - Instead of using an overlay for passing custom arguments, here we use variables
+#   which are supposed to be set directly inside uEnv.txt.
+#
+# - To keep behavioral compatibility with set_bootargs_custom, arguments can be
+#   added to the right-hand side of the original "bootargs" variable (i.e. appended
+#   to it) by setting variable "torizon_bootargs_r".
+#
+# - To be compatible with Secure Boot, particularly with the Kernel command-line
+#   protection, arguments can also be added to the left-hand side of "bootargs"
+#   (i.e. prepended to it) via variable "torizon_bootargs_l".
+#
+set_bootargs_custom2=if test -n "${torizon_bootargs_l}${torizon_bootargs_r}"; then \
+                         env set bootargs ${torizon_bootargs_l} ${bootargs} ${torizon_bootargs_r}; \
                      fi || true
 
 board_fixups=if test "${board}" = "verdin-imx8mm"; then \
@@ -244,5 +258,5 @@ uenv_extra_configs=@@UENV_EXTRA_CONFIGS@@
 # Ensure "prog_fuses", "read_fuses", "set_vars", and "reset_dev" are ran first here.
 bootcmd_run=run prog_fuses && run read_fuses && run set_vars && run reset_dev && \
             run board_fixups && run check_rollback_needed && run uenv_extra_configs && run set_bootargs && run set_fdt_path && \
-            run bootcmd_dtb && run bootcmd_args && run set_bootargs_custom && run set_bootargs_torizon && \
+            run bootcmd_dtb && run bootcmd_args && run set_bootargs_custom && run set_bootargs_custom2 && \
             run set_kernel_load_addr && run bootcmd_load_k && run bootcmd_unzip_k && run bootcmd_load_r && run bootcmd_boot
