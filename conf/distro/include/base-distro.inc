@@ -83,9 +83,13 @@ SKIP_META_SECURITY_SANITY_CHECK = "1"
 # Configure the "kernel command-line protection" for Torizon OS (relevant when
 # the tdx-signed class is in use).
 TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON ?= "root=LABEL=otaroot rootfstype=ext4 ${OSTREE_KERNEL_ARGS}"
-TOS_SECBOOT_REQUIRED_BOOTARGS ?= "${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
-TOS_SECBOOT_REQUIRED_BOOTARGS:qemuarm64 ?= ""
-# Override BSP configuration:
+# Per-machine default bootargs for Torizon OS:
+TOS_SECBOOT_REQUIRED_BOOTARGS_DEFAULT ?= "${TOS_SECBOOT_REQUIRED_BOOTARGS_COMMON}"
+TOS_SECBOOT_REQUIRED_BOOTARGS_DEFAULT:qemuarm64 ?= ""
+# Bootargs for Torizon OS; users of Torizon OS should override this one rather than
+# TDX_SECBOOT_REQUIRED_BOOTARGS:
+TOS_SECBOOT_REQUIRED_BOOTARGS ?= "${TOS_SECBOOT_REQUIRED_BOOTARGS_DEFAULT}"
+# Override BSP configuration when tdx-signed is in use:
 TDX_SECBOOT_REQUIRED_BOOTARGS:tdx-signed = "${TOS_SECBOOT_REQUIRED_BOOTARGS}"
 
 # Export some extra build information (takes place if class image-buildinfo is used).
