@@ -36,4 +36,18 @@ do_deploy:append:verdin-imx8mp() {
     install -m 0644 "${B}/${MACHINE}_defconfig/dts/upstream/src/arm64/${def_dt}.dtb" \
                     "${DEPLOYDIR}/u-boot-dtbs/freescale/"
 }
+
+do_deploy:append:verdin-imx8mm() {
+    # Check assumptions:
+    local def_dt="freescale/imx8mm-verdin-wifi-dev"
+    tcbsgn_check_config "CONFIG_DEFAULT_DEVICE_TREE" "${def_dt}"
+    tcbsgn_check_config "CONFIG_OF_LIST" "${def_dt}"
+
+    # Deploy common files:
+    tcbsgn_deploy_common_files_imx8m
+
+    # Deploy files specific to the imx8mm:
+    install -d "${DEPLOYDIR}/u-boot-dtbs/freescale"
+    install -m 0644 "${B}/${MACHINE}_defconfig/dts/upstream/src/arm64/${def_dt}.dtb" \
+                    "${DEPLOYDIR}/u-boot-dtbs/freescale/"
 }
