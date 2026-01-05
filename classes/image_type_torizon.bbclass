@@ -32,6 +32,8 @@ TCB_SIGNING_FILES_TARBALL = "tcb_signing_files.tar.gz"
 TCB_SIGNING_SUPPORT ?= "0"
 TCB_SIGNING_SUPPORT:verdin-imx8mp ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
 TCB_SIGNING_FILELIST:verdin-imx8mp ?= "uboot_config bl31* lpddr4_pmu_train_* u-boot.dtb u-boot-nodtb.bin spl/ u-boot-dtbs/"
+TCB_SIGNING_SUPPORT:verdin-imx8mm ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
+TCB_SIGNING_FILELIST:verdin-imx8mm ?= "uboot_config bl31* lpddr4_pmu_train_* u-boot.dtb u-boot-nodtb.bin spl/ u-boot-dtbs/"
 
 pack_tcb_signing_binaries_in_teziimg() {
     if [ "${TCB_SIGNING_SUPPORT}" != "1" ]; then
