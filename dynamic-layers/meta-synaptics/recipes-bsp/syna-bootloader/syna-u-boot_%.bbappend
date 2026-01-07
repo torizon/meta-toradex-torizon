@@ -13,5 +13,6 @@ SRC_URI += "\
 "
 
 do_compile:prepend () {
+    sed -i "s/@@BOOT_PART@@/${UBOOT_BOOT_PARTITION_NUMBER}/" ${WORKDIR}/extra-uboot-config.cfg
     export extra_uboot_config=${WORKDIR}/extra-uboot-config.cfg
 }
