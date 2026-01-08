@@ -333,6 +333,7 @@ gen_bootloader_ota_files () {
 # Dependencies for gen_bootloader_ota_files():
 GEN_BOOTLOADER_OTA_FILES_DEPENDS ?= "\
     jq-native:do_populate_sysroot \
+    virtual/bootloader:do_deploy \
 "
 
 IMAGE_PREPROCESS_COMMAND += "adjust_rootfs_datetime;"
