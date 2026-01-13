@@ -24,8 +24,8 @@ do_install() {
     install -m 0755 ${UNPACKDIR}/fw_printenv ${D}${bindir}/fw_printenv
     install -m 0755 ${UNPACKDIR}/fw_setenv ${D}${bindir}/fw_setenv
 
-    install -d ${D}${sysconfdir}/ostree.d
-    install -m 0755 ${UNPACKDIR}/99_fallback_logic ${D}${sysconfdir}/ostree.d/99_fallback_logic
+    install -d ${D}${sysconfdir}/ostree-grub.d
+    install -m 0755 ${UNPACKDIR}/99_fallback_logic ${D}${sysconfdir}/ostree-grub.d/99_fallback_logic
 
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${UNPACKDIR}/grubenv-create.service ${D}${systemd_unitdir}/system/grubenv-create.service
