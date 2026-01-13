@@ -11,6 +11,7 @@ SRC_URI:append = " \
     file://0006-Add-support-for-custom-bootargs-in-uEnv.txt.patch \
     file://0001-mount-Allow-building-when-macro-MOUNT_ATTR_IDMAP-is-.patch \
     file://0002-mount-Allow-building-when-macro-LOOP_CONFIGURE-is-no.patch \
+    file://0007-ostree-grub-generator-allow-adding-custom-scripts-to.patch \
     file://ostree-pending-reboot.service \
     file://ostree-pending-reboot.path \
     file://ostree-repo-config.sh \
