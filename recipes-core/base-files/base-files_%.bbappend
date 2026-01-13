@@ -17,6 +17,11 @@ do_install_basefilesissue () {
 	printf "%s \\\n \\\l\n\n" "${DISTRO_VERSION}" >> ${D}${sysconfdir}/issue
 	printf "%s %%h\n\n" "${DISTRO_VERSION}" >> ${D}${sysconfdir}/issue.net
 }
+	
+do_install:append:intel-corei7-64 () {
+	# Replace fstab with our own for Intel Core i7-64
+	install -m 644 ${WORKDIR}/x86/fstab ${D}${sysconfdir}/fstab
+}
 
 do_install:append:cfs-support () {
 	# Get rid of the /dev/root entry in fstab to avoid errors from
