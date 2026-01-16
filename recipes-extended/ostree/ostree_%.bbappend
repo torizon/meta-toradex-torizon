@@ -75,16 +75,30 @@ def is_ti(d):
     else:
         return False
 
+def is_nvidia(d):
+    overrides = d.getVar('OVERRIDES')
+    if not overrides:
+        return False
+    overrides = overrides.split(':')
+    if 'tegra' in overrides:
+        return True
+    else:
+        return False
+
 def get_deps(d):
     if is_ti(d):  # TI
         preferred_provider_uboot = d.getVar('PREFERRED_PROVIDER_u-boot')
         return preferred_provider_uboot if preferred_provider_uboot is not None else ''
+    elif is_nvidia(d):
+        return 'ostree-uenv-extlinux'
     else:  # NXP/x86 generic/QEMU
         return 'u-boot-default-script' if d.getVar('PREFERRED_PROVIDER_u-boot-default-script') else ''
 
 def get_rdeps(d):
     if is_ti(d):  # TI
         return 'ostree-uboot-env' if d.getVar('PREFERRED_PROVIDER_u-boot') else ''
+    elif is_nvidia(d):
+        return 'ostree-uenv-extlinux-conf'
     else:  # NXP/x86 generic/QEMU
         return 'ostree-uboot-env' if d.getVar('PREFERRED_PROVIDER_u-boot-default-script') else ''
 
