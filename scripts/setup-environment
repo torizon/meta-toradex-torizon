@@ -66,21 +66,21 @@ _TDX_TORADEX_MACHINES=("apalis-imx6"          "meta-freescale-3rdparty" \
                   "verdin-am62p"         "meta-toradex-ti" \
                   "verdin-imx8mm"        "meta-toradex-nxp" \
                   "verdin-imx8mp"        "meta-toradex-nxp" \
-                  "verdin-imx95"        "meta-toradex-nxp")
+                  "verdin-imx95"         "meta-toradex-nxp")
 
 _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "am62pxx-evm"        "meta-ti-bsp" \
                  "am62xx-evm"         "meta-ti-bsp" \
                  "beagley-ai"         "meta-beagle" \
-                 "intel-corei7-64"    "meta-intel" \
+                 "imx93frdm"          "meta-imx-frdm/meta-imx-bsp" \
                  "imx95-19x19-verdin" "meta-imx" \
+                 "intel-corei7-64"    "meta-intel" \
                  "sl1680"             "meta-synaptics" \
                  "sl2619"             "meta-synaptics" \
-                 "imx93frdm"          "meta-imx-frdm/meta-imx-bsp" \
                  "smarc-rzv2l"        "rz-community-bsp" \
+                 "stm32mp15-disco"    "meta-st-stm32mp" \
+                 "stm32mp25-disco"    "meta-st-stm32mp" \
                  "stm32mp25-eval"     "meta-st-stm32mp" \
-                 "stm32mp15-disco"     "meta-st-stm32mp" \
-                 "stm32mp25-disco"     "meta-st-stm32mp" \
                  "winglet"            "meta-synaptics")
 
 if [ "$(whoami)" = "root" ]; then
