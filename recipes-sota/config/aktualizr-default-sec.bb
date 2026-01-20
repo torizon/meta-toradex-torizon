@@ -21,6 +21,10 @@ RDEPENDS:${PN}:remove:genericx86-64 = "u-boot-fw-utils"
 RDEPENDS:${PN}:remove:intel-x86-common = "u-boot-fw-utils"
 DEPENDS:imx-generic-bsp = "jq-native"
 
+# Check if bootloader update is supported
+BL_UPDATE_SUPPORT ?= "1"
+BL_UPDATE_SUPPORT:intel-x86-common ?= "0"
+
 do_install:append () {
     install -m 0700 -d ${D}${libdir}/sota/conf.d
     install -m 0644 ${UNPACKDIR}/50-secondaries.toml ${D}${libdir}/sota/conf.d/50-secondaries.toml
@@ -28,8 +32,11 @@ do_install:append () {
     sed -i "s/@@MACHINE@@/${MACHINE}/g" ${D}${libdir}/sota/secondaries.json
 
     install -d ${D}${bindir}
-    install -m 0744 ${UNPACKDIR}/bl_actions.sh ${D}${bindir}/bl_actions.sh
-    install -m 0644 ${UNPACKDIR}/common_actions.sh ${D}${bindir}/common_actions.sh
+
+    if [ "${BL_UPDATE_SUPPORT}" = "1" ]; then
+        install -m 0744 ${UNPACKDIR}/bl_actions.sh ${D}${bindir}/bl_actions.sh
+        install -m 0644 ${UNPACKDIR}/common_actions.sh ${D}${bindir}/common_actions.sh
+    fi
 }
 
 do_install:append:imx-generic-bsp () {
@@ -63,3 +70,7 @@ FILES:${PN} = " \
 FILES:${PN}:append:imx-generic-bsp = " \
                                 ${bindir}/fuse_actions.sh \
                                 "
+FILES:${PN}:remove:intel-x86-common = "\
+    ${bindir}/bl_actions.sh \
+    ${bindir}/common_actions.sh \
+"
