@@ -28,10 +28,10 @@ $ docker run --rm -it --name=syn-crops-common -v <path/to/common-torizon>:/workd
 Build
 ======
 
-| Board | MACHINE | Status |
-|---|---|---|
-| Winglet | winglet | Supported  |
-| Astra SL1680 | sl1680 | Supported |
+| Board        | MACHINE     | Status     |
+|---           |---          |---         |
+| Luna SL1680  | luna-sl1680 | Supported  |
+| Astra SL1680 | sl1680      | Supported  |
 
 1. Source `setup-environment`, specifying the machine to build with the MACHINE variable e.g.:
 ```bash
@@ -50,7 +50,7 @@ Recovery Mode
 #### Astra SL1680
 On the device, press the `USB-Boot` button, and while holding it down either power on the device or press the `RESET` button.
 
-#### Winglet
+#### Luna SL1680
 To the right of the USB-C connector there is a jumper, that's the board `USB-Boot` jumper. Power off the device on the `Power Switch`, short this jumper and then power it on again.
 After the flashing is done, remove the short on that jumper so the device can boot normally.
 
@@ -59,7 +59,7 @@ Flashing eMMC
 For flashing, there are two possible ways: use the helper script `flash-image.sh` or doing the steps manually.
 
 > [!WARNING]  
-> This helper script does NOT yet work with the Winglet board, it only works with the Astra SL1680 board.
+> This helper script does NOT yet work with the Luna SL1680 board, it only works with the Astra SL1680 board.
 
 1. The easiest way is to use the helper script:
 
@@ -70,7 +70,7 @@ For flashing, there are two possible ways: use the helper script `flash-image.sh
 2. Another option is to do all the steps manually:
 
     a. For flashing, you'll need the latest release of Synaptics' `usb-tool`. Please refer to their [usb-tool GitHub repository](https://github.com/synaptics-astra/usb-tool/releases) and download the latest `astra-update`.
-    On `Winglet`, make sure to check the _important note_ at the bottom of this section.
+    On `Luna SL1680`, make sure to check the _important note_ at the bottom of this section.
 
     b. Unpack its contents somewhere, go into that folder and copy `SYNAIMG` from the generated artifacts of your build.
     ```bash
@@ -97,10 +97,10 @@ For flashing, there are two possible ways: use the helper script `flash-image.sh
     ```
 
 > [!IMPORTANT]
-> For `Winglet`, you'll need to replace the folder `astra-usbboot-images` with the one provided here.
+> For `Luna SL1680`, you'll need to replace the folder `astra-usbboot-images` with the one provided here.
 > Just rename the current one something else, for instance `astra-usbboot-images-sl1680` and add the provided `astra-usbboot-images` in `usb-tool`
 > And if you'll need to flash Astra SL1680, you'll need to switch back to the original binaries, so keep that in mind!
-> TODO: Make Winglet specific binaries available
+> TODO: Make Luna SL1680 specific binaries available
 
 Manual Setup
 ======

@@ -6,10 +6,10 @@ SRC_URI += " \
     file://fragment.cfg \
 "
 
-# Enable SDIO support in the device tree for Winglet
-SRC_URI:append:winglet = " \
+# Enable SDIO support in the device tree for Luna SL1680
+SRC_URI:append:luna-sl1680 = " \
     file://0001-dolphin-rdk.dts-enable-sdio-connection.patch \
-    file://winglet.cfg \
+    file://luna-sl1680.cfg \
 "
 
 # Synaptics kernel recipe is overwriting INITRAMFS_IMAGE
