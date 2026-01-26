@@ -3,4 +3,4 @@
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
-SRC_URI:append:winglet = " file://0001-synasdk-config-native-sl1680-select-ch0-memory-varia.patch;patchdir=./configs"
+SRC_URI:append:luna-sl1680 = " file://0001-synasdk-config-native-sl1680-select-ch0-memory-varia.patch;patchdir=./configs"

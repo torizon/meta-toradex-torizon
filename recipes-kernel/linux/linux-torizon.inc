@@ -4,7 +4,7 @@ SRC_URI:append:common-torizon = " \
     file://torizon.scc \
 "
 
-# Synaptics sl1680 and Toradex Winglet (sl1680 based) need the cfg fragment
+# Synaptics sl1680 and Toradex Luna (sl1680 based) need the cfg fragment
 # in order to merge with the generated .config. Otherwise the fragments won't apply.
 # 
 # NXP's Kernel recipe needs the cfg fragment in order to merge with
