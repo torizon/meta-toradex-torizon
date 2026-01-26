@@ -4,34 +4,26 @@ DISTRO_FEATURES:append = " tpm2"
 
 IMAGE_INSTALL:append = " \
     imgtec-pvr-firmware \
-    kernel-module-berlin-chipid \
-    kernel-module-berlin-ir \
     kernel-module-bluetooth-lpm \
     kernel-module-bluetooth-rfkill \
-    kernel-module-dolphin-hwmon \
-    kernel-module-dwc3-syna \
     kernel-module-hl7593 \
     kernel-module-hrx-v4l2 \
-    kernel-module-pcie-berlin \
-    kernel-module-phy-berlin-pcie \
-    kernel-module-phy-syna-usb \
     kernel-module-pvrsrvkm \
     kernel-module-rpi-panel-attiny-regulator \
-    kernel-module-sm \
-    kernel-module-syna-axi-meter \
-    kernel-module-tps6286x-regulator \
     linux-firmware-syna \
     optee-client \
-    optee-os-tadevkit \
     optee-examples \
+    optee-os-tadevkit \
     optee-test \
-    synasdk-macaddr \
+    pciutils \
     synasdk-brcm-bt-start \
+    synasdk-drm-factory-ca-program \
+    synasdk-factory-ta \
+    synasdk-macaddr \
+    synasdk-synap-module \
     synasdk-v4l2isp-daemon \
     synasdk-vpu-plugin \
-    synasdk-v4l2isp-qtapp \
-    synasdk-synap-module \
-    v4l-utils \
+    syna-wifi-tools \
 "
 
 SYNA_SDK_CONFIG_NAME = "sl1680_poky_aarch64_rdk"
@@ -50,5 +42,7 @@ UENV_EXTRA_CONFIGS = "\
 "
 
 hostname:pn-base-files = "torizon-sl1680"
+
+DISTRO_FEATURES_REMOVE:remove = "vulkan"
 
 require sl-common.inc

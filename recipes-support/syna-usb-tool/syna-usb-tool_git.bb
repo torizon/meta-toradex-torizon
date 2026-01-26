@@ -25,4 +25,4 @@ do_deploy() {
 
 addtask deploy after do_compile
 
-COMPATIBLE_MACHINE = "(sl1680|sl2619|winglet)"
+COMPATIBLE_MACHINE = "(sl1680|sl2619|luna-sl1680)"
