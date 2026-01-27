@@ -17,8 +17,8 @@ do_install_basefilesissue () {
 	printf "%s \\\n \\\l\n\n" "${DISTRO_VERSION}" >> ${D}${sysconfdir}/issue
 	printf "%s %%h\n\n" "${DISTRO_VERSION}" >> ${D}${sysconfdir}/issue.net
 }
-	
-do_install:append:intel-corei7-64 () {
+
+do_install:append:intel-x86-common() {
 	# Replace fstab with our own for Intel Core i7-64
 	install -m 644 ${WORKDIR}/x86/fstab ${D}${sysconfdir}/fstab
 }
