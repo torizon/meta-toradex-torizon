@@ -15,6 +15,12 @@ SRC_URI:append:genericx86-64 = " file://0001-rules-whitelist-hd-devices.patch"
 PACKAGECONFIG:append = " resolved networkd"
 RRECOMMENDS:${PN}:remove = "os-release"
 
+# systemd-conf is needed to make Torizon Cloud docker-compose updates work.
+# Change it to a depency instead of reccomends, if NO_RECCOMENDS is used the
+# OTA will still work.
+RRECOMMENDS:${PN}:remove = "systemd-conf"
+RDEPENDS:${PN}:append = " systemd-conf"
+
 # /var is expected to be rw, so drop volatile-binds service files
 RDEPENDS:${PN}:remove = "volatile-binds"
 RDEPENDS:${PN} += "bash"
