@@ -1,17 +1,17 @@
-From 04139d80c78c66a5d1e8a2ff90a1ca0c1e43d3eb Mon Sep 17 00:00:00 2001
+From 32e3456c8a7669f39728b0ce96b807a392834dd9 Mon Sep 17 00:00:00 2001
 From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
-Date: Wed, 1 Oct 2025 09:16:16 +0000
+Date: Wed, 28 Jan 2026 15:00:51 +0000
 Subject: [PATCH] dolphin-rdk.dts: enable sdio connection
 
 Upstream-Status: Pending
 
 Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 ---
- arch/arm64/boot/dts/synaptics/dolphin-rdk.dts | 73 ++++---------------
- 1 file changed, 14 insertions(+), 59 deletions(-)
+ arch/arm64/boot/dts/synaptics/dolphin-rdk.dts | 79 +++++--------------
+ 1 file changed, 20 insertions(+), 59 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts b/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts
-index 094583bdc726..6e95dad0e2cb 100644
+index d88a3d975def..22b5ea91be8a 100644
 --- a/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts
 +++ b/arch/arm64/boot/dts/synaptics/dolphin-rdk.dts
 @@ -109,6 +109,12 @@ reg_usb0_vbus: usb0_vbus {
@@ -27,7 +27,20 @@ index 094583bdc726..6e95dad0e2cb 100644
  	bt_reg_on: bt_reg_on {
  		compatible = "syna,rfkill";
  		bt-power-gpio = <&expander1 5 GPIO_ACTIVE_HIGH>;
-@@ -181,16 +187,6 @@ expander1: gpio@44 {
+@@ -119,6 +125,12 @@ bluesleep: bluesleep {
+ 		bt-dev-wake-gpio = <&expander1 3 GPIO_ACTIVE_HIGH>;
+ 	};
+ 
++	bcmdhd {
++		compatible = "synaptics,bcmdhd_wlan";
++		wl_reg_on = <&expander1 2 GPIO_ACTIVE_HIGH>;         /* wifi reg_on pin */
++		wl_host_wake = <&expander1 3 GPIO_ACTIVE_HIGH>;      /* wifi host wake (OOB) pin */
++	};
++
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 		label = "gpio-keys";
+@@ -233,16 +245,6 @@ expander1: gpio@44 {
  				gpio-controller;
  				#gpio-cells = <2>;
  			};
@@ -44,7 +57,7 @@ index 094583bdc726..6e95dad0e2cb 100644
  		};
  
  		i2c@1 {
-@@ -357,13 +353,16 @@ &sdhci1 {
+@@ -409,13 +411,16 @@ &sdhci1 {
  	status = "okay";
  	pinctrl-0 = <&sdhci1_pmux>, <&sdhci1_gpio_pmux>;
  	pinctrl-names = "default";
@@ -65,7 +78,7 @@ index 094583bdc726..6e95dad0e2cb 100644
  };
  
  &pcie_phy0 {
-@@ -372,7 +371,7 @@ &pcie_phy0 {
+@@ -424,7 +429,7 @@ &pcie_phy0 {
  
  &pcie0 {
  	status = "okay";
@@ -74,7 +87,7 @@ index 094583bdc726..6e95dad0e2cb 100644
  };
  
  &i2c0 {
-@@ -382,50 +381,6 @@ &i2c0 {
+@@ -434,50 +439,6 @@ &i2c0 {
  	no-irq-suspend;
  	clock-frequency = <100000>;
  
