@@ -21,8 +21,9 @@ Alternatively, you can manually clone all layers one by one. Refer to the sectio
 Build Environment
 ======
 You can use Synaptics Crops container to also build Common Torizon
+###### &emsp; The following command must be run inside the common-torizon directory
 ```bash
-$ docker run --rm -it --name=syn-crops-common -v <path/to/common-torizon>:/workdir --workdir=/workdir ghcr.io/synaptics-astra/crops:1.1.0
+$ docker run --rm -it --name=syn-crops-common -v $(pwd):/workdir --workdir=/workdir ghcr.io/synaptics-astra/crops:latest
 ```
 
 Build
@@ -110,9 +111,16 @@ $ mkdir common-torizon; cd common-torizon
 ```
 2. Clone the necessary layers to build the Common Torizon image for the Synaptics boards:
   * Download Synaptics SDK:
+
+    Obs. It is recommended to use the latest version of synaptics-astra sdk. You can get it in their release repository: [https://github.com/synaptics-astra/sdk/releases](https://github.com/synaptics-astra/sdk/releases)
 ```bash
-$ git clone https://github.com/synaptics-astra/sdk.git -b scarthgap_6.12_v2.0.0 layers
+$ git clone https://github.com/synaptics-astra/sdk.git -b scarthgap_6.12_<last_release_version> layers
 ```
+For example:
+```bash
+$ git clone https://github.com/synaptics-astra/sdk.git -b scarthgap_6.12_v2.1.0 layers
+```
+
   * Download `meta-toradex-torizon` and its dependencies:
 ```bash
 $ cd layers
