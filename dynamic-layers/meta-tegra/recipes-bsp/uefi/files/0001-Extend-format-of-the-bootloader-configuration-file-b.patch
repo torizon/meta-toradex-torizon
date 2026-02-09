@@ -1,0 +1,150 @@
+From 3fa5248d33a6825326069cbf42d1c8ea43b23640 Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 21 Nov 2025 17:57:38 +0300
+Subject: [PATCH] Extend format of the bootloader configuration file by
+ supporting the U-Boot ENV-style variables to specify paths to the boot images
+ and the bootargs to be used in Torizon boot flow.
+
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ .../Application/L4TLauncher/L4TLauncher.c     | 54 +++++++++++++++++++
+ .../Application/L4TLauncher/L4TLauncher.h     | 11 ++++
+ 2 files changed, 65 insertions(+)
+
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+index c905f852..57bfd14e 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+@@ -1185,8 +1185,13 @@ ProcessExtLinuxConfig (
+   CHAR16           *Timeout      = NULL;
+   CHAR16           *CbootArg     = NULL;
+   CHAR16           *PostCbootArg = NULL;
++  CHAR16           *UEnvKernelImage = NULL;
++  CHAR16           *UEnvRamDiskImage = NULL;
++  CHAR16           *UEnvFDTDir = NULL;
++  CHAR16           *UEnvBootArgs = NULL;
+   BOOLEAN          Ascii;
+   UINTN            Index;
++  BOOLEAN          UseUEnvConfig = FALSE;
+ 
+   ZeroMem (BootConfig, sizeof (EXTLINUX_BOOT_CONFIG));
+ 
+@@ -1207,6 +1212,20 @@ ProcessExtLinuxConfig (
+              NULL,
+              NULL
+              );
++
++  if (Status == EFI_NOT_FOUND) {
++      Status = OpenAndReadFileToBuffer (
++             *RootFsHandle,
++             UENV_CONF_PATH,
++             &FileHandle,
++             NULL,
++             NULL
++             );
++      if (!EFI_ERROR (Status)) {
++        UseUEnvConfig = TRUE;
++      }
++  }
++
+   if (EFI_ERROR (Status)) {
+     ErrorPrint (L"%a:sds Failed to Authenticate %s (%r)\r\n", __FUNCTION__, EXTLINUX_CONF_PATH, Status);
+     return Status;
+@@ -1233,6 +1252,28 @@ ProcessExtLinuxConfig (
+         continue;
+       }
+ 
++      if (UseUEnvConfig) {
++        Status = CheckCommandString (CleanLine, UENV_KEY_KERNEL_IMAGE, &UEnvKernelImage);
++        if (!EFI_ERROR (Status)) {
++          continue;
++        }
++
++        Status = CheckCommandString (CleanLine, UENV_KEY_RAMDISK_IMAGE, &UEnvRamDiskImage);
++        if (!EFI_ERROR (Status)) {
++          continue;
++        }
++
++        Status = CheckCommandString (CleanLine, UENV_KEY_FDTDIR, &UEnvFDTDir);
++        if (!EFI_ERROR (Status)) {
++          continue;
++        }
++
++        Status = CheckCommandString (CleanLine, UENV_KEY_BOOTARGS, &UEnvBootArgs);
++        if (!EFI_ERROR (Status)) {
++          continue;
++        }
++      }
++
+       Status = CheckCommandString (CleanLine, EXTLINUX_KEY_DEFAULT, &DefaultLabel);
+       if (!EFI_ERROR (Status)) {
+         continue;
+@@ -1261,16 +1302,25 @@ ProcessExtLinuxConfig (
+ 
+         Status = CheckCommandString (CleanLine, EXTLINUX_KEY_LINUX, &BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].LinuxPath);
+         if (!EFI_ERROR (Status)) {
++          if (StrStr (BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].LinuxPath, EXTLINUX_UENV_KEREL_ARG)) {
++            BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].LinuxPath = UEnvKernelImage;
++          }
+           continue;
+         }
+ 
+         Status = CheckCommandString (CleanLine, EXTLINUX_KEY_INITRD, &BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].InitrdPath);
+         if (!EFI_ERROR (Status)) {
++          if (StrStr (BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].InitrdPath, EXTLINUX_UENV_INITRD_ARG)) {
++            BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].InitrdPath = UEnvRamDiskImage;
++          }
+           continue;
+         }
+ 
+         Status = CheckCommandString (CleanLine, EXTLINUX_KEY_FDT, &BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].DtbPath);
+         if (!EFI_ERROR (Status)) {
++          if (StrStr (BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].InitrdPath, EXTLINUX_UENV_FDTDIR_ARG)) {
++            BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].DtbPath = UEnvFDTDir;
++          }
+           continue;
+         }
+ 
+@@ -1281,6 +1331,10 @@ ProcessExtLinuxConfig (
+ 
+         Status = CheckCommandString (CleanLine, EXTLINUX_KEY_APPEND, &BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].BootArgs);
+         if (!EFI_ERROR (Status)) {
++          if (StrStr (BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].BootArgs, EXTLINUX_UENV_BOOT_ARG)) {
++            BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].BootArgs = UEnvBootArgs;
++            continue;
++          }
+           CbootArg = StrStr (BootConfig->BootOptions[BootConfig->NumberOfBootOptions-1].BootArgs, EXTLINUX_CBOOT_ARG);
+           if (CbootArg != NULL) {
+             PostCbootArg = CbootArg + StrLen (EXTLINUX_CBOOT_ARG);
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h
+index 177af9a4..281a2776 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h
+@@ -20,6 +20,7 @@
+ #define DETACHED_SIG_FILE_EXTENSION     L".sig"
+ 
+ #define EXTLINUX_CONF_PATH  L"boot\\extlinux\\extlinux.conf"
++#define UENV_CONF_PATH      L"boot\\loader\\uEnv.txt"
+ 
+ #define BOOTMODE_DIRECT_STRING    L"bootmode=direct"
+ #define BOOTMODE_GRUB_STRING      L"bootmode=grub"
+@@ -52,6 +53,16 @@
+ 
+ #define EXTLINUX_CBOOT_ARG  L"${cbootargs}"
+ 
++#define UENV_KEY_KERNEL_IMAGE     L"kernel_image="
++#define UENV_KEY_RAMDISK_IMAGE    L"ramdisk_image="
++#define UENV_KEY_FDTDIR           L"fdtdir="
++#define UENV_KEY_BOOTARGS         L"bootargs="
++
++#define EXTLINUX_UENV_KEREL_ARG  L"${kernel_image}"
++#define EXTLINUX_UENV_INITRD_ARG  L"${ramdisk_image}"
++#define EXTLINUX_UENV_FDTDIR_ARG  L"${fdtdir}"
++#define EXTLINUX_UENV_BOOT_ARG  L"${bootargs}"
++
+ #define MAX_EXTLINUX_OPTIONS  10
+ 
+ typedef struct {
+-- 
+2.34.1
+

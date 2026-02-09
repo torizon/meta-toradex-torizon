@@ -13,6 +13,10 @@ SRC_URI:append:cfs-support = "\
     file://80-composefs.conf \
 "
 
+SRC_URI:remove:tegra = "\
+    file://0002-only-scan-for-block-devices.patch \
+"
+
 PACKAGES:append = " \
     initramfs-module-plymouth \
     initramfs-module-ostree \
