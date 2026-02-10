@@ -20,6 +20,7 @@ SRC_URI = "\
 
 SRCREV = "2552ba5584a96f1d7930c74f199b816c19e20129"
 PV = "0.15.8+git${SRCPV}"
+S = "${UNPACKDIR}/git"
 
 RDEPENDS:${PN} = "bash"
 
