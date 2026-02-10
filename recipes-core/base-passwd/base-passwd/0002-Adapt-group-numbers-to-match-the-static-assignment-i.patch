@@ -1,6 +1,6 @@
-From 66ab3264e3c10e9c7bf4cd2c40eb24eeb9179fac Mon Sep 17 00:00:00 2001
-From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
-Date: Sat, 24 Aug 2024 15:11:09 -0300
+From b5c35c95512468840e70fcdb93547b3abf7a5539 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Fri, 30 Jan 2026 17:10:11 +0000
 Subject: [PATCH 2/2] Adapt group numbers to match the static assignment in
  torizon
 
@@ -15,12 +15,13 @@ as in previous releases of the OS.
 Upstream-Status: Inappropriate [configuration]
 Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
 Signed-off-by: Hiago De Franco <hiago.franco@toradex.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 ---
  group.master | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/group.master b/group.master
-index 73b6d286c82f..55a77b810a01 100644
+index 0fa81a3..33d9ec7 100644
 --- a/group.master
 +++ b/group.master
 @@ -12,7 +12,6 @@ uucp:*:10:
@@ -40,9 +41,9 @@ index 73b6d286c82f..55a77b810a01 100644
  gpio:*:49:
  staff:*:50:
  i2cdev:*:51:
-@@ -46,5 +43,8 @@ wheel:*:80:
+@@ -45,5 +42,8 @@ shutdown:*:70:
+ wheel:*:80:
  nobody:*:99:
- clock:*:81:
  users:*:100:
 +input:*:101:
 +kvm:*:102:
@@ -50,5 +51,5 @@ index 73b6d286c82f..55a77b810a01 100644
 +sgx:*:104:
  nogroup:*:65534:
 -- 
-2.51.0
+2.34.1
 
