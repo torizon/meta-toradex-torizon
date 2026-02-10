@@ -12,6 +12,7 @@ SRC_URI += " \
 SRCREV = "516ce5198a077fffcc2a19d946b3c21814841f01"
 SRCREV:use-head-next = "${AUTOREV}"
 
+S = "${UNPACKDIR}/git"
 PV = "0.0+git${SRCPV}"
 CARGO_SRC_DIR = ""
 
