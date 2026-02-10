@@ -1,6 +1,6 @@
-From 7bae91fd94b6bcbcc43270a86f09b3d55147efcf Mon Sep 17 00:00:00 2001
+From ca435f788a6aac3ab712b382a23733ffebc46cbf Mon Sep 17 00:00:00 2001
 From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
-Date: Mon, 29 Jan 2024 10:30:18 -0300
+Date: Fri, 6 Feb 2026 17:54:58 +0000
 Subject: [PATCH] systemd-networkd-wait-online.service.in: use --any by default
 
 Use --any by default when waiting for a network interface to be fully
@@ -8,6 +8,13 @@ configured, otherwise it blocks until all the available interfaces are
 in the configured state.
 
 Obs.: Inherited from LmP.
+
+Also, adding --timeout=5, so that, even if this service gets
+enabled/started, it won't hang for the default 2 minutes if there's no
+internet connection, but will timeout after 5 seconds.
+A low timeout is being used, since this service used to be masked out.
+Now that this can't be done anymore, we disable it and set a low timeout
+to make sure it won't affect us.
 
 Upstream-Status: Inappropriate [TorizonCore specific]
 
@@ -19,7 +26,7 @@ Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/units/systemd-networkd-wait-online.service.in b/units/systemd-networkd-wait-online.service.in
-index 7768121f5f..7d26e04fe3 100644
+index 7768121f5fc..87abfe7dcb3 100644
 --- a/units/systemd-networkd-wait-online.service.in
 +++ b/units/systemd-networkd-wait-online.service.in
 @@ -19,7 +19,7 @@ Before=network-online.target shutdown.target
@@ -27,7 +34,7 @@ index 7768121f5f..7d26e04fe3 100644
  [Service]
  Type=oneshot
 -ExecStart={{LIBEXECDIR}}/systemd-networkd-wait-online
-+ExecStart={{LIBEXECDIR}}/systemd-networkd-wait-online --any
++ExecStart={{LIBEXECDIR}}/systemd-networkd-wait-online --any --timeout=5
  RemainAfterExit=yes
  
  [Install]
