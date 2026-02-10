@@ -30,6 +30,8 @@ SYSTEMD_SERVICE:${PN} = "remote-access.service"
 
 PV = "0.0+git${SRCPV}"
 
+S = "${UNPACKDIR}/git"
+
 # Dependencies as specified by main project's Cargo.toml
 # Make sure to keep this up-to-date as needed
 # Auto-generated via "cargo bitbake"
