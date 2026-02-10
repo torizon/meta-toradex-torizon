@@ -52,10 +52,10 @@ DISTRO_FEATURES_NATIVESDK:remove:imx-generic-bsp = "x11"
 # Note, enable or disable the useradd-staticids in a configured system,
 # the TMPDIR/DEPLOY_DIR/SSTATE_DIR may contain incorrect uid/gid values.
 # Clearing them will correct this condition.
-USERADDEXTENSION = "useradd-staticids"
-USERADD_UID_TABLES = "files/torizon-static-passwd"
-USERADD_GID_TABLES = "files/torizon-static-group"
-USERADD_ERROR_DYNAMIC = "skip"
+USERADDEXTENSION ?= "useradd-staticids"
+USERADD_UID_TABLES ?= "files/torizon-static-passwd"
+USERADD_GID_TABLES ?= "files/torizon-static-group"
+USERADD_ERROR_DYNAMIC ?= "skip"
 
 BBMASK += " \
     /meta-freescale/recipes-graphics/cairo \
