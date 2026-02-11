@@ -9,3 +9,5 @@ DEPENDS += "lz4-native"
 SRC_URI += "\
     file://intel-corei7-64.cfg \
 "
+
+RDEPENDS_${PN}:append = " linux-firmware-rtl8188 "
