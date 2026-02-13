@@ -2,7 +2,6 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += "\
     file://plymouth \
-    file://ostree \
     file://kmod \
     file://0002-only-scan-for-block-devices.patch \
     file://0003-notify-newroot-for-plymouth.patch \
@@ -19,7 +18,6 @@ SRC_URI:remove:tegra = "\
 
 PACKAGES:append = " \
     initramfs-module-plymouth \
-    initramfs-module-ostree \
     initramfs-module-kmod \
 "
 
@@ -31,9 +29,6 @@ SUMMARY:initramfs-module-plymouth = "initramfs support for plymouth"
 RDEPENDS:initramfs-module-plymouth = "${PN}-base plymouth ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd-udev-rules', '', d)}"
 FILES:initramfs-module-plymouth = "/init.d/02-plymouth"
 
-SUMMARY:initramfs-module-ostree = "initramfs support for ostree based filesystems"
-RDEPENDS:initramfs-module-ostree = "${PN}-base ostree-switchroot"
-FILES:initramfs-module-ostree = "/init.d/95-ostree"
 
 SUMMARY:initramfs-module-composefs = "initramfs support for booting composefs images"
 RDEPENDS:initramfs-module-composefs = "${PN}-base"
@@ -57,7 +52,6 @@ RDEPENDS:initramfs-module-kmod = "${@get_initramfs_kmods(d)} ${PN}-base"
 
 do_install:append() {
     install -m 0755 ${UNPACKDIR}/plymouth ${D}/init.d/02-plymouth
-    install -m 0755 ${UNPACKDIR}/ostree ${D}/init.d/95-ostree
     install -m 0755 ${UNPACKDIR}/kmod ${D}/init.d/01-kmod
 }
 
