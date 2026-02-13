@@ -83,7 +83,7 @@ echo "Removing temp directory $tmpdir"
 rm -rf $tmpdir
 ```
 
-3. Connect the USB port to the host machine and put the target board into the recovery mode: short the `FORCE_RECOVERY` pin (labeled as `FC_REC` on the carrier board) to the ground, this can be done by installing a wired jumper to the contacts `9-10` of the `J50` `button` header on the carrier board (refer to the Jetson Orin Nano Developer Kit Carrier Board Specification), then power on the board.
+3. Connect the USB port to the host machine and put the target board into the recovery mode: short the `FORCE_RECOVERY` pin (labeled as `FC_REC` on the carrier board) to the ground, this can be done by installing a wired jumper to the contacts `9-10` of the `J14` `button` header on the carrier board (refer to the [Jetson Orin Nano Developer Kit Carrier Board Specification](https://developer.nvidia.com/downloads/assets/embedded/secure/jetson/orin_nano/docs/jetson_orin_nano_devkit_carrier_board_specification_sp.pdf)), then power on the board.
 
 4. Run the deployment script:
 ```
