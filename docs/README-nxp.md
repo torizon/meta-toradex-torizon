@@ -1,27 +1,16 @@
 Setup
 ======
-1. Create the project folder:
+1. If you don't have the `repo` tool installed, please refer to [Build Torizon OS From Source with Yocto Project](https://developer.toradex.com/torizon/in-depth/build-torizoncore-from-source-with-yocto-projectopenembedded/#download-metadata).
+2. Initialize and sync the repo manifest for NXP:
 ```bash
 $ mkdir common-torizon; cd common-torizon
-```
-2. Clone NXP's BSP layers:
-```bash
-$ repo init -u https://github.com/nxp-imx/imx-manifest.git -b imx-linux-scarthgap -m imx-6.6.52-2.2.0.xml
+$ repo init -u git://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/nxp/default.xml
 $ repo sync -j 10
 ```
-3. Clone `meta-toradex-torizon` layer, and its dependencies:
-```bash
-$ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y sources/meta-toradex-torizon
-$ git clone https://github.com/uptane/meta-updater.git -b scarthgap sources/meta-updater
-```
+We **strongly recommend** using the `default.xml` manifest. The `integration.xml` and `next.xml` are development manifests used internally and they might be unstable.
+`default.xml` is the manifest used for our releases, so they are reliable.  
 
-Additional Setup for i.MX93 FRDM boards
-======
-1. Clone NXP's BSP layers specific to the i.MX93 FRDM board:
-```bash
-$ git clone https://github.com/nxp-imx-support/meta-imx-frdm.git -b imx-frdm-4.0 sources/meta-imx-frdm
-$ ln -s sources/meta-imx-frdm/tools/imx-frdm-setup.sh imx-frdm-setup.sh
-```
+Alternatively, you can manually clone all layers one by one. Refer to the section [_Manual Setup_](#manual-setup) at the end of this document to learn how.
 
 Build
 ======
@@ -30,25 +19,17 @@ Build
 | FRDM i.MX 93 | imx93frdm  | Supported  |
 | Verdin i.MX95 EVK  | imx95-19x19-verdin  | Supported |
 
-1. Create a symlink to our `setup-environment`:
+1. Source `setup-environment`, specifying the machine to build with the MACHINE variable e.g.:
 ```bash
-$ ln -s sources/meta-toradex-torizon/scripts/setup-environment torizon-setup-environment
+$ MACHINE=imx93frdm . torizon-setup-environment <build-directory>
 ```
-> [!IMPORTANT]  
-> Here we name the link to our script `torizon-setup-environment` to avoid clashing with NXP's `setup-script` (which is also called by our script).
-2. Source `torizon-setup-environment` to setup build:
-```bash
-$ MACHINE=<MACHINE> . torizon-setup-environment build
-```
-where '<MACHINE>' is the value from the table above.
+If a build directory is not given, the script will create one named `build`, where all build artifacts will be stored.
 
-This will create a build folder named `build`, where all build artifacts will be stored.
-3. Start Common Torizon build:
+2. Inside the build directory, start the build e.g.:
 ```bash
 $ bitbake torizon-docker
 ```
-
-All artifacts should be inside `build/deploy/images/<MACHINE>`, including the `.wic` file.
+All artifacts should be inside `<build-directory>/deploy/images/${MACHINE}`.
 
 Flash the Device (Verdin i.MX95 EVK)
 ======
@@ -77,3 +58,29 @@ zstdcat if=torizon-docker-imx93-11x11-lpddr4x-frdm-7.0.0-devel-20250602173442+bu
 Flash the Device (FRDM i.MX93 eMMC)
 ======
 Coming Soon
+
+Manual Setup
+======
+1. Create the project folder:
+```bash
+$ mkdir common-torizon; cd common-torizon
+```
+2. Clone NXP's BSP layers:
+```bash
+$ repo init -u https://github.com/nxp-imx/imx-manifest.git -b imx-linux-scarthgap -m imx-6.6.52-2.2.0.xml
+$ repo sync -j 10
+```
+3. Clone `meta-toradex-torizon` layer, and its dependencies:
+```bash
+$ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y sources/meta-toradex-torizon
+$ git clone https://github.com/uptane/meta-updater.git -b scarthgap sources/meta-updater
+$ ln -s sources/meta-toradex-torizon/scripts/setup-environment torizon-setup-environment
+```
+
+Additional Setup for i.MX93 FRDM boards
+======
+1. Clone NXP's BSP layers specific to the i.MX93 FRDM board:
+```bash
+$ git clone https://github.com/nxp-imx-support/meta-imx-frdm.git -b imx-frdm-4.0 sources/meta-imx-frdm
+$ ln -s sources/meta-imx-frdm/tools/imx-frdm-setup.sh imx-frdm-setup.sh
+```
