@@ -55,6 +55,10 @@ kernel_do_configure:append() {
 
 def get_linux_base_version(d):
     linux_version = d.getVar('LINUX_VERSION')
+
+	if not linux_version:
+		bb.fatal("LINUX_VERSION is not defined. Make sure this class is inherited in a kernel context.")
+
     if '-rt' in linux_version:
         return linux_version.split('-rt')[0]
     return linux_version
