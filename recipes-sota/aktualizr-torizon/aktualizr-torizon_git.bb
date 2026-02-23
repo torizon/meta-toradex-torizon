@@ -23,6 +23,8 @@ PV = "1.0+git${SRCPV}"
 DEPENDS = "boost curl openssl libarchive libsodium sqlite3 asn1c-native ostree"
 RDEPENDS:${PN}:class-target = "aktualizr-hwid lshw bash aktualizr-default-sec aktualizr-polling-interval aktualizr-reboot greenboot"
 
+S = "${UNPACKDIR}/git"
+
 inherit cmake pkgconfig systemd python3native
 
 SYSTEMD_SERVICE:${PN} = "aktualizr-torizon.service"

@@ -1,0 +1,32 @@
+From 58df7c3e56c28e58ad9eda99fac089cfdac8b257 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Fri, 30 Jan 2026 19:12:05 +0000
+Subject: [PATCH] Add nss-resolve to the Name Service Switch (NSS)
+
+Add `nss-resolve` so that `systemd-resolved` is used for name
+resolution with glibc `gethostbyname` calls.
+
+Upstream-Status: Inappropriate [no upstream, configuration].
+
+Signed-off-by: Eero Aaltonen <eero.aaltonen@vaisala.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ nsswitch.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nsswitch.conf b/nsswitch.conf
+index e3711de..9ae9173 100644
+--- a/nsswitch.conf
++++ b/nsswitch.conf
+@@ -9,7 +9,7 @@ group:          files systemd
+ shadow:         files
+ gshadow:        files
+ 
+-hosts:          files dns
++hosts:          resolve [!UNAVAIL=return] files dns
+ networks:       files
+ 
+ protocols:      db files
+-- 
+2.34.1
+

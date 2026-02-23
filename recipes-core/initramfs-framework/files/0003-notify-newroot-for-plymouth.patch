@@ -1,6 +1,6 @@
-From b025081d8ba7116b584c9ea5fdc2bfdc88a6d01f Mon Sep 17 00:00:00 2001
-From: Beat Hofer <beat.hofer@camillebauer.com>
-Date: Tue, 14 Oct 2025 10:14:58 +0200
+From 228229ca0c76b03842b5a2a069350c26a970338b Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Mon, 2 Feb 2026 11:40:52 +0000
 Subject: [PATCH] notify-newroot-for-plymouth
 
 The Plymouth daemon must be notified that the ROOTFS has been mounted.
@@ -8,17 +8,18 @@ Otherwise, the required plugin files will not be found.
 
 Upstream-Status: Inappropriate [Torizon Specific]
 Signed-off-by: Hiago De Franco <hiago.franco@toradex.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 ---
  finish | 5 +++++
  1 file changed, 5 insertions(+)
 
 diff --git a/finish b/finish
-index 21eaa5739343..1c954067b629 100755
+index ac0de9f..1ee6a19 100755
 --- a/finish
 +++ b/finish
-@@ -41,6 +41,11 @@ finish_run() {
+@@ -40,6 +40,11 @@ finish_run() {
+ 		mount --move /proc $ROOTFS_DIR/proc
  		mount --move /sys $ROOTFS_DIR/sys
- 		mount --move /run $ROOTFS_DIR/run
  
 +		if [ -f /usr/bin/plymouth ]; then
 +			debug "Notifying plymouth about the rootfs dir change..."
@@ -26,5 +27,8 @@ index 21eaa5739343..1c954067b629 100755
 +		fi
 +
  		cd $ROOTFS_DIR
- 		exec switch_root $ROOTFS_DIR ${bootparam_init:-/sbin/init}
+ 		exec switch_root -c /dev/console $ROOTFS_DIR ${bootparam_init:-/sbin/init}
  	else
+-- 
+2.34.1
+
