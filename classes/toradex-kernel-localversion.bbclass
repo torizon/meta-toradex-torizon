@@ -13,7 +13,13 @@
 inherit toradex-kernel-config
 
 TDX_VERSION ??= "0"
-SCMVERSION ??= "y"
+# Do not include the kernel repo's git hash to the kernel version.
+# If patches are applied from OE this is not reproducible as patches
+# get applied by 'git am' and a new hash value will be present with
+# each build.
+# Additionally external kernel modules fail to install if the kernel
+# is taken from sstate but the module is rebuilt.
+SCMVERSION = "n"
 KERNEL_LOCALVERSION ?= "-${TDX_VERSION}"
 # mute the meta-freescale/classes/fsl-kernel-localversion setting, otherwise
 # with latest master we get -${TDX_VERSION} twice in the resulting version.
@@ -46,3 +52,15 @@ kernel_do_configure:append() {
 		kernel_configure_variable LOCALVERSION_AUTO n
 	fi
 }
+
+def get_linux_base_version(d):
+    linux_version = d.getVar('LINUX_VERSION')
+
+	if not linux_version:
+		bb.fatal("LINUX_VERSION is not defined. Make sure this class is inherited in a kernel context.")
+
+    if '-rt' in linux_version:
+        return linux_version.split('-rt')[0]
+    return linux_version
+
+CVE_VERSION = "${@get_linux_base_version(d)}"
