@@ -89,7 +89,21 @@ validate_ostree_layer_revision_info() {
 do_image_ostreecommit[prefuncs] += "validate_ostree_layer_revision_info ${CFS_OSTREECOMMIT_PREFUNCS}"
 do_image_ostreecommit[depends] += "${CFS_OSTREECOMMIT_DEPENDS}"
 do_image_ostreecommit[file-checksums] += "${CFS_OSTREECOMMIT_FILE_CHECKSUMS}"
-do_image_ostreecommit[nostamp] = "1"
+
+# 'nostamp' is only needed when 'cfs-signed' is active, because that feature
+# generates cryptographic keys at build time, making the task non-cacheable
+# since the keys might change. For projects not using 'cfs-signed', there are
+# no keys involved and the task is deterministic, so setting 'nostamp'
+# unconditionally would cause taint propagation to all dependent tasks,
+# eventually breaking the build.
+#
+# FIXME: due to Yocto bug #13808, it is not possible to use an inline python
+# function to set flags conditionally. An anonymous function is required
+# instead. This can be simplified once the bug has been fixed.
+python() {
+    if 'cfs-signed' in (d.getVar('OVERRIDES') or '').split(':'):
+        d.setVarFlag('do_image_ostreecommit', 'nostamp', '1')
+}
 
 EXTRA_OSTREE_COMMIT:append:cfs-signed = "\
     --generate-composefs-metadata \

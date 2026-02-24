@@ -108,7 +108,21 @@ CFS_INSTALL_FILE_CHECKSUMS ?= "${@cfs_get_key_file_checksums(d)}"
 do_install[prefuncs] += "${CFS_INSTALL_PREFUNCS}"
 do_install[depends] += "${CFS_INSTALL_DEPENDS}"
 do_install[file-checksums] += "${CFS_INSTALL_FILE_CHECKSUMS}"
-do_install[nostamp] = "1"
+
+# 'nostamp' is only needed when 'cfs-signed' is active, because that feature
+# generates cryptographic keys at build time, making the task non-cacheable
+# since the keys might change. For projects not using 'cfs-signed', there are
+# no keys involved and the task is deterministic, so setting 'nostamp'
+# unconditionally would cause taint propagation to all dependent tasks,
+# eventually breaking the build.
+#
+# FIXME: due to Yocto bug #13808, it is not possible to use an inline python
+# function to set flags conditionally. An anonymous function is required
+# instead. This can be simplified once the bug has been fixed.
+python() {
+    if 'cfs-signed' in (d.getVar('OVERRIDES') or '').split(':'):
+        d.setVarFlag('do_install', 'nostamp', '1')
+}
 
 do_install:append:cfs-signed() {
     # Bundled into initramfs-module-composefs:
