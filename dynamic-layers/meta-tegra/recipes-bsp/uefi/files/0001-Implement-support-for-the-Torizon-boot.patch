@@ -1,0 +1,548 @@
+From c6a193985b9e5e8340b0867136d738dc56b3684d Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 21 Nov 2025 17:57:38 +0300
+Subject: [PATCH] Implement support for the Torizon boot:
+
+* added the dedicated boot mode option NVIDIA_L4T_BOOTMODE_TORIZON
+* if NVIDIA_L4T_BOOTMODE_TORIZON is selected use uEnv.txt instead of
+  exlinux.conf to construct a single boot option and use it for boot
+* added support for the upgrade_available and rollback U-Boot variables
+  used in Torizon OTA (emulate the U-Boot variables by storing them as
+  flags in the new TorizonBootFlags EFI variable)
+
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ Platform/NVIDIA/NVIDIA.common.dsc.inc         |   1 +
+ .../Application/L4TLauncher/L4TLauncher.c     | 120 ++++++++++++++++--
+ .../Application/L4TLauncher/L4TLauncher.h     |  13 ++
+ .../L4TLauncher/L4TRootfsValidation.c         |  57 ++++++++-
+ .../L4TLauncher/L4TRootfsValidation.h         |   1 +
+ .../Drivers/NvidiaConfigDxe/NvidiaConfigDxe.c |   3 +
+ .../NvidiaConfigDxe/NvidiaConfigDxe.inf       |   1 +
+ .../Drivers/NvidiaConfigDxe/NvidiaConfigHii.h |   1 +
+ .../NvidiaConfigDxe/NvidiaConfigHii.uni       |   7 +
+ .../NvidiaConfigDxe/NvidiaConfigHii.vfr       |  18 +++
+ .../NvidiaConfigDxe/NvidiaConfigHiiMap.uni    |   5 +
+ Silicon/NVIDIA/Include/NVIDIAConfiguration.h  |  11 ++
+ Silicon/NVIDIA/NVIDIA.dec                     |   5 +
+ .../Tegra/DeviceTree/L4TConfiguration.dts     |   7 +-
+ 14 files changed, 240 insertions(+), 10 deletions(-)
+
+diff --git a/Platform/NVIDIA/NVIDIA.common.dsc.inc b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+index 8e8ddbbe..4e513132 100644
+--- a/Platform/NVIDIA/NVIDIA.common.dsc.inc
++++ b/Platform/NVIDIA/NVIDIA.common.dsc.inc
+@@ -1080,6 +1080,7 @@ gEfiSecurityPkgTokenSpaceGuid.PcdSingleBootApplicationGuid|{ GUID("cbf481fb-b373
+   gNVIDIATokenSpaceGuid.PcdOsChainStatusA|L"RootfsStatusSlotA"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV,RT
+   gNVIDIATokenSpaceGuid.PcdOsChainStatusB|L"RootfsStatusSlotB"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV,RT
+   gNVIDIATokenSpaceGuid.PcdL4TDefaultBootMode|L"L4TDefaultBootMode"|gNVIDIAPublicVariableGuid|0x00|0xFF|BS,NV,RT
++  gNVIDIATokenSpaceGuid.PcdTorizonBootFlags|L"TorizonBootFlags"|gNVIDIAPublicVariableGuid|0x00|0xFF|BS,NV,RT
+   gNVIDIATokenSpaceGuid.PcdIpmiNetworkBootMode|L"IpmiNetworkBootMode"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV,RT
+   gNVIDIATokenSpaceGuid.PcdAcpiTimerEnabled|L"AcpiTimerEnabled"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV
+   gNVIDIATokenSpaceGuid.PcdUefiShellEnabled|L"UefiShellEnabled"|gNVIDIAPublicVariableGuid|0x0|0x01|BS,NV
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+index c905f852..47506493 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+@@ -1172,7 +1172,7 @@ EFI_STATUS
+ EFIAPI
+ ProcessExtLinuxConfig (
+   IN EFI_HANDLE             DeviceHandle,
+-  IN UINT32                 BootChain,
++  IN L4T_BOOT_PARAMS        *BootParams,
+   OUT EXTLINUX_BOOT_CONFIG  *BootConfig,
+   OUT EFI_HANDLE            *RootFsHandle
+   )
+@@ -1185,6 +1185,12 @@ ProcessExtLinuxConfig (
+   CHAR16           *Timeout      = NULL;
+   CHAR16           *CbootArg     = NULL;
+   CHAR16           *PostCbootArg = NULL;
++  CHAR16           *UEnvKernelImage = NULL;
++  CHAR16           *UEnvRamDiskImage = NULL;
++  CHAR16           *UEnvFDTDir = NULL;
++  CHAR16           *UEnvFDTFile = NULL;
++  CHAR16           *UEnvBootArgs = NULL;
++  CHAR16           *ConfPath = NULL;
+   BOOLEAN          Ascii;
+   UINTN            Index;
+ 
+@@ -1194,21 +1200,28 @@ ProcessExtLinuxConfig (
+     return EFI_INVALID_PARAMETER;
+   }
+ 
+-  Status = FindPartitionInfo (DeviceHandle, ROOTFS_BASE_NAME, BootChain, NULL, RootFsHandle);
++  Status = FindPartitionInfo (DeviceHandle, ROOTFS_BASE_NAME, BootParams->BootChain, NULL, RootFsHandle);
+   if (EFI_ERROR (Status)) {
+     ErrorPrint (L"%a: Unable to find partition info\r\n", __FUNCTION__);
+     return Status;
+   }
+ 
++  if (BootParams->BootMode == NVIDIA_L4T_BOOTMODE_TORIZON) {
++    ConfPath = UENV_CONF_PATH;
++  } else {
++    ConfPath = EXTLINUX_CONF_PATH;
++  }
++
+   Status = OpenAndReadFileToBuffer (
+              *RootFsHandle,
+-             EXTLINUX_CONF_PATH,
++             ConfPath,
+              &FileHandle,
+              NULL,
+              NULL
+              );
++
+   if (EFI_ERROR (Status)) {
+-    ErrorPrint (L"%a:sds Failed to Authenticate %s (%r)\r\n", __FUNCTION__, EXTLINUX_CONF_PATH, Status);
++    ErrorPrint (L"%a:sds Failed to Authenticate %s (%r)\r\n", __FUNCTION__, ConfPath, Status);
+     return Status;
+   }
+ 
+@@ -1225,6 +1238,63 @@ ProcessExtLinuxConfig (
+ 
+     CleanLine = CleanExtLinuxLine (FileLine);
+     if (*CleanLine != CHAR_NULL) {
++      if (BootParams->BootMode == NVIDIA_L4T_BOOTMODE_TORIZON) {
++        if ((BootParams->TorizonBootFlags & TORIZON_BOOTFLAGS_ROLLBACK) == 0) {
++          Status = CheckCommandString (CleanLine, UENV_KEY_KERNEL_IMAGE, &UEnvKernelImage);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_RAMDISK_IMAGE, &UEnvRamDiskImage);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_FDTDIR, &UEnvFDTDir);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_BOOTARGS, &UEnvBootArgs);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_FDTFILE, &UEnvFDTFile);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++        } else { /* (rollback enabled) */
++          Status = CheckCommandString (CleanLine, UENV_KEY_KERNEL_IMAGE2, &UEnvKernelImage);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_RAMDISK_IMAGE2, &UEnvRamDiskImage);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_FDTDIR2, &UEnvFDTDir);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_BOOTARGS2, &UEnvBootArgs);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++
++          Status = CheckCommandString (CleanLine, UENV_KEY_FDTFILE2, &UEnvFDTFile);
++          if (!EFI_ERROR (Status)) {
++            continue;
++          }
++        }
++
++        /* ignore ExtLinux config for Torizon boot */
++        continue;
++      }
++
+       Status = CheckCommandString (CleanLine, EXTLINUX_KEY_TIMEOUT, &Timeout);
+       if (!EFI_ERROR (Status)) {
+         BootConfig->Timeout = StrDecimalToUintn (Timeout);
+@@ -1297,6 +1367,22 @@ ProcessExtLinuxConfig (
+     }
+   }
+ 
++  if (BootParams->BootMode == NVIDIA_L4T_BOOTMODE_TORIZON) {
++    BootConfig->NumberOfBootOptions = 1;
++    BootConfig->BootOptions[0].LinuxPath = UEnvKernelImage;
++    BootConfig->BootOptions[0].InitrdPath = UEnvRamDiskImage;
++    BootConfig->BootOptions[0].BootArgs = UEnvBootArgs;
++    if (UEnvFDTDir != NULL && UEnvFDTFile != NULL) {
++      BootConfig->BootOptions[0].DtbPath = AllocatePool((StrLen(UEnvFDTDir) + StrLen(UEnvFDTFile) + 2) * sizeof (CHAR16));
++      if (BootConfig->BootOptions[0].DtbPath != NULL) {
++        BootConfig->BootOptions[0].DtbPath[0] = 0;
++        StrCatS (BootConfig->BootOptions[0].DtbPath, StrLen(UEnvFDTDir) + StrLen(UEnvFDTFile) + 2, UEnvFDTDir);
++        StrCatS (BootConfig->BootOptions[0].DtbPath, StrLen(UEnvFDTDir) + StrLen(UEnvFDTFile) + 2, L"/");
++        StrCatS (BootConfig->BootOptions[0].DtbPath, StrLen(UEnvFDTDir) + StrLen(UEnvFDTFile) + 2, UEnvFDTFile);
++      }
++    }
++  }
++
+   if (FileLine != NULL) {
+     FreePool (FileLine);
+     FileLine = NULL;
+@@ -1757,10 +1843,24 @@ ProcessBootParams (
+ 
+   DataSize = sizeof (BootParams->BootMode);
+   Status   = gRT->GetVariable (L4T_BOOTMODE_VARIABLE_NAME, &gNVIDIAPublicVariableGuid, NULL, &DataSize, &BootParams->BootMode);
+-  if (EFI_ERROR (Status) || (BootParams->BootMode > NVIDIA_L4T_BOOTMODE_RECOVERY)) {
++
++  if (EFI_ERROR (Status) || (BootParams->BootMode > NVIDIA_L4T_BOOTMODE_TORIZON)) {
+     BootParams->BootMode = NVIDIA_L4T_BOOTMODE_GRUB;
+   }
+ 
++  if (BootParams->BootMode == NVIDIA_L4T_BOOTMODE_TORIZON) {
++    Status   = gRT->GetVariable (
++                      TORIZON_BOOTFLAGS_VARIABLE_NAME,
++                      &gNVIDIAPublicVariableGuid,
++                      NULL,
++                      &DataSize,
++                      &BootParams->TorizonBootFlags);
++    if (EFI_ERROR (Status)) {
++      ErrorPrint (L"Failed to read boot flags (err %r)\r\n", Status);
++      BootParams->TorizonBootFlags = 0;
++    }
++  }
++
+   DataSize = sizeof (BootChain);
+   Status   = gRT->GetVariable (BOOT_FW_VARIABLE_NAME, &gNVIDIAPublicVariableGuid, NULL, &DataSize, &BootChain);
+   // If variable does not exist, is >4 bytes or has a value larger than 1, boot partition A
+@@ -2646,10 +2746,14 @@ L4TLauncher (
+       } while (FALSE);
+     }
+ 
+-    if (BootParams.BootMode == NVIDIA_L4T_BOOTMODE_DIRECT) {
+-      ErrorPrint (L"%a: Attempting Direct Boot\r\n", __FUNCTION__);
++    if (BootParams.BootMode == NVIDIA_L4T_BOOTMODE_DIRECT || BootParams.BootMode == NVIDIA_L4T_BOOTMODE_TORIZON) {
++      if (BootParams.BootMode == NVIDIA_L4T_BOOTMODE_DIRECT) {
++        ErrorPrint (L"%a: Attempting Direct Boot\r\n", __FUNCTION__);
++      } else {
++        ErrorPrint (L"%a: Attempting Torizon Boot\r\n", __FUNCTION__);
++      }
+       do {
+-        Status = ProcessExtLinuxConfig (DeviceHandle, BootParams.BootChain, &ExtLinuxConfig, &RootFsDeviceHandle);
++        Status = ProcessExtLinuxConfig (DeviceHandle, &BootParams, &ExtLinuxConfig, &RootFsDeviceHandle);
+         if (EFI_ERROR (Status)) {
+           ErrorPrint (L"%a: Unable to process extlinux config: %r\r\n", __FUNCTION__, Status);
+           BootParams.BootMode = NVIDIA_L4T_BOOTMODE_BOOTIMG;
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h
+index 177af9a4..49bbd95c 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.h
+@@ -20,6 +20,7 @@
+ #define DETACHED_SIG_FILE_EXTENSION     L".sig"
+ 
+ #define EXTLINUX_CONF_PATH  L"boot\\extlinux\\extlinux.conf"
++#define UENV_CONF_PATH      L"boot\\loader\\uEnv.txt"
+ 
+ #define BOOTMODE_DIRECT_STRING    L"bootmode=direct"
+ #define BOOTMODE_GRUB_STRING      L"bootmode=grub"
+@@ -52,6 +53,18 @@
+ 
+ #define EXTLINUX_CBOOT_ARG  L"${cbootargs}"
+ 
++#define UENV_KEY_KERNEL_IMAGE     L"kernel_image="
++#define UENV_KEY_RAMDISK_IMAGE    L"ramdisk_image="
++#define UENV_KEY_FDTDIR           L"fdtdir="
++#define UENV_KEY_FDTFILE          L"fdtfile="
++#define UENV_KEY_BOOTARGS         L"bootargs="
++
++#define UENV_KEY_KERNEL_IMAGE2    L"kernel_image2="
++#define UENV_KEY_RAMDISK_IMAGE2   L"ramdisk_image2="
++#define UENV_KEY_FDTDIR2          L"fdtdir2="
++#define UENV_KEY_FDTFILE2         L"fdtfile2="
++#define UENV_KEY_BOOTARGS2        L"bootargs2="
++
+ #define MAX_EXTLINUX_OPTIONS  10
+ 
+ typedef struct {
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.c b/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.c
+index aee2d832..d2a489dc 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.c
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.c
+@@ -648,6 +648,10 @@ ValidateRootfsStatus (
+     return EFI_SUCCESS;
+   }
+ 
++  if (BootParams->BootMode == NVIDIA_L4T_BOOTMODE_TORIZON) {
++    BootParams->BootChain = ROOTFS_SLOT_A;
++  }
++
+   if (BootParams->BootChain > ROOTFS_SLOT_B) {
+     DEBUG ((
+       DEBUG_ERROR,
+@@ -697,6 +701,7 @@ ValidateRootfsStatus (
+ 
+   // Set BootMode to RECOVERY if there is no more valid rootfs
+   if (!IsValidRootfs ()) {
++
+     BootParams->BootMode = NVIDIA_L4T_BOOTMODE_RECOVERY;
+ 
+     // Clear the SR_RF when boot to recovery kernel.
+@@ -721,7 +726,8 @@ ValidateRootfsStatus (
+   }
+ 
+   // Check redundancy level and validate rootfs status
+-  switch (mRootfsInfo.RootfsVar[RF_REDUNDANCY].Value) {
++  if (BootParams->BootMode != NVIDIA_L4T_BOOTMODE_TORIZON) {
++    switch (mRootfsInfo.RootfsVar[RF_REDUNDANCY].Value) {
+     case NVIDIA_OS_REDUNDANCY_BOOT_ONLY:
+       // There is no rootfs B. Ensure to set rootfs slot to A.
+       if (mRootfsInfo.CurrentSlot != ROOTFS_SLOT_A) {
+@@ -845,6 +851,55 @@ ValidateRootfsStatus (
+         mRootfsInfo.RootfsVar[RF_REDUNDANCY].Value
+         ));
+       break;
++    }
++  } else { /* Torizon Boot */
++    if (IsRootfsSlotBootable (mRootfsInfo.CurrentSlot)) {
++      if (BootParams->TorizonBootFlags & TORIZON_BOOTFLAGS_UPGRADE_AVAILABLE) {
++        Status = DecreaseRootfsRetryCount (mRootfsInfo.CurrentSlot);
++        if (EFI_ERROR (Status)) {
++          DEBUG ((
++            DEBUG_ERROR,
++            "%a: Failed to decrease the RetryCount of slot %d: %r\n",
++            __FUNCTION__,
++            mRootfsInfo.CurrentSlot,
++            Status
++            ));
++          goto Exit;
++        }
++      }
++    } else {
++      if (BootParams->TorizonBootFlags & TORIZON_BOOTFLAGS_UPGRADE_AVAILABLE) {
++        ErrorPrint (L"The boot counter has expired, setting the rollback flag\r\n");
++        Status = SetRetryCountTomRootfsInfo (mRootfsInfo.CurrentSlot, mRootfsInfo.RootfsVar[RF_RETRY_MAX].Value);
++        if (EFI_ERROR (Status)) {
++          DEBUG ((
++            DEBUG_ERROR,
++            "%a: Failed to reset the RetryCount of slot %d: %r\n",
++            __FUNCTION__,
++            mRootfsInfo.CurrentSlot,
++            Status
++            ));
++          goto Exit;
++        }
++        BootParams->TorizonBootFlags = TORIZON_BOOTFLAGS_ROLLBACK;
++        Status = gRT->SetVariable (
++                        TORIZON_BOOTFLAGS_VARIABLE_NAME,
++                        &gNVIDIAPublicVariableGuid,
++                        EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS,
++                        1,
++                        &BootParams->TorizonBootFlags);
++        if (EFI_ERROR (Status)) {
++          DEBUG ((
++            DEBUG_ERROR,
++            "%a: Failed to update Torizon BootFlags %x: %r\n",
++            __FUNCTION__,
++            BootParams->TorizonBootFlags,
++            Status
++            ));
++          goto Exit;
++        }
++      }
++    }
+   }
+ 
+ Exit:
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.h b/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.h
+index 17b3e7f4..51d74e99 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.h
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TRootfsValidation.h
+@@ -87,6 +87,7 @@ typedef struct {
+ typedef struct {
+   UINT32    BootMode;
+   UINT32    BootChain;
++  UINT8     TorizonBootFlags;
+ } L4T_BOOT_PARAMS;
+ 
+ /**
+diff --git a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.c b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.c
+index cd896efc..9183033b 100644
+--- a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.c
++++ b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.c
+@@ -1776,6 +1776,9 @@ InitializeSettings (
+   // Initialize L4T boot mode Form Settings
+   PcdSet32S (PcdL4TDefaultBootMode, PcdGet32 (PcdL4TDefaultBootMode));
+ 
++  // Initialize Torizon Boot Flags Form Settings
++  PcdSet8S (PcdTorizonBootFlags, PcdGet8 (PcdTorizonBootFlags));
++
+   // Initialize the IPMI network boot mode Form Settings
+   PcdSet8S (PcdIpmiNetworkBootMode, PcdGet8 (PcdIpmiNetworkBootMode));
+ 
+diff --git a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.inf b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.inf
+index 16d44f89..dbc45680 100644
+--- a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.inf
++++ b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigDxe.inf
+@@ -99,6 +99,7 @@
+   gNVIDIATokenSpaceGuid.PcdBoardRecoveryBoot
+   gNVIDIATokenSpaceGuid.PcdSocDisplayHandoffMode
+   gNVIDIATokenSpaceGuid.PcdServerPowerControlSetting
++  gNVIDIATokenSpaceGuid.PcdTorizonBootFlags
+ 
+ [Depex]
+   gEfiVariableArchProtocolGuid        AND
+diff --git a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.h b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.h
+index f1873a96..c846aa6c 100644
+--- a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.h
++++ b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.h
+@@ -111,6 +111,7 @@
+ #define KEY_MAX_CORES                  0x1023
+ #define KEY_SERVER_POWER_CONTROL       0x1024
+ #define KEY_DBG2_NETWORK_DEVICE        0x1025
++#define KEY_TORIZON_BOOT_FLAGS         0x1026
+ 
+ #define KEY_UPHY0_SOCKET0_CONFIG  0x1100
+ #define KEY_UPHY1_SOCKET0_CONFIG  0x1101
+diff --git a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.uni b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.uni
+index 99261973..11284895 100644
+--- a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.uni
++++ b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.uni
+@@ -54,6 +54,8 @@
+ #string STR_OS_STATUS_B_HELP                 #language en-US "Used to set the status of OS chain B."
+ #string STR_L4T_BOOTMODE_PROMPT              #language en-US "L4T Boot Mode"
+ #string STR_L4T_BOOTMODE_HELP                #language en-US "Used to override boot mode of l4t launcher."
++#string STR_TORIZON_PROMPT                   #language en-US "Torizon Boot Flags"
++#string STR_TORIZON_HELP                     #language en-US "Used to override Torizon boot flags."
+ #string STR_DT_DGPU_EFIFB_PROMPT             #language en-US "dGPU EFIFB Support (DT Mode)"
+ #string STR_DT_DGPU_EFIFB_HELP               #language en-US "Enable to support dGPU EFIFB in device tree mode."
+ #string STR_EGM_ENABLE_PROMPT                #language en-US "EGM"
+@@ -941,6 +943,11 @@
+ #string STR_L4T_BOOTMODE_BOOTIMG         #language en-US  "Kernel Partition"
+ #string STR_L4T_BOOTMODE_RECOVERY        #language en-US  "Recovery Partition"
+ #string STR_L4T_BOOTMODE_DEFAULT         #language en-US  "Application Default"
++#string STR_L4T_BOOTMODE_TORIZON         #language en-US  "Torizon"
++
++#string STR_TORIZON_NONE                 #language en-US  "normal_boot"
++#string STR_TORIZON_UA                   #language en-US  "upgrade_available"
++#string STR_TORIZON_RB                   #language en-US  "rollback"
+ 
+ #string STR_RESET_VARIABLES_HELP         #language en-US  "Reset all non-authenticated settings (reboot required)"
+ #string STR_RESET_VARIABLES_PROMPT       #language en-US  "Reset Settings"
+diff --git a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.vfr b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.vfr
+index 328b7789..e941fab9 100644
+--- a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.vfr
++++ b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHii.vfr
+@@ -80,6 +80,11 @@ formset
+     name  = L4TDefaultBootMode,
+     guid  = NVIDIA_PUBLIC_VARIABLE_GUID;
+ 
++  efivarstore NVIDIA_TORIZON_BOOT_FLAGS,
++    attribute = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS,  // EFI variable attributes
++    name  = TorizonBootFlags,
++    guid  = NVIDIA_PUBLIC_VARIABLE_GUID;
++
+   efivarstore NVIDIA_IPMI_NETWORK_BOOT_MODE,
+     attribute = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS,
+     name  = IpmiNetworkBootMode,
+@@ -536,8 +541,21 @@ formset
+           option text = STRING_TOKEN(STR_L4T_BOOTMODE_DIRECT), value = NVIDIA_L4T_BOOTMODE_DIRECT, flags = 0;
+           option text = STRING_TOKEN(STR_L4T_BOOTMODE_BOOTIMG), value = NVIDIA_L4T_BOOTMODE_BOOTIMG, flags = 0;
+           option text = STRING_TOKEN(STR_L4T_BOOTMODE_RECOVERY), value = NVIDIA_L4T_BOOTMODE_RECOVERY, flags = 0;
++          option text = STRING_TOKEN(STR_L4T_BOOTMODE_TORIZON), value = NVIDIA_L4T_BOOTMODE_TORIZON, flags = 0;
+       endoneof;
+ 
++      suppressif NOT ideqval L4TDefaultBootMode.BootMode == NVIDIA_L4T_BOOTMODE_TORIZON;
++          oneof varid = TorizonBootFlags.Flags,
++              questionid = KEY_TORIZON_BOOT_FLAGS,
++              prompt = STRING_TOKEN(STR_TORIZON_PROMPT),
++              help   = STRING_TOKEN(STR_TORIZON_HELP),
++              flags  = INTERACTIVE | NUMERIC_SIZE_1,
++              option text = STRING_TOKEN(STR_TORIZON_NONE), value = 0, flags = 0;
++              option text = STRING_TOKEN(STR_TORIZON_UA), value = 1, flags = 0;
++              option text = STRING_TOKEN(STR_TORIZON_RB), value = 2, flags = 0;
++          endoneof;
++      endif;
++
+       oneof varid = DgpuDtEfifbSupport.Enabled,
+         questionid = KEY_DGPU_DT_EFIFB_SUPPORT,
+         prompt = STRING_TOKEN(STR_DT_DGPU_EFIFB_PROMPT),
+diff --git a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHiiMap.uni b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHiiMap.uni
+index d0c71ccb..2b6ee818 100644
+--- a/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHiiMap.uni
++++ b/Silicon/NVIDIA/Drivers/NvidiaConfigDxe/NvidiaConfigHiiMap.uni
+@@ -46,6 +46,11 @@
+ #string STR_L4T_BOOTMODE_RECOVERY               #language x-uefi-redfish-Bios.v1_2_0 "RecoveryPartition"
+ #string STR_L4T_BOOTMODE_DEFAULT                #language x-uefi-redfish-Bios.v1_2_0 "ApplicationDefault"
+ 
++#string STR_TORIZON_PROMPT                      #language x-uefi-redfish-Bios.v1_2_0 "/Bios/Attributes/Torizon"
++#string STR_TORIZON_NONE                        #language x-uefi-redfish-Bios.v1_2_0 "normal_boot"
++#string STR_TORIZON_UA                          #language x-uefi-redfish-Bios.v1_2_0 "upgrade_available"
++#string STR_TORIZON_RB                          #language x-uefi-redfish-Bios.v1_2_0 "rollback"
++
+ #string STR_PCIE_IN_OS_PROMPT                   #language x-uefi-redfish-Bios.v1_2_0 "/Bios/Attributes/EnablePcieInOs"
+ #string STR_EGM_ENABLE_PROMPT                   #language x-uefi-redfish-Bios.v1_2_0 "/Bios/Attributes/EGM"
+ #string STR_EGM_HV_RESERVED_SIZE_PROMPT         #language x-uefi-redfish-Bios.v1_2_0 "/Bios/Attributes/EGMHypervisorReservedMemory"
+diff --git a/Silicon/NVIDIA/Include/NVIDIAConfiguration.h b/Silicon/NVIDIA/Include/NVIDIAConfiguration.h
+index 05598960..a0d418ce 100644
+--- a/Silicon/NVIDIA/Include/NVIDIAConfiguration.h
++++ b/Silicon/NVIDIA/Include/NVIDIAConfiguration.h
+@@ -33,8 +33,15 @@
+ #define NVIDIA_L4T_BOOTMODE_DIRECT    0x1
+ #define NVIDIA_L4T_BOOTMODE_BOOTIMG   0x2
+ #define NVIDIA_L4T_BOOTMODE_RECOVERY  0x3
++#define NVIDIA_L4T_BOOTMODE_TORIZON   0x4
+ #define NVIDIA_L4T_BOOTMODE_DEFAULT   0xFF
+ 
++#define TORIZON_BOOTFLAGS_VARIABLE_NAME       L"TorizonBootFlags"
++
++#define TORIZON_BOOTFLAGS_NORMAL                (0)
++#define TORIZON_BOOTFLAGS_UPGRADE_AVAILABLE        (1 << 0)
++#define TORIZON_BOOTFLAGS_ROLLBACK                (1 << 1)
++
+ #define KERNEL_CMD_STR_MIN_SIZE  0
+ #define KERNEL_CMD_STR_MAX_SIZE  255
+ 
+@@ -105,6 +112,10 @@ typedef struct {
+   UINT32    BootMode;
+ } NVIDIA_L4T_BOOT_MODE;
+ 
++typedef struct {
++  UINT8    Flags;
++} NVIDIA_TORIZON_BOOT_FLAGS;
++
+ typedef struct {
+   BOOLEAN    BoardRecoveryBoot;
+ } NVIDIA_BOARD_RECOVERY_BOOT;
+diff --git a/Silicon/NVIDIA/NVIDIA.dec b/Silicon/NVIDIA/NVIDIA.dec
+index 9e9476d8..1d148fff 100644
+--- a/Silicon/NVIDIA/NVIDIA.dec
++++ b/Silicon/NVIDIA/NVIDIA.dec
+@@ -633,6 +633,11 @@
+   #255 - Use application default
+   gNVIDIATokenSpaceGuid.PcdL4TDefaultBootMode|0xFF|UINT32|0x00000044
+ 
++#Torizon boot flags
++  #1 << 0 - U-Boot's upgrade_available flag
++  #1 << 1 - U-Boot's rollback flag
++  gNVIDIATokenSpaceGuid.PcdTorizonBootFlags|0x00|UINT8|0x000000132
++
+ #SMBIOS Data
+   #Type02 Data
+   gNVIDIATokenSpaceGuid.PcdBoardChassisLocation|L""|VOID*|0x00000051
+diff --git a/Silicon/NVIDIA/Tegra/DeviceTree/L4TConfiguration.dts b/Silicon/NVIDIA/Tegra/DeviceTree/L4TConfiguration.dts
+index 7e0fe4d8..4d68d77d 100644
+--- a/Silicon/NVIDIA/Tegra/DeviceTree/L4TConfiguration.dts
++++ b/Silicon/NVIDIA/Tegra/DeviceTree/L4TConfiguration.dts
+@@ -47,7 +47,12 @@
+ 								non-volatile;
+ 							};
+ 							L4TDefaultBootMode {
+-								data = [01 00 00 00];
++								data = [04 00 00 00]; /* 4 == Torizon Boot Mode */
++								runtime;
++								non-volatile;
++							};
++							TorizonBootFlags {
++								data = [00]; /* normal boot */
+ 								runtime;
+ 								non-volatile;
+ 							};
+-- 
+2.34.1
+
