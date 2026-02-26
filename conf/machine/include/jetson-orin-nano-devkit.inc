@@ -12,3 +12,8 @@ BBMASK += "meta-tegra/external/sota/recipes-bsp/uefi/edk2-firmware-tegra_%.bbapp
 do_image_tegraflash[depends] += " tegra-minimal-initramfs:do_image_complete"
 
 IMAGE_INSTALL:append:tegra = " nvidia-docker nvidia-drm-loadconf"
+
+MACHINE_EXTRA_RDEPENDS:remove = " tegra-redundant-boot"
+
+PREFERRED_PROVIDER_u-boot-fw-utils = "u-boot-fw-utils-tegra-emul"
+PREFERRED_RPROVIDER_u-boot-fw-utils = "u-boot-fw-utils-tegra-emul"
