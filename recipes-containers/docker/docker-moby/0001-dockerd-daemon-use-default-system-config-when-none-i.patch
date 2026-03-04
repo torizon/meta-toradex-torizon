@@ -1,7 +1,8 @@
-From 5a268edc0a2e196e2f489c628779a3bdfe52368e Mon Sep 17 00:00:00 2001
+From cc7ba95122b11b76999c47bdb5538b8248bcab7e Mon Sep 17 00:00:00 2001
 From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
-Date: Thu, 20 Jun 2024 09:15:52 -0300
-Subject: [PATCH] daemon: use default system config when none is available
+Date: Fri, 13 Feb 2026 18:31:02 +0000
+Subject: [PATCH] dockerd:daemon: use default system config when none is
+ available
 
 This allows the system image to provide a default daemon.json file while
 still allowing the user to overwrite via /etc/docker/daemon.json.
@@ -11,15 +12,16 @@ Signed-off-by: Ricardo Salveti <ricardo@foundries.io>
 Signed-off-by: Sergio Prado <sergio.prado@toradex.com>
 Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 Signed-off-by: Hiago De Franco <hiago.franco@toradex.com>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
 ---
  daemon/command/daemon.go | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/daemon/command/daemon.go b/daemon/command/daemon.go
-index 688ddf085df0..7892f8a8cdcf 100644
+index e3186c1816..54ff4b1f9a 100644
 --- a/daemon/command/daemon.go
 +++ b/daemon/command/daemon.go
-@@ -571,6 +571,12 @@ func loadDaemonCliConfig(opts *daemonOptions) (*config.Config, error) {
+@@ -584,6 +584,12 @@ func loadDaemonCliConfig(opts *daemonOptions) (*config.Config, error) {
  	}
  	opts.setDefaultOptions()
  
@@ -33,5 +35,5 @@ index 688ddf085df0..7892f8a8cdcf 100644
  	flags := opts.flags
  	conf.Debug = opts.Debug
 -- 
-2.51.0
+2.34.1
 

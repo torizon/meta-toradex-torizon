@@ -43,10 +43,16 @@ pkg_postinst:${PN}:append () {
 		fi
 		# Disable reboot when Ctrl+Alt+Del is pressed on a USB keyboard
 		systemctl $OPTS mask ctrl-alt-del.target
+	fi
+}
 
-		# Mask systemd-networkd-wait-online.service to avoid long boot times
-		# when networking is unplugged
-		systemctl $OPTS mask systemd-networkd-wait-online.service
+pkg_postinst:${PN}-networkd:append () {
+	if ${@bb.utils.contains('DISTRO_FEATURES','systemd','true','false',d)}; then
+		if [ -n "$D" ]; then
+			OPTS="--root=$D"
+		fi
+		# Disable systemd-networkd-wait-online.service to avoid long boot times when networking is unplugged
+		systemctl $OPTS disable systemd-networkd-wait-online.service
 	fi
 }
 

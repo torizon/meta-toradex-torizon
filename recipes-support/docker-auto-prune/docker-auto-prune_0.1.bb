@@ -20,7 +20,7 @@ SYSTEMD_AUTO_ENABLE:${PN} = "disable"
 
 do_compile() {
 	sed -e 's/@@DOCKER_PRUNE_ONCALENDAR@@/${DOCKER_PRUNE_ONCALENDAR}/' \
-		${S}/docker-auto-prune.timer.in > docker-auto-prune.timer
+		${UNPACKDIR}/docker-auto-prune.timer.in > docker-auto-prune.timer
 }
 
 do_install() {
