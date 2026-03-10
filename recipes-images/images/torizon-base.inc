@@ -108,6 +108,7 @@ CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
 
 CORE_IMAGE_BASE_INSTALL:append:mx95-nxp-bsp = " \
     ${@bb.utils.contains("DISTROOVERRIDES", "common-torizon-distro", "mali-imx", "",d)} \
+    neutron \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:verdin-imx95 = " \
