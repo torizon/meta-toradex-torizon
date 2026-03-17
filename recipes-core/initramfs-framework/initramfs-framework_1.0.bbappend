@@ -4,6 +4,7 @@ SRC_URI += "\
     file://plymouth \
     file://ostree \
     file://kmod \
+    file://0001-initramfs-framework-mount-run-and-move-to-rootfs-bef.patch \
     file://0002-only-scan-for-block-devices.patch \
     file://0003-notify-newroot-for-plymouth.patch \
 "
