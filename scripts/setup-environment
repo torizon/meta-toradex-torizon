@@ -195,3 +195,6 @@ else
         ;;
     esac
 fi
+
+export BUILDDIR=${_TDX_BUILDDIR}
+
