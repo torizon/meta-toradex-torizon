@@ -1,0 +1,36 @@
+From 2cb176c2c10a2cffaadbad4a6d5a3b29e25de86f Mon Sep 17 00:00:00 2001
+From: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+Date: Thu, 19 Mar 2026 14:38:45 -0300
+Subject: [PATCH] Allow pulling local repos with static deltas
+
+In order to allow for smaller Lockboxes, disable a feature (default
+behavior) of OSTree where the static-deltas are normally disabled when
+performing local pulls.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+Related-to: TOR-4248
+Signed-off-by: Rogerio Guerra Borin <rogerio.borin@toradex.com>
+---
+ src/libostree/ostree-repo-pull.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/src/libostree/ostree-repo-pull.c b/src/libostree/ostree-repo-pull.c
+index 9989415f..cf6d908a 100644
+--- a/src/libostree/ostree-repo-pull.c
++++ b/src/libostree/ostree-repo-pull.c
+@@ -3942,12 +3942,6 @@ ostree_repo_pull_with_options (OstreeRepo *self, const char *remote_name_or_base
+    */
+   if (pull_data->remote_repo_local)
+     {
+-      /* For local pulls, default to disabling static deltas so that the
+-       * exact object files are copied.
+-       */
+-      if (!pull_data->require_static_deltas)
+-        pull_data->disable_static_deltas = TRUE;
+-
+       /* Note the inversion here; PULL_FLAGS_UNTRUSTED is converted to
+        * IMPORT_FLAGS_TRUSTED only if it's unset (and just for local repos).
+        */
+-- 
+2.34.1
+

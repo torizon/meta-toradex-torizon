@@ -9,6 +9,7 @@ SRC_URI:append = " \
     file://0004-Add-support-for-kernel_image_type-in-uEnv.txt.patch \
     file://0005-Add-support-for-custom-bootargs-in-uEnv.txt.patch \
     file://0006-ostree-grub-generator-allow-adding-custom-scripts-to.patch \
+    file://0001-Allow-pulling-local-repos-with-static-deltas.patch \
     file://ostree-pending-reboot.service \
     file://ostree-pending-reboot.path \
     file://ostree-repo-config.sh \
