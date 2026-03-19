@@ -1,0 +1,64 @@
+From b5d8f0f872037e437a0f55037e422fb37501f420 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Tue, 17 Mar 2026 13:13:15 +0000
+Subject: [PATCH] initramfs-framework: mount /run and move to rootfs before
+ switch_root
+
+Mount /run as tmpfs during early init and include it in the set of
+mounts moved to $ROOTFS_DIR prior to exec switch_root.
+
+Having /run available early lets initramfs modules stamp state that can
+later influence systemd service jobs, since systemd will reuse the mount
+point instead of creating a new one during boot.
+
+This is particularly useful with ostree, as it uses /run/ostree-booted
+as way to describe that the rootfs comes from an ostree deployment.
+
+Upstream-Status: Backport [https://github.com/openembedded/openembedded-core/commit/3a4bd7ddefbf5b412a2b4031d491f5a50f1908cd]
+
+Signed-off-by: Ricardo Salveti <ricardo@foundries.io>
+Signed-off-by: Mathieu Dubois-Briand <mathieu.dubois-briand@bootlin.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ finish | 3 ++-
+ init   | 4 +++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/finish b/finish
+index ac0de9f..ed8298d 100755
+--- a/finish
++++ b/finish
+@@ -35,10 +35,11 @@ finish_run() {
+ 			mount -n --move "$dir" "${ROOTFS_DIR}/media/${dir##*/}"
+ 		done
+ 
+-		debug "Moving /dev, /proc and /sys onto rootfs..."
++		debug "Moving /dev, /proc, /sys and /run onto rootfs..."
+ 		mount --move /dev $ROOTFS_DIR/dev
+ 		mount --move /proc $ROOTFS_DIR/proc
+ 		mount --move /sys $ROOTFS_DIR/sys
++		mount --move /run $ROOTFS_DIR/run
+ 
+ 		cd $ROOTFS_DIR
+ 		exec switch_root -c /dev/console $ROOTFS_DIR ${bootparam_init:-/sbin/init}
+diff --git a/init b/init
+index a48b77e..5dd2522 100755
+--- a/init
++++ b/init
+@@ -81,9 +81,11 @@ EFI_DIR=/sys/firmware/efi  # place to store device firmware information
+ touch /etc/fstab
+ 
+ # initialize /proc, /sys, /run/lock and /var/lock
+-mkdir -p /proc /sys /run/lock /var/lock
++mkdir -p /proc /sys /run /var/lock
+ mount -t proc proc /proc
+ mount -t sysfs sysfs /sys
++mount -t tmpfs tmpfs /run
++mkdir -p /run/lock
+ 
+ if [ -d $EFI_DIR ];then
+ 	mount -t efivarfs none /sys/firmware/efi/efivars
+-- 
+2.34.1
+
