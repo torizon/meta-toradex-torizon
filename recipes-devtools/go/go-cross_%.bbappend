@@ -10,5 +10,5 @@ SRC_URI:remove = " \
 
 # Re-add the patch, but now corrected with the GODEBUG variable inserted in the right place.
 SRC_URI:append = " \
-    file://0001-net-url-add-urlmaxqueryparams-GODEBUG-to-limit-the-n.patch \
+    ${@bb.utils.contains_any('MACHINE', 'luna-sl1680 sl1680 sl2619', '', 'file://0001-net-url-add-urlmaxqueryparams-GODEBUG-to-limit-the-n.patch', d)} \
 "
