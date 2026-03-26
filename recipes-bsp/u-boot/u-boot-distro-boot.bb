@@ -221,6 +221,9 @@ keep_fusing_block() {
 
 inherit deploy
 
+FORCE_ENVSAVE_BLOCK_ENABLE = "0"
+FORCE_ENVSAVE_BLOCK_ENABLE:common-torizon-distro = "1"
+
 UBOOT_BOOT_PARTITION_NUMBER ?= "1"
 OTAROOT_PARTITION_NUMBER ?= "1"
 UENV_EXTRA_CONFIGS ?= "true"
@@ -234,6 +237,12 @@ do_compile() {
         -e 's/@@APPEND@@/${APPEND}/' \
         -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \
         "${S}/boot.cmd.in" > boot.cmd
+
+    if [ "${FORCE_ENVSAVE_BLOCK_ENABLE}" = "1" ]; then
+        sed -i "/#+START_ENVSAVE_BLOCK/d; /#+END_ENVSAVE_BLOCK/d" "boot.cmd"
+    else
+        sed -i "/#+START_ENVSAVE_BLOCK/,/#+END_ENVSAVE_BLOCK/d" "boot.cmd"
+    fi
 
     bbdebug 1 "Building uEnv.txt..."
     sed -e 's#@@UENV_EXTRA_CONFIGS@@#${UENV_EXTRA_CONFIGS}#' \
