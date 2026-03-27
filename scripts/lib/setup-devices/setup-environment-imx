@@ -25,6 +25,7 @@ DL_DIR ?= "${_TDX_OEROOT}/downloads"
 
 # Where to save shared state
 SSTATE_DIR ?= "${_TDX_OEROOT}/sstate-cache"
+BB_HASHSERVE_DB_DIR ?= "\${SSTATE_DIR}"
 
 # Where to save the build system work output
 TMPDIR = "${_TDX_BUILDDIR}/tmp"
