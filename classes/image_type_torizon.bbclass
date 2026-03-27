@@ -110,6 +110,7 @@ UBOOT_BINARY_OTA_IGNORE:toradex-smarc-imx8mp = "1"
 UBOOT_BINARY_OTA_IGNORE:toradex-smarc-imx95 = "1"
 UBOOT_BINARY_OTA_IGNORE:verdin-imx95 = "1"
 UBOOT_BINARY_OTA_IGNORE:genericx86-64 = "1"
+UBOOT_BINARY_OTA_IGNORE:lino-imx93 = "1"
 
 TEZI_IMAGE_TEZIIMG_PREFUNCS:prepend = "gen_torizon_prov_data pack_tcb_signing_binaries_in_teziimg "
 
