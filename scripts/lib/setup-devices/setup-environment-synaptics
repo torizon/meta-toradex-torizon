@@ -113,6 +113,7 @@ if ! grep -q "# Torizon" conf/local.conf; then
   sed -i "/^DISTRO .*/c\DISTRO = \"${DISTRO}\"" conf/local.conf
   sed -i "/^#DL_DIR .*/c\DL_DIR ?= \"${_TDX_OEROOT}/downloads\"" conf/local.conf
   sed -i "/^#SSTATE_DIR .*/c\SSTATE_DIR ?= \"${_TDX_OEROOT}/sstate-cache\"" conf/local.conf
+  sed -i "/^SSTATE_DIR .*/a BB_HASHSERVE_DB_DIR ?= \"\${SSTATE_DIR}\"" conf/local.conf
   sed -i "/^#TMPDIR .*/c\TMPDIR = \"${_TDX_BUILDDIR}/tmp\"" conf/local.conf
 
   cat <<EOF >>conf/local.conf
