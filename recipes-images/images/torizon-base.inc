@@ -107,14 +107,6 @@ CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:mx95-nxp-bsp = " \
-    ${@bb.utils.contains("DISTROOVERRIDES", "common-torizon-distro", "mali-imx", "",d)} \
-"
-
-CORE_IMAGE_BASE_INSTALL:append:verdin-imx95 = " \
-    mali-imx \
-"
-
-CORE_IMAGE_BASE_INSTALL:append:toradex-smarc-imx95 = " \
     mali-imx \
 "
 
