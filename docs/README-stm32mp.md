@@ -20,7 +20,7 @@ $ cd ~/yocto-workdir
 ```
 4. Initialize the Torizon repository:
 ```
-$ repo init -u git://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m torizon/default.xml
+$ repo init -u https://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m torizon/default.xml
 ```
 5. Sync the repositories:
 ```

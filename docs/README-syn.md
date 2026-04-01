@@ -4,7 +4,7 @@ Setup
 2. Initialize and sync the repo manifest for Synaptics:
 ```bash
 $ mkdir common-torizon; cd common-torizon
-$ repo init -u git://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/syn/integration.xml
+$ repo init -u https://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/syn/integration.xml
 $ repo sync -j 10
 ```
 
