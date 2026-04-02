@@ -4,7 +4,7 @@ Setup
 2. Initialize and sync the repo manifest for NXP:
 ```bash
 $ mkdir common-torizon; cd common-torizon
-$ repo init -u git://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/nxp/default.xml
+$ repo init -u https://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/nxp/default.xml
 $ repo sync -j 10
 ```
 We **strongly recommend** using the `default.xml` manifest. The `integration.xml` and `next.xml` are development manifests used internally and they might be unstable.
