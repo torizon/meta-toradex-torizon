@@ -4,13 +4,14 @@
 #
 # Torizon boot script.
 
-#+START_ENVSAVE_BLOCK
+#+START_ENVSAVE_BLOCK (this block may be removed)
 if test "${env_initialized}" != "1"
 then 
     # Forcing a 'env save' to guarantee that the environment is initialized during a first boot 
     env set env_initialized 1 
     env save 
 fi
+
 #+END_ENVSAVE_BLOCK
 
 if test -z "${altbootcmd}"
