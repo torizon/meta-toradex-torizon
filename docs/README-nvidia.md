@@ -20,8 +20,13 @@ $ cd ~/yocto-workdir
 ```
 4. Initialize the Torizon repository:
 ```
-$ repo init -u git://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m torizon/default.xml
+$ repo init -u https://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m torizon/integration.xml
 ```
+> [!IMPORTANT]
+> Until an official release of Common Torizon OS for NVIDIA Jetson Orin Nano, only the `integration.xml` manifest is suitable for end-users to build. After an official release, users will be able to use the `default.xml` manifest.
+
+Note that `integration.xml` is a development manifest that may contain unfinished features and should therefore be considered unstable.
+
 5. Sync the repositories:
 ```
 $ repo sync
