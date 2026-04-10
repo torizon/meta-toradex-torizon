@@ -227,6 +227,7 @@ inherit deploy
 # not pre-initialized by the bootloader (e.g. luna-sl1680).
 BOOTCMD_INIT_ENV_SUPP ?= "0"
 BOOTCMD_INIT_ENV_SUPP:luna-sl1680 = "1"
+BOOTCMD_INIT_ENV_SUPP:sl1680 = "1"
 
 UBOOT_BOOT_PARTITION_NUMBER ?= "1"
 OTAROOT_PARTITION_NUMBER ?= "1"
