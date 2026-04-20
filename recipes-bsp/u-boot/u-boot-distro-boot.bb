@@ -221,6 +221,13 @@ keep_fusing_block() {
 
 inherit deploy
 
+# BOOTCMD_INIT_ENV_SUPP: when set to "1", includes a block in boot.cmd that
+# forces a 'env save' on first boot to ensure the U-Boot environment storage
+# is properly initialized. Required on platforms where the environment area is
+# not pre-initialized by the bootloader (e.g. luna-sl1680).
+BOOTCMD_INIT_ENV_SUPP ?= "0"
+BOOTCMD_INIT_ENV_SUPP:luna-sl1680 = "1"
+
 UBOOT_BOOT_PARTITION_NUMBER ?= "1"
 OTAROOT_PARTITION_NUMBER ?= "1"
 UENV_EXTRA_CONFIGS ?= "true"
@@ -234,6 +241,12 @@ do_compile() {
         -e 's/@@APPEND@@/${APPEND}/' \
         -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \
         "${S}/boot.cmd.in" > boot.cmd
+
+    if [ "${BOOTCMD_INIT_ENV_SUPP}" = "1" ]; then
+        sed -i "/#+START_ENVSAVE_BLOCK/d; /#+END_ENVSAVE_BLOCK/d" "boot.cmd"
+    else
+        sed -i "/#+START_ENVSAVE_BLOCK/,/#+END_ENVSAVE_BLOCK/d" "boot.cmd"
+    fi
 
     bbdebug 1 "Building uEnv.txt..."
     sed -e 's#@@UENV_EXTRA_CONFIGS@@#${UENV_EXTRA_CONFIGS}#' \
