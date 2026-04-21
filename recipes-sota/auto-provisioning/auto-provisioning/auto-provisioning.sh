@@ -13,8 +13,9 @@ PROV_SECRET=""
 PROV_TOKEN_ENDPOINT=""
 PROV_ACCESS_TOKEN=""
 PROV_HIBERNATED=""
+PROV_FLEETIDS=""
 
-PROV_REGISTER_ENDPOINT=${PROV_REGISTER_ENDPOINT:-"https://app.torizon.io/api/accounts/devices"}
+PROV_REGISTER_ENDPOINT=${PROV_REGISTER_ENDPOINT:-"https://app.torizon.io/api/v2/devices"}
 
 log() {
     echo "$@"
@@ -77,6 +78,9 @@ read_config_file() {
     if ! PROV_HIBERNATED=$(read_json_property ".hibernated" "$config"); then
         PROV_HIBERNATED="false"
     fi
+    if ! PROV_FLEETIDS=$(read_json_property ".fleetids" "$config"); then
+        PROV_FLEETIDS="[]"
+    fi
 }
 
 get_provisioning_token() {
@@ -122,7 +126,8 @@ register_device() {
                    --arg devid "${device_id}" \
                    --arg devnm "${device_name}" \
                    --arg hbrnt "${PROV_HIBERNATED}" \
-                   '{"device_id": $devid, "device_name": $devnm, "hibernated": $hbrnt | test("true")}')
+                   --argjson fleet "${PROV_FLEETIDS}" \
+                   '{"deviceId": $devid, "deviceName": $devnm, "hibernated": $hbrnt | test("true"), "fleetIds": $fleet}')
     http_code=$(curl -s -w '%{http_code}' --max-time 30 -X POST \
                      -H "Authorization: Bearer ${PROV_ACCESS_TOKEN}" \
                      -d "${post_data}" \
@@ -143,7 +148,7 @@ write_credentials() {
     temp_dir="${SOTA_CRED_DIR}.tmp"
     rm -Rf ${temp_dir} && mkdir -p ${temp_dir}
     if ! unzip device.zip -d ${temp_dir} >/dev/null; then
-	rm -rf ${temp_dir}
+        rm -rf ${temp_dir}
         exit_error "Failed extracting credentials file"
     fi
     sync
@@ -154,6 +159,21 @@ write_credentials() {
     rm -rf ${SOTA_BASE_DIR}/sql.db
     rm -rf ${CONFIG_FILE}
     sync
+}
+
+check_fleets() {
+    local groups
+    local info
+
+    if [ "$PROV_FLEETIDS" != "[]" ]; then
+        info=$(cat $SOTA_CRED_DIR/info.json)
+        groups=$(read_json_property ".groups" "$info")
+        if [ "$groups" != "$PROV_FLEETIDS" ]; then
+            log "Could not add device to all requested fleet(s)."
+            log "Fleet(s) requested to be added to: $PROV_FLEETIDS"
+            log "Fleet(s) successfully added to: $groups"
+        fi
+    fi
 }
 
 restart_services() {
@@ -177,6 +197,7 @@ main() {
     get_provisioning_token
     register_device
     write_credentials
+    check_fleets
     restart_services
     log "Device successfully provisioned"
 }
