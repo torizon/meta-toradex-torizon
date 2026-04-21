@@ -149,3 +149,8 @@ CORE_IMAGE_BASE_INSTALL:append:cfs-signed = "\
 CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
     composefs \
 "
+
+# Enable WIC generation with images utilizing tdx-signed or inherited
+# classes (such as torizon-signed)
+IMAGE_FSTYPES_REMOVE:remove:tdx-signed = "ota-ext4 wic"
+IMAGE_FSTYPES:append:tdx-signed = " ota-ext4 wic"
