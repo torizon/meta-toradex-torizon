@@ -13,6 +13,9 @@ INHERIT += "toradex-sanity toradex-mirrors"
 # We do not need teziimg, ota-ext4 or wic images by default
 IMAGE_FSTYPES_REMOVE ?= "ota-ext4 wic wic.gz wic.bmap wic.xz"
 
+# Set WKS file to be used with Torizon images by default
+WKS_FILE:sota ?= "torizon-sota.wks"
+
 # Compatibility with toradex layers
 BBMASK += " \
     /meta-toradex-bsp-common/recipes-core/systemd/systemd_%.bbappend \

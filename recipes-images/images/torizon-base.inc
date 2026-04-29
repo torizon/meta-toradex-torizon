@@ -70,8 +70,22 @@ CORE_IMAGE_BASE_INSTALL:append:tdx = " \
     udev-toradex-rules \
 "
 
-CORE_IMAGE_BASE_INSTALL:append:common-torizon-distro = " \
-    resize-helper \
+# Define when the resize-helper is to be used:
+#
+# - The resize-helper is needed on images built with class tdx-signed because we
+#   are currently producing WIC-format images when building with that class.
+# - However, the resize-helper does not currently work with class torizon-signed
+#   (which inherits from tdx-signed) due to composefs; so we keep it disabled for
+#   now on cfs-signed images.
+#
+# TODO: Handle partition resizing on torizon-signed.
+#
+RESIZE_HELPER = ""
+RESIZE_HELPER:common-torizon-distro = "resize-helper"
+RESIZE_HELPER:tdx-signed = "resize-helper"
+RESIZE_HELPER:cfs-signed = ""
+CORE_IMAGE_BASE_INSTALL:append = " \
+    ${RESIZE_HELPER} \
 "
 
 # SOTA related packages
@@ -149,3 +163,8 @@ CORE_IMAGE_BASE_INSTALL:append:cfs-signed = "\
 CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
     composefs \
 "
+
+# Enable WIC generation with images utilizing tdx-signed or inherited
+# classes (such as torizon-signed)
+IMAGE_FSTYPES_REMOVE:remove:tdx-signed = "ota-ext4 wic"
+IMAGE_FSTYPES:append:tdx-signed = " ota-ext4 wic"
