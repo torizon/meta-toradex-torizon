@@ -59,9 +59,6 @@ Flashing eMMC
 ======
 For flashing, there are two possible ways: use the helper script `flash-image.sh` or doing the steps manually.
 
-> [!WARNING]  
-> This helper script does NOT yet work with the Luna SL1680 board, it only works with the Astra SL1680 board.
-
 1. The easiest way is to use the helper script:
 
     a. After the build is done, get the file called `SYNAIMG-flash.tar.gz` from the `deploy/images/${MACHINE}` folder.  
@@ -98,10 +95,9 @@ For flashing, there are two possible ways: use the helper script `flash-image.sh
     ```
 
 > [!IMPORTANT]
-> For `Luna SL1680`, you'll need to replace the folder `astra-usbboot-images` with the one provided here.
+> For `Luna SL1680`, you'll need to replace the folder `astra-usbboot-images` with the one provided [here](https://artifacts.toradex.com/artifactory/common-torizon-extras-prod-frankfurt/luna-sl1680/astra-usbboot-images-winglet.tar.gz).
 > Just rename the current one something else, for instance `astra-usbboot-images-sl1680` and add the provided `astra-usbboot-images` in `usb-tool`
 > And if you'll need to flash Astra SL1680, you'll need to switch back to the original binaries, so keep that in mind!
-> TODO: Make Luna SL1680 specific binaries available
 
 Manual Setup
 ======

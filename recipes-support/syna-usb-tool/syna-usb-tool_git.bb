@@ -8,6 +8,11 @@ PV = "1.0.5"
 SRC_URI = "git://github.com/synaptics-astra/usb-tool.git;protocol=https;branch=main"
 SRCREV = "e5e9a160ffb1755549e73457bda767e641439dc6"
 
+SRC_URI:append:luna-sl1680 = " \
+    https://artifacts.toradex.com/artifactory/common-torizon-extras-prod-frankfurt/luna-sl1680/astra-usbboot-images-winglet.tar.gz;name=luna-tarball \
+    "
+SRC_URI[luna-tarball.sha256sum] = "c1879d14f9ede4eceb387acb538e031103ecf2cbf41d8a00b87356f6674e65b0"
+
 S = "${WORKDIR}/git"
 
 inherit deploy
@@ -21,6 +26,11 @@ do_deploy() {
     install -d ${SYNAIMG_DEPLOY}
     cp -r ${S}/bin/ ${SYNAIMG_DEPLOY}
     cp -r ${S}/astra-usbboot-images/ ${SYNAIMG_DEPLOY}
+}
+
+# Replace with Luna-specific files from tarball
+do_deploy:append:luna-sl1680() {
+    cp -r ${WORKDIR}/astra-usbboot-images/ ${SYNAIMG_DEPLOY}
 }
 
 addtask deploy after do_compile
