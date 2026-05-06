@@ -9,7 +9,7 @@ ConditionPathExists=|/var/sota/import/pkey.pem
 RestartSec=10
 Restart=always
 Environment="CONFIG_FILE=/etc/rac/client.toml"
-ExecStartPre=/usr/bin/sudo -u torizon mkdir -p /home/torizon/run/rac
+ExecStartPre=/usr/bin/install -d -o torizon -g torizon -m 0700 /home/torizon/run/rac
 ExecStart=/usr/bin/rac
 
 [Install]
