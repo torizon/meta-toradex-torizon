@@ -911,10 +911,16 @@ cargo_add_rac_patch_paths() {
 
 do_configure[postfuncs] += "cargo_add_rac_patch_paths"
 
+RUNRAC_FOLDER ??= "/home/torizon/run/rac"
+
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/remote-access.service ${D}${systemd_unitdir}/system/remote-access.service
+    sed -i "s|@@RUNRAC_FOLDER@@|${RUNRAC_FOLDER}|g" \
+        ${D}${systemd_unitdir}/system/remote-access.service
 
     install -d ${D}${sysconfdir}/rac
     install -m 0644 ${WORKDIR}/client.toml ${D}${sysconfdir}/rac
+    sed -i "s|@@RUNRAC_FOLDER@@|${RUNRAC_FOLDER}|g" \
+        ${D}${sysconfdir}/rac/client.toml
 }
