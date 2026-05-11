@@ -42,7 +42,6 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     less \
     libpwquality \
     mmc-utils \
-    nano \
     networkmanager \
     openssh-sftp-server \
     ostree-customize-plymouth \
