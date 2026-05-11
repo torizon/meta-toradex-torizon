@@ -12,8 +12,7 @@ SRC_URI = " \
     file://mwifiex-delay.sh \
 "
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
 SYSTEMD_SERVICE:${PN} = "mwifiex-delay.service"
 
