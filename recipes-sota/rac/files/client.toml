@@ -6,13 +6,13 @@ client_key_path = "/var/sota/import/pkey.pem"
 
 [device]
 # If this file does not exist, a new key will be generated and saved to this file
-ssh_private_key_path = "/home/torizon/run/rac/device-key-01.sec"
+ssh_private_key_path = "@@RUNRAC_FOLDER@@/device-key-01.sec"
 unprivileged_user_group = "torizon:torizon"
-local_tuf_repo_path = "/home/torizon/run/rac/uptane-repo"
+local_tuf_repo_path = "@@RUNRAC_FOLDER@@/uptane-repo"
 poll_timeout = { secs = 30, nanos = 0 }
 validation_poll_timeout = { secs = 30, nanos = 0 }
 enable_dbus_client = true
 
 [device.session.spawned_sshd]
 sshd_path = "/usr/sbin/sshd"
-config_dir = "/home/torizon/run/rac"
+config_dir = "@@RUNRAC_FOLDER@@"
