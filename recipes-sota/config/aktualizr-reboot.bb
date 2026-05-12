@@ -10,7 +10,7 @@ SRC_URI = " \
     file://70-reboot.toml \
 "
 
-S = "${UNPACKDIR}/sources"
+S = "${UNPACKDIR}"
 
 do_install:append () {
     install -m 0700 -d ${D}${libdir}/sota/conf.d

@@ -8,7 +8,7 @@ SRC_URI = " \
     file://containers-tags.sh \
 "
 
-S = "${UNPACKDIR}/sources"
+S = "${UNPACKDIR}"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 EXCLUDE_FROM_WORLD = "1"
