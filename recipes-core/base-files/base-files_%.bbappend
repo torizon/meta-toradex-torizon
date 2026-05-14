@@ -4,6 +4,7 @@ hostname = ""
 
 SRC_URI += " \
 	file://x86/fstab \
+	file://beagley-ai/fstab \
 "
 
 # This deviates a bit from what OE-core is doing. Especially we want the full
@@ -28,3 +29,9 @@ do_install:append:cfs-support () {
 	# systemd-remount-fs.
 	sed -i -e '\#^ */dev/root#d' ${D}${sysconfdir}/fstab
 }
+
+do_install:append:beagley-ai() {
+	install -d ${D}/boot/vendor_boot
+    install -m 644 ${WORKDIR}/beagley-ai/fstab ${D}${sysconfdir}/fstab
+}
+
