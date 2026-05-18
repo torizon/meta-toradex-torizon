@@ -1,4 +1,5 @@
 RDEPENDS:packagegroup-core-full-cmdline-utils:remove = "\
+    bc \
     gawk \
     mc \
     mc-fish \
