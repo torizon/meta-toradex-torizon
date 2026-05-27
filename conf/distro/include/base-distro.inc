@@ -94,3 +94,12 @@ TDX_SECBOOT_REQUIRED_BOOTARGS:tdx-signed = "${TOS_SECBOOT_REQUIRED_BOOTARGS}"
 # Export some extra build information (takes place if class image-buildinfo is used).
 TDX_SIGNING_CLASS ?= ""
 IMAGE_BUILDINFO_VARS:append = " TDX_SIGNING_CLASS OVERRIDES"
+
+# CycloneDX SBOM/VEX: deploy each recipe's bom.json/vex.json to a per-recipe
+# directory. Since meta-cyclonedx commit a650a26, do_deploy_cyclonedx is an
+# sstate task deploying to the shared ${CYCLONEDX_EXPORT_DIR}; with the default
+# fixed path multiple images (e.g. an OS image + initramfs-ostree-torizon-image)
+# collide in the sstate shared area ("trying to install files into a shared area
+# when those files already exist"). ${PN} expands per-recipe and keeps each
+# SBOM/VEX in its own path.
+CYCLONEDX_EXPORT_DIR = "${DEPLOY_DIR}/cyclonedx-export/cyclonedx-${PN}"
