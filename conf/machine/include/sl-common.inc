@@ -17,6 +17,9 @@ BBMASK += "/meta-synaptics/dynamic-layers/virtualization-layer/recipes-container
 
 PREFERRED_PROVIDER_virtual/dtb = ""
 
+PREFERRED_VERSION_meson = "1.3.1"
+PREFERRED_VERSION_meson-native = "1.3.1"
+
 IMAGE_CMD:ota-ext4:append () {
     # Clean up
     [ -f "${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs.subimg" ] && rm ${DEPLOY_DIR_IMAGE}/${SYNAIMG_DEPLOY_SUBDIR}/rootfs.subimg
