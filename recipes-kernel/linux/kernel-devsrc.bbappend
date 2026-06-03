@@ -6,4 +6,4 @@ do_install:append() {
 
 FILES:${PN} += "/usr/src/linux.tar.bz2"
 
-RDEPENDS:${PN}:remove = "bc python3 flex bison glibc-utils openssl-dev util-linux gcc-plugins libmpc-dev"
+RDEPENDS:${PN}:remove = "bc python3 flex bison glibc-utils openssl-dev util-linux gcc-plugins libmpc-dev gawk"
