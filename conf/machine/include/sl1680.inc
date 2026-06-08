@@ -46,3 +46,5 @@ hostname:pn-base-files = "torizon-sl1680"
 DISTRO_FEATURES_REMOVE:remove = "vulkan"
 
 require sl-common.inc
+
+do_image_ota_ext4[depends] += "syna2img-tools:do_deploy"

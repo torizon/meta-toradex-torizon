@@ -83,6 +83,9 @@ EOF
     (
         cd ${DEPLOY_DIR_IMAGE}
         cp -L -R syna-metadata/* syna-usb-tool/* ${SYNAIMG_DEPLOY_SUBDIR} ${SYNAIMG_DEPLOY_SUBDIR}-flash
+        if [ -d syna2img-tools ]; then
+            cp -L -R syna2img-tools/* ${SYNAIMG_DEPLOY_SUBDIR}-flash
+        fi
         tar -czf ${SYNAIMG_DEPLOY_SUBDIR}-flash.tar.gz -C ${DEPLOY_DIR_IMAGE} ${SYNAIMG_DEPLOY_SUBDIR}-flash
     )
 }
