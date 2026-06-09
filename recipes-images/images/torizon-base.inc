@@ -73,6 +73,7 @@ CORE_IMAGE_BASE_INSTALL:append:tdx = " \
 # the presence of GPLv3 software in Torizon OS images.
 BAD_RECOMMENDATIONS_GPL_V3 = " \
     gpgme-tool \
+    dosfstools \
 "
 BAD_RECOMMENDATIONS += "${BAD_RECOMMENDATIONS_GPL_V3}"
 
