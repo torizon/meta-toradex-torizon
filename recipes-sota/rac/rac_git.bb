@@ -17,14 +17,9 @@ SRCREV_FORMAT = "rac_tough"
 SRCREV_rac = "395ff18a7e00e7cc47687e4b2a9753032b4592a5"
 SRCREV_tough = "69e51d241b950951907b439a9996692967a9e82b"
 
-# Disable AUTOREV, it does not guarantee work, since the crate dependencies
-# listed below in the SRC_URI might also need to be updated.
-# If you want to enable AUTOREV, uncomment the following lines and in the case
-# the dependencies need to be updated, use "cargo bitbake", update the SRC_URI,
-# remove the SRC_URI sha256sums completely below and build the recipe, which will
-# output an updated list of SRC_URI sha256sums for each dependency from cargo.
-# SRCREV_rac:use-head-next = "${AUTOREV}"
-# SRCREV_tough:use-head-next = "${AUTOREV}"
+# Track the latest revisions on head-next builds.
+SRCREV_rac:use-head-next = "${AUTOREV}"
+SRCREV_tough:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
 
@@ -32,9 +27,12 @@ SYSTEMD_SERVICE:${PN} = "remote-access.service"
 
 PV = "0.0+git${SRCPV}"
 
-# Dependencies as specified by main project's Cargo.toml
-# Make sure to keep this up-to-date as needed
-# Auto-generated via "cargo bitbake"
+# Dependencies as specified by the main project's Cargo.toml, auto-generated
+# via "cargo bitbake". Keep this up-to-date as needed: should a revision change
+# the crate dependencies (e.g. after an AUTOREV bump), regenerate the list by
+# running "cargo bitbake", update the SRC_URI, remove the SRC_URI sha256sums
+# completely below and build the recipe, which will output an updated list of
+# SRC_URI sha256sums for each dependency from cargo.
 SRC_URI += " \
     crate://crates.io/addr2line/0.21.0 \
     crate://crates.io/adler/1.0.2 \
