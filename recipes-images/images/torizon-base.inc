@@ -69,12 +69,6 @@ CORE_IMAGE_BASE_INSTALL:append:tdx = " \
     udev-toradex-rules \
 "
 
-# Packages normally installed via RRECOMMENDS that should be dropped to avoid
-# the presence of GPLv3 software in Torizon OS images.
-BAD_RECOMMENDATIONS_GPL_V3 = " \
-    gpgme-tool \
-"
-BAD_RECOMMENDATIONS += "${BAD_RECOMMENDATIONS_GPL_V3}"
 
 # Define when the resize-helper is to be used:
 #

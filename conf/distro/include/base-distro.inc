@@ -16,6 +16,23 @@ IMAGE_CLASSES:remove = "image_types_fsl"
 # Torizon machine specific overrides
 INHERIT += "torizon"
 
+# Central list of GPLv3 packages that must not end up in Torizon OS images.
+# Packages listed here are removed from the RDEPENDS/RRECOMMENDS of all
+# recipes (see gplv3-package-filter.bbclass) and are also fed into
+# BAD_RECOMMENDATIONS.
+TORIZON_EXCLUDED_PACKAGES_GPL_V3 = " \
+    dosfstools \
+    findutils \
+    gpgme-tool \
+    mc \
+    mc-fish \
+    mc-helpers \
+    mc-helpers-perl \
+    mc-shell \
+"
+BAD_RECOMMENDATIONS += "${TORIZON_EXCLUDED_PACKAGES_GPL_V3}"
+INHERIT += "gplv3-package-filter"
+
 # This also disables the static packageconfig. runc needs to be dynamically
 # linked for seccomp support. https://github.com/opencontainers/runc/issues/2008
 PACKAGECONFIG:remove:pn-${PREFERRED_PROVIDER_virtual/runc} = "static"
