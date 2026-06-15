@@ -58,7 +58,7 @@ EXTRA_OSTREE_COMMIT = " \
     --add-metadata=oe.layers="${OSTREE_LAYER_REVISION_INFO}" \
 "
 
-IMAGE_CMD:ostreecommit[vardepsexclude] += "EXTRA_OSTREE_COMMIT OSTREE_COMMIT_SUBJECT"
+IMAGE_CMD:ostreecommit[vardepsexclude] += "EXTRA_OSTREE_COMMIT OSTREE_COMMIT_SUBJECT OSTREE_LAYER_REVISION_INFO"
 
 require recipes-extended/ostree/gen-cfs-keys.inc
 
