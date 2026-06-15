@@ -902,9 +902,16 @@ cargo_add_rac_patch_paths() {
     # Need to fix config file due to the tough repo having a virtual manifest.
     # Which is not supported by the cargo bbclasses currently,
     # see: https://github.com/openembedded/openembedded-core/commit/684a8af41c5bb70db68e75f72bdc4c9b09630810
-    sed -i 's|tough =.*|tough = { path = "${WORKDIR}/tough/tough" }|g' ${CARGO_HOME}/config
-    sed -i '/olpc-cjson =.*/d' ${CARGO_HOME}/config
-    sed -i '/^tough =.*/a olpc-cjson = { path = "${WORKDIR}/tough/olpc-cjson" }' ${CARGO_HOME}/config
+    if [ -f "${CARGO_HOME}/config.toml" ]; then
+        cargo_cfg="${CARGO_HOME}/config.toml"
+    elif [ -f "${CARGO_HOME}/config" ]; then
+        cargo_cfg="${CARGO_HOME}/config"
+    else
+        bbfatal "Neither ${CARGO_HOME}/config.toml nor ${CARGO_HOME}/config found. Ensure cargo configuration is properly initialized before this step."
+    fi
+    sed -i 's|tough =.*|tough = { path = "${WORKDIR}/tough/tough" }|g' "${cargo_cfg}"
+    sed -i '/olpc-cjson =.*/d' "${cargo_cfg}"
+    sed -i '/^tough =.*/a olpc-cjson = { path = "${WORKDIR}/tough/olpc-cjson" }' "${cargo_cfg}"
 }
 
 do_configure[postfuncs] += "cargo_add_rac_patch_paths"
