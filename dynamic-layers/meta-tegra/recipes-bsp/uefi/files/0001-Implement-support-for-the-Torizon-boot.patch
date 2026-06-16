@@ -1,5 +1,4 @@
 From 275a0ebf94a640ef366cb4294f2f16f9cd1c9fcb Mon Sep 17 00:00:00 2001
-From 275a0ebf94a640ef366cb4294f2f16f9cd1c9fcb Mon Sep 17 00:00:00 2001
 From: Vladimir Skvortsov <vskvortsov@emcraft.com>
 Date: Thu, 11 Jun 2026 12:12:36 -0300
 Subject: [PATCH] Implement support for the Torizon boot:
@@ -13,6 +12,9 @@ Subject: [PATCH] Implement support for the Torizon boot:
 
 Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
 Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+[matheus: rebased onto edk2-nvidia 0887a54c (r36.4.4-updates); manually
+ reapplied NvidiaConfigDxe.inf, NvidiaConfigHii.h, NvidiaConfigHiiMap.uni
+ and L4TConfiguration.dts hunks due to context drift]
 Signed-off-by: Matheus Rodrigues <matheus.rodrigues@toradex.com>
 ---
  Platform/NVIDIA/NVIDIA.common.dsc.inc         |   1 +
@@ -26,19 +28,15 @@ Signed-off-by: Matheus Rodrigues <matheus.rodrigues@toradex.com>
  .../NvidiaConfigDxe/NvidiaConfigHii.uni       |   7 +
  .../NvidiaConfigDxe/NvidiaConfigHii.vfr       |  18 +++
  .../NvidiaConfigDxe/NvidiaConfigHiiMap.uni    |   5 +
- .../NvidiaConfigDxe/NvidiaConfigHiiMap.uni    |   5 +
  Silicon/NVIDIA/Include/NVIDIAConfiguration.h  |  11 ++
  Silicon/NVIDIA/NVIDIA.dec                     |   5 +
  .../Tegra/DeviceTree/L4TConfiguration.dts     |   7 +-
  14 files changed, 240 insertions(+), 10 deletions(-)
- 14 files changed, 240 insertions(+), 10 deletions(-)
 
 diff --git a/Platform/NVIDIA/NVIDIA.common.dsc.inc b/Platform/NVIDIA/NVIDIA.common.dsc.inc
 index 8e8ddbbe..4e513132 100644
-index 8e8ddbbe..4e513132 100644
 --- a/Platform/NVIDIA/NVIDIA.common.dsc.inc
 +++ b/Platform/NVIDIA/NVIDIA.common.dsc.inc
-@@ -1080,6 +1080,7 @@ gEfiSecurityPkgTokenSpaceGuid.PcdSingleBootApplicationGuid|{ GUID("cbf481fb-b373
 @@ -1080,6 +1080,7 @@ gEfiSecurityPkgTokenSpaceGuid.PcdSingleBootApplicationGuid|{ GUID("cbf481fb-b373
    gNVIDIATokenSpaceGuid.PcdOsChainStatusA|L"RootfsStatusSlotA"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV,RT
    gNVIDIATokenSpaceGuid.PcdOsChainStatusB|L"RootfsStatusSlotB"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV,RT
@@ -48,7 +46,6 @@ index 8e8ddbbe..4e513132 100644
    gNVIDIATokenSpaceGuid.PcdAcpiTimerEnabled|L"AcpiTimerEnabled"|gNVIDIAPublicVariableGuid|0x0|0|BS,NV
    gNVIDIATokenSpaceGuid.PcdUefiShellEnabled|L"UefiShellEnabled"|gNVIDIAPublicVariableGuid|0x0|0x01|BS,NV
 diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
-index c905f852..241d617b 100644
 index c905f852..241d617b 100644
 --- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
 +++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
@@ -553,4 +550,3 @@ index 7e0fe4d8..536f861f 100644
  							};
 -- 
 2.43.0
-
