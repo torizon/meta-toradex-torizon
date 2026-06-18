@@ -25,6 +25,7 @@ SPLASH = "plymouth"
 
 # Base packages
 CORE_IMAGE_BASE_INSTALL:append = " \
+    apparmor \
     cpupower \
     curl \
     ethtool \

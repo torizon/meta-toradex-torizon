@@ -40,7 +40,7 @@ IMAGE_BOOT_FILES = ""
 IMAGE_BOOT_FILES_REMOVE:sota = "boot.scr-${MACHINE};boot.scr overlays.txt overlays/*;overlays/"
 IMAGE_BOOT_FILES_REMOVE:append:apalis-imx8 = " hdmitxfw.bin dpfw.bin"
 
-DISTRO_FEATURES:append = " virtualization stateless-system"
+DISTRO_FEATURES:append = " virtualization stateless-system apparmor"
 DISTRO_FEATURES_REMOVE ?= "3g alsa irda pcmcia nfc ldconfig pulseaudio wayland x11 ptest multiarch vulkan"
 DISTRO_FEATURES_REMOVE:remove:mx95-nxp-bsp = "vulkan"
 DISTRO_FEATURES_REMOVE:append:imx-generic-bsp = " opengl"
