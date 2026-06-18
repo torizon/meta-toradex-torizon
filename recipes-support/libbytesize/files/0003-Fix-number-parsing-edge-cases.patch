@@ -1,0 +1,89 @@
+From 1713cc1288a81a28ec41997ed76eed33017dc760 Mon Sep 17 00:00:00 2001
+From: Jon Oster <jon.i.oster@gmail.com>
+Date: Thu, 8 Jan 2026 06:05:32 -0800
+Subject: [PATCH] Fix number parsing edge cases
+
+Allows parsing of strings with a decimal but no decimal part, e.g. "1. KB".
+Fails to parse if there is no number present by adding a validation check
+to ensure that either the integer part or the fractional part has len > 0.
+
+Signed-off-by: Jon Oster <jon.i.oster@gmail.com>
+
+Upstream-Status: Backport [https://github.com/storaged-project/libbytesize/commit/1713cc1288a81a28ec41997ed76eed33017dc760]
+---
+ po/libbytesize.pot |  2 +-
+ src/bs_size.c      | 17 ++++++++++++++++-
+ 2 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/po/libbytesize.pot b/po/libbytesize.pot
+index 767b68c..d9bc46b 100644
+--- a/po/libbytesize.pot
++++ b/po/libbytesize.pot
+@@ -8,7 +8,7 @@ msgid ""
+ msgstr ""
+ "Project-Id-Version: libbytesize 2.12\n"
+ "Report-Msgid-Bugs-To: vtrefny@redhat.com\n"
+-"POT-Creation-Date: 2025-12-17 15:40-0800\n"
++"POT-Creation-Date: 2026-01-08 06:02-0800\n"
+ "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+ "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+ "Language-Team: LANGUAGE <LL@li.org>\n"
+diff --git a/src/bs_size.c b/src/bs_size.c
+index b56fdc7..c9e2163 100644
+--- a/src/bs_size.c
++++ b/src/bs_size.c
+@@ -443,7 +443,7 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+     char const * const pattern = "^\\s*         # white space \n" \
+                                   "(?P<sign>(-|\\+)?)     # optional sign character \n" \
+                                   "(?P<int_part>[0-9]*)   # integer part \n" \
+-                                  "(?:%s(?P<frac_part>[0-9]+))?  # optional fractional part \n" \
++                                  "(?:%s(?P<frac_part>[0-9]*))?  # optional fractional part \n" \
+                                   "(?:(?P<exp_sep>[eE])(?P<exp_sign>(-|\\+)?)(?P<exp_val>[0-9]+))? # optional exponent \n" \
+                                   "\\s*               # white space \n" \
+                                   "(?P<rest>[^\\s]*)\\s*$ # unit specification";
+@@ -467,6 +467,8 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+     int exp_sign = 1;
+     mpz_t numerator, denominator, int_part, frac_part, pow_10;
+     size_t frac_digits = 0;
++    bool has_int_digits = false;
++    bool has_frac_digits = false;
+ 
+     radix_char = nl_langinfo (RADIXCHAR);
+     if (strncmp (radix_char, ".", 1) != 0)
+@@ -533,6 +535,7 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+ 
+     status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "int_part", &substring, &substring_len);
+     if (status >= 0 && substring_len > 0) {
++        has_int_digits = true;
+         status = mpz_set_str (int_part, (const char *) substring, 10);
+         pcre2_substring_free (substring);
+         if (status != 0) {
+@@ -552,6 +555,7 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+ 
+     status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "frac_part", &substring, &substring_len);
+     if (status >= 0 && substring_len > 0) {
++        has_frac_digits = true;
+         frac_digits = substring_len;
+         status = mpz_set_str (frac_part, (const char *) substring, 10);
+         pcre2_substring_free (substring);
+@@ -571,6 +575,17 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+             pcre2_substring_free (substring);
+     }
+ 
++    /* Validate: we must have at least one digit in int_part or frac_part */
++    if (!has_int_digits && !has_frac_digits) {
++        set_error (error, BS_ERROR_INVALID_SPEC, strdup_printf ("Failed to parse size spec: %s", size_str));
++        mpz_clears (numerator, denominator, int_part, frac_part, pow_10, NULL);
++        mpq_clear (size);
++        pcre2_match_data_free (match_data);
++        pcre2_code_free (regex);
++        free (loc_size_str);
++        return NULL;
++    }
++
+     status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "exp_val", &substring, &substring_len);
+     if (status >= 0 && substring_len > 0) {
+         exp_val = strtol ((const char *) substring, NULL, 10);
+-- 
+2.30.2
+
