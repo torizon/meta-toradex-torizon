@@ -21,7 +21,7 @@ Build
 
 1. Source `setup-environment`, specifying the machine to build with the MACHINE variable e.g.:
 ```bash
-$ MACHINE=imx93frdm . torizon-setup-environment <build-directory>
+$ MACHINE=imx93frdm . setup-environment <build-directory>
 ```
 If a build directory is not given, the script will create one named `build`, where all build artifacts will be stored.
 
@@ -74,7 +74,7 @@ $ repo sync -j 10
 ```bash
 $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y sources/meta-toradex-torizon
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap sources/meta-updater
-$ ln -s sources/meta-toradex-torizon/scripts/setup-environment torizon-setup-environment
+$ ln -s sources/meta-toradex-torizon/scripts/setup-environment setup-environment
 ```
 
 Additional Setup for i.MX93 FRDM boards
