@@ -39,3 +39,9 @@ IMAGE_INSTALL:remove = " minnowboard-efi-startup network-configuration"
 # = -${TDX_VERSION}); these extensions apply only to the xenomai kernels.
 LINUX_VERSION_EXTENSION:xenomai3 ?= "-torizon-${LINUX_KERNEL_TYPE}-xenomai3"
 LINUX_VERSION_EXTENSION:xenomai4 ?= "-torizon-${LINUX_KERNEL_TYPE}-xenomai4"
+
+# Enable OVMF Secure Boot build (produces ovmf.secboot.fd + EnrollDefaultKeys.efi)
+PACKAGECONFIG:append:pn-ovmf = " secureboot"
+
+# Expose TPM2 to OVMF (auto-enables -D TPM_ENABLE=TRUE in the OVMF build)
+MACHINE_FEATURES:append = " tpm2"
