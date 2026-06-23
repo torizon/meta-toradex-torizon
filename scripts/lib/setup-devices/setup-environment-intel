@@ -32,7 +32,35 @@ INHERIT += "rm_work"
 # Torizon
 include conf/machine/include/\${MACHINE}.inc
 EOF
+
 fi
+
+_TDX_MANIFEST_FILE="${_TDX_OEROOT}"/.repo/manifest.xml
+_TDX_INTEGRATION_BUILD=0
+if [ -L "$_TDX_MANIFEST_FILE" ]; then
+  case "$(basename "$(readlink -f "$_TDX_MANIFEST_FILE")")" in
+    integration.xml|next.xml) _TDX_INTEGRATION_BUILD=1 ;;
+  esac
+elif [ -f "$_TDX_MANIFEST_FILE" ]; then
+  if grep -qE "(integration.xml|next.xml)" "$_TDX_MANIFEST_FILE"; then
+    _TDX_INTEGRATION_BUILD=1
+  fi
+fi
+
+# When building on integration, ensure use-head-next is set so you always get
+# the newest software (u-boot, kernel, aktualizr-torizon, etc). Idempotent, so
+# it also applies when local.conf already existed from a previous run.
+if [ "$_TDX_INTEGRATION_BUILD" = "1" ] && \
+   ! grep -qF 'DISTROOVERRIDES .= ":use-head-next"' conf/local.conf; then
+  cat <<EOF >>conf/local.conf
+
+# This is needed when building on integration. With use-head-next you
+# always get the newest software (u-boot, kernel, aktualizr-torizon, etc).
+# Building on integration without use-head-next your build may fail.
+DISTROOVERRIDES .= ":use-head-next"
+EOF
+fi
+
 
 if ! grep -q "# Torizon" conf/bblayers.conf; then
   cat <<EOF >>conf/bblayers.conf
