@@ -1,0 +1,53 @@
+From 2bc826fba951b03cd0b3b0f8f03a87f4fe61688a Mon Sep 17 00:00:00 2001
+From: Jon Oster <jon.i.oster@gmail.com>
+Date: Thu, 8 Jan 2026 05:35:47 -0800
+Subject: [PATCH] Add regression tests for parsing edge cases
+
+Switching to internal parsing logic caused two changes to existing behaviour.
+"1. KiB" was previously accepted, and parsed the same as "1.0 KiB". And "e+0"
+was previously not accepted, raising an error; with the new parsing it's parsed
+as 0. This was found by an external test suite, so we're adding these cases to
+the internal suite as well.
+
+Signed-off-by: Jon Oster <jon.i.oster@gmail.com>
+
+Upstream-Status: Backport [https://github.com/storaged-project/libbytesize/commit/2bc826fba951b03cd0b3b0f8f03a87f4fe61688a]
+---
+ tests/libbytesize_unittest.py | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/tests/libbytesize_unittest.py b/tests/libbytesize_unittest.py
+index 9bc8ac7..ab26517 100755
+--- a/tests/libbytesize_unittest.py
++++ b/tests/libbytesize_unittest.py
+@@ -8,7 +8,7 @@ import ctypes
+ 
+ from locale_utils import get_avail_locales, missing_locales, requires_locales
+ 
+-from bytesize import KiB, GiB, ROUND_UP, ROUND_DOWN, ROUND_HALF_UP, OverflowError
++from bytesize import KiB, GiB, ROUND_UP, ROUND_DOWN, ROUND_HALF_UP, OverflowError, InvalidSpecError
+ 
+ # SizeStruct is part of the 'private' API and needs to be imported differently
+ # when running from locally build tree and when using installed library
+@@ -79,6 +79,18 @@ class SizeTestCase(unittest.TestCase):
+         expected = (1610612736, 1)
+         self.assertEqual(actual, expected)
+ 
++        # Regression test: "1. KiB" should parse successfully (existing behavior)
++        # This is technically invalid (no digits after decimal point), but the
++        # existing implementation accepts it, so we maintain backward compatibility.
++        actual = SizeStruct.new_from_str('1. KiB').get_bytes()
++        expected = (1024, 1)
++        self.assertEqual(actual, expected)
++
++        # Regression test: "e+0" should raise InvalidSpecError (existing behavior)
++        # This should not be parsed as 0, but should fail with an error.
++        with self.assertRaises(InvalidSpecError):
++            SizeStruct.new_from_str('e+0')
++
+     @requires_locales({'cs_CZ.UTF-8'})
+     def testNewFromStrLocaleCsCZ(self):
+         locale.setlocale(locale.LC_ALL,'cs_CZ.UTF-8')
+-- 
+2.30.2
+

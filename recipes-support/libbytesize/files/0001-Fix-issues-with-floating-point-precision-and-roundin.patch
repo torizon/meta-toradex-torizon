@@ -1,0 +1,482 @@
+From 4797c5d66c4541c5727958960f638290744f58f2 Mon Sep 17 00:00:00 2001
+From: Jon Oster <jon.i.oster@gmail.com>
+Date: Wed, 17 Dec 2025 15:56:47 -0800
+Subject: [PATCH] Fix issues with floating point precision and rounding
+
+This commit started off because I wanted to remove MPFR as a dependency.
+After an initially-incorrect attempt at doing so, I discovered two more
+problems. First, the test suite didn't have any tests verifying that MPFR
+actually fixed the problem it was introduced to fix (correctly rounding
+results like 0.1*1000 to 100 instead of 99). Second, MPFR gets 0.1*1000,
+but still makes rounding mistakes in other cases--I found this out by
+fuzzing after my initial incorrect patch.
+
+So now I've replaced MPFR with exact rational math in libgmp, and added
+regression tests for the rounding errors in string parsing. To do this, I
+had to do the parsing manually; I followed the same regex approach that
+the existing function uses.
+
+Signed-off-by: Jon Oster <jon.i.oster@gmail.com>
+
+Upstream-Status: Backport [https://github.com/storaged-project/libbytesize/commit/4797c5d66c4541c5727958960f638290744f58f2]
+---
+ configure.ac                  |   2 +-
+ po/libbytesize.pot            |   2 +-
+ src/Makefile.am               |   2 +-
+ src/bs_size.c                 | 176 ++++++++++++++++++++++++----------
+ src/bytesize.pc.in            |   2 +-
+ tests/libbytesize_unittest.py | 113 ++++++++++++++++++++++
+ 6 files changed, 243 insertions(+), 54 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index d3f30aa..b4c5e3a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -46,7 +46,7 @@ LIBBYTESIZE_PKG_CHECK_MODULES([PCRE2], [libpcre2-8])
+ 
+ AC_CHECK_LIB(gmp, __gmpz_init)
+ 
+-AC_CHECK_HEADERS([langinfo.h gmp.h mpfr.h stdint.h stdbool.h stdarg.h string.h stdio.h ctype.h],
++AC_CHECK_HEADERS([langinfo.h gmp.h stdint.h stdbool.h stdarg.h string.h stdio.h ctype.h],
+                  [],
+                  [LIBBYTESIZE_SOFT_FAILURE([Header file $ac_header not found.])],
+                  [])
+diff --git a/po/libbytesize.pot b/po/libbytesize.pot
+index 28f12d7..767b68c 100644
+--- a/po/libbytesize.pot
++++ b/po/libbytesize.pot
+@@ -8,7 +8,7 @@ msgid ""
+ msgstr ""
+ "Project-Id-Version: libbytesize 2.12\n"
+ "Report-Msgid-Bugs-To: vtrefny@redhat.com\n"
+-"POT-Creation-Date: 2025-12-04 12:49+0100\n"
++"POT-Creation-Date: 2025-12-17 15:40-0800\n"
+ "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+ "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+ "Language-Team: LANGUAGE <LL@li.org>\n"
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 9f68d12..ebbb749 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -3,7 +3,7 @@ LDADD = $(LIBINTL)
+ 
+ lib_LTLIBRARIES = libbytesize.la
+ libbytesize_la_CFLAGS = -Wall -Wextra -Werror -Wno-overflow -D_GNU_SOURCE
+-libbytesize_la_LIBADD = -lgmp -lmpfr $(PCRE2_LIBS)
++libbytesize_la_LIBADD = -lgmp $(PCRE2_LIBS)
+ libbytesize_la_LDFLAGS = -version-info 1:0:0
+ libbytesize_la_SOURCES = bs_size.c bs_size.h gettext.h
+ 
+diff --git a/src/bs_size.c b/src/bs_size.c
+index bf41180..b56fdc7 100644
+--- a/src/bs_size.c
++++ b/src/bs_size.c
+@@ -1,8 +1,8 @@
+ #include <gmp.h>
+-#include <mpfr.h>
+ #include <langinfo.h>
+ #include <stdarg.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <inttypes.h>
+ #include <string.h>
+ #include <ctype.h>
+@@ -224,11 +224,12 @@ static void strstrip(char *str) {
+     str[i-begin] = '\0';
+ }
+ 
+-static bool multiply_size_by_unit (mpfr_t size, char *unit_str) {
++static bool multiply_size_by_unit (mpq_t size, char *unit_str) {
+     BSBunit bunit = BS_BUNIT_UNDEF;
+     BSDunit dunit = BS_DUNIT_UNDEF;
+     uint64_t pwr = 0;
+-    mpfr_t dec_mul;
++    mpq_t dec_mul;
++    mpz_t pow_1000;
+     size_t unit_str_len = 0;
+ 
+     unit_str_len = strlen (unit_str);
+@@ -236,41 +237,45 @@ static bool multiply_size_by_unit (mpfr_t size, char *unit_str) {
+     for (bunit=BS_BUNIT_B; bunit < BS_BUNIT_UNDEF; bunit++)
+         if (strncasecmp (unit_str, b_units[bunit-BS_BUNIT_B], unit_str_len) == 0) {
+             pwr = (uint64_t) bunit - BS_BUNIT_B;
+-            mpfr_mul_2exp (size, size, 10 * pwr, MPFR_RNDN);
++            mpz_mul_2exp (mpq_numref (size), mpq_numref (size), 10 * pwr);
+             return true;
+         }
+ 
+-    mpfr_init2 (dec_mul, BS_FLOAT_PREC_BITS);
+-    mpfr_set_ui (dec_mul, 1000, MPFR_RNDN);
++    mpq_init (dec_mul);
++    mpz_init (pow_1000);
+     for (dunit=BS_DUNIT_B; dunit < BS_DUNIT_UNDEF; dunit++)
+         if (strncasecmp (unit_str, d_units[dunit-BS_DUNIT_B], unit_str_len) == 0) {
+             pwr = (uint64_t) (dunit - BS_DUNIT_B);
+-            mpfr_pow_ui (dec_mul, dec_mul, pwr, MPFR_RNDN);
+-            mpfr_mul (size, size, dec_mul, MPFR_RNDN);
+-            mpfr_clear (dec_mul);
++            mpz_ui_pow_ui (pow_1000, 1000, pwr);
++            mpq_set_z (dec_mul, pow_1000);
++            mpq_mul (size, size, dec_mul);
++            mpz_clear (pow_1000);
++            mpq_clear (dec_mul);
+             return true;
+         }
+ 
+-    /* not found among the binary and decimal units, let's try their translated
+-       versions */
+     for (bunit=BS_BUNIT_B; bunit < BS_BUNIT_UNDEF; bunit++)
+         if (strncasecmp (unit_str, _(b_units[bunit-BS_BUNIT_B]), unit_str_len) == 0) {
+             pwr = (uint64_t) bunit - BS_BUNIT_B;
+-            mpfr_mul_2exp (size, size, 10 * pwr, MPFR_RNDN);
++            mpz_mul_2exp (mpq_numref (size), mpq_numref (size), 10 * pwr);
++            mpz_clear (pow_1000);
++            mpq_clear (dec_mul);
+             return true;
+         }
+ 
+-    mpfr_init2 (dec_mul, BS_FLOAT_PREC_BITS);
+-    mpfr_set_ui (dec_mul, 1000, MPFR_RNDN);
+     for (dunit=BS_DUNIT_B; dunit < BS_DUNIT_UNDEF; dunit++)
+         if (strncasecmp (unit_str, _(d_units[dunit-BS_DUNIT_B]), unit_str_len) == 0) {
+             pwr = (uint64_t) (dunit - BS_DUNIT_B);
+-            mpfr_pow_ui (dec_mul, dec_mul, pwr, MPFR_RNDN);
+-            mpfr_mul (size, size, dec_mul, MPFR_RNDN);
+-            mpfr_clear (dec_mul);
++            mpz_ui_pow_ui (pow_1000, 1000, pwr);
++            mpq_set_z (dec_mul, pow_1000);
++            mpq_mul (size, size, dec_mul);
++            mpz_clear (pow_1000);
++            mpq_clear (dec_mul);
+             return true;
+         }
+ 
++    mpz_clear (pow_1000);
++    mpq_clear (dec_mul);
+     return false;
+ }
+ 
+@@ -436,10 +441,10 @@ BSSize bs_size_new_from_bytes (uint64_t bytes, int sgn) {
+  */
+ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+     char const * const pattern = "^\\s*         # white space \n" \
+-                                  "(?P<numeric>  # the numeric part consists of three parts, below \n" \
+-                                  " (-|\\+)?     # optional sign character \n" \
+-                                  " (?P<base>([0-9\\.%s]+))       # base \n" \
+-                                  " (?P<exp>(e|E)(-|\\+)?[0-9]+)?) # exponent \n" \
++                                  "(?P<sign>(-|\\+)?)     # optional sign character \n" \
++                                  "(?P<int_part>[0-9]*)   # integer part \n" \
++                                  "(?:%s(?P<frac_part>[0-9]+))?  # optional fractional part \n" \
++                                  "(?:(?P<exp_sep>[eE])(?P<exp_sign>(-|\\+)?)(?P<exp_val>[0-9]+))? # optional exponent \n" \
+                                   "\\s*               # white space \n" \
+                                   "(?P<rest>[^\\s]*)\\s*$ # unit specification";
+     char *real_pattern = NULL;
+@@ -451,19 +456,23 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+     int str_count = 0;
+     const char *radix_char = NULL;
+     char *loc_size_str = NULL;
+-    mpf_t parsed_size;
+-    mpfr_t size;
++    mpq_t size;
+     int status = 0;
+     BSSize ret = NULL;
+     PCRE2_UCHAR *substring = NULL;
+     PCRE2_SIZE substring_len = 0;
+     PCRE2_UCHAR error_buffer[ERROR_BUFFER_LEN];
++    int sign = 1;
++    long exp_val = 0;
++    int exp_sign = 1;
++    mpz_t numerator, denominator, int_part, frac_part, pow_10;
++    size_t frac_digits = 0;
+ 
+     radix_char = nl_langinfo (RADIXCHAR);
+     if (strncmp (radix_char, ".", 1) != 0)
+         real_pattern = strdup_printf (pattern, radix_char);
+     else
+-        real_pattern = strdup_printf (pattern, "");
++        real_pattern = strdup_printf (pattern, "\\.");
+ 
+     regex = pcre2_compile ((PCRE2_SPTR) real_pattern, PCRE2_ZERO_TERMINATED, PCRE2_EXTENDED, &errorcode, &erroffset, NULL);
+     free (real_pattern);
+@@ -509,32 +518,98 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+         return NULL;
+     }
+ 
+-    status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "numeric", &substring, &substring_len);
+-    if (status < 0 || substring_len < 1) {
+-        set_error (error, BS_ERROR_INVALID_SPEC, strdup_printf ("Failed to parse size spec: %s", size_str));
+-        pcre2_match_data_free (match_data);
+-        pcre2_code_free (regex);
+-        free (loc_size_str);
+-        return NULL;
++    mpq_init (size);
++    mpz_init (numerator);
++    mpz_init (denominator);
++    mpz_init (int_part);
++    mpz_init (frac_part);
++    mpz_init (pow_10);
++
++    status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "sign", &substring, &substring_len);
++    if (status >= 0 && substring_len > 0 && substring[0] == '-')
++        sign = -1;
++    if (status >= 0)
++        pcre2_substring_free (substring);
++
++    status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "int_part", &substring, &substring_len);
++    if (status >= 0 && substring_len > 0) {
++        status = mpz_set_str (int_part, (const char *) substring, 10);
++        pcre2_substring_free (substring);
++        if (status != 0) {
++            set_error (error, BS_ERROR_INVALID_SPEC, strdup_printf ("Failed to parse size spec: %s", size_str));
++            mpz_clears (numerator, denominator, int_part, frac_part, pow_10, NULL);
++            mpq_clear (size);
++            pcre2_match_data_free (match_data);
++            pcre2_code_free (regex);
++            free (loc_size_str);
++            return NULL;
++        }
++    } else {
++        mpz_set_ui (int_part, 0);
++        if (status >= 0)
++            pcre2_substring_free (substring);
+     }
+ 
+-    /* parse the number using GMP because it knows how to handle localization
+-       much better than MPFR */
+-    mpf_init2 (parsed_size, BS_FLOAT_PREC_BITS);
+-    status = mpf_set_str (parsed_size, *substring == '+' ? (const char *) substring+1 : (const char *) substring, 10);
+-    pcre2_substring_free (substring);
+-    if (status != 0) {
+-        set_error (error, BS_ERROR_INVALID_SPEC, strdup_printf ("Failed to parse size spec: %s", size_str));
+-        pcre2_match_data_free (match_data);
+-        pcre2_code_free (regex);
+-        free (loc_size_str);
+-        mpf_clear (parsed_size);
+-        return NULL;
++    status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "frac_part", &substring, &substring_len);
++    if (status >= 0 && substring_len > 0) {
++        frac_digits = substring_len;
++        status = mpz_set_str (frac_part, (const char *) substring, 10);
++        pcre2_substring_free (substring);
++        if (status != 0) {
++            set_error (error, BS_ERROR_INVALID_SPEC, strdup_printf ("Failed to parse size spec: %s", size_str));
++            mpz_clears (numerator, denominator, int_part, frac_part, pow_10, NULL);
++            mpq_clear (size);
++            pcre2_match_data_free (match_data);
++            pcre2_code_free (regex);
++            free (loc_size_str);
++            return NULL;
++        }
++    } else {
++        mpz_set_ui (frac_part, 0);
++        frac_digits = 0;
++        if (status >= 0)
++            pcre2_substring_free (substring);
+     }
+-    /* but use MPFR from now on because GMP thinks 0.1*1000 = 99 */
+-    mpfr_init2 (size, BS_FLOAT_PREC_BITS);
+-    mpfr_set_f (size, parsed_size, MPFR_RNDN);
+-    mpf_clear (parsed_size);
++
++    status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "exp_val", &substring, &substring_len);
++    if (status >= 0 && substring_len > 0) {
++        exp_val = strtol ((const char *) substring, NULL, 10);
++        pcre2_substring_free (substring);
++
++        status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "exp_sign", &substring, &substring_len);
++        if (status >= 0 && substring_len > 0 && substring[0] == '-')
++            exp_sign = -1;
++        if (status >= 0)
++            pcre2_substring_free (substring);
++    }
++
++    mpz_ui_pow_ui (pow_10, 10, frac_digits);
++    mpz_set (denominator, pow_10);
++    mpz_mul (numerator, int_part, pow_10);
++    mpz_add (numerator, numerator, frac_part);
++
++    if (exp_val != 0) {
++        long adjusted_exp = exp_val;
++        if (exp_sign == -1)
++            adjusted_exp = -adjusted_exp;
++
++        if (adjusted_exp > 0) {
++            mpz_ui_pow_ui (pow_10, 10, adjusted_exp);
++            mpz_mul (numerator, numerator, pow_10);
++        } else if (adjusted_exp < 0) {
++            mpz_ui_pow_ui (pow_10, 10, -adjusted_exp);
++            mpz_mul (denominator, denominator, pow_10);
++        }
++    }
++
++    if (sign == -1)
++        mpz_neg (numerator, numerator);
++
++    mpq_set_num (size, numerator);
++    mpq_set_den (size, denominator);
++    mpq_canonicalize (size);
++
++    mpz_clears (numerator, denominator, int_part, frac_part, pow_10, NULL);
+ 
+     status = pcre2_substring_get_byname (match_data, (PCRE2_SPTR) "rest", &substring, &substring_len);
+     if ((status >= 0) && strncmp ((const char *) substring, "", 1) != 0) {
+@@ -545,7 +620,7 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+             pcre2_match_data_free (match_data);
+             pcre2_code_free (regex);
+             free (loc_size_str);
+-            mpfr_clear (size);
++            mpq_clear (size);
+             return NULL;
+         }
+     }
+@@ -554,10 +629,11 @@ BSSize bs_size_new_from_str (const char *size_str, BSError **error) {
+     pcre2_code_free (regex);
+ 
+     ret = bs_size_new ();
+-    mpfr_get_z (ret->bytes, size, MPFR_RNDZ);
++    /* Rational to int, round towards zero for preserving previous behaviour */
++    mpz_tdiv_q (ret->bytes, mpq_numref (size), mpq_denref (size));
+ 
+     free (loc_size_str);
+-    mpfr_clear (size);
++    mpq_clear (size);
+ 
+     return ret;
+ }
+diff --git a/src/bytesize.pc.in b/src/bytesize.pc.in
+index 74762bb..fbd2f00 100644
+--- a/src/bytesize.pc.in
++++ b/src/bytesize.pc.in
+@@ -9,4 +9,4 @@ URL: https://github.com/storaged-project/libbytesize
+ Version: @VERSION@
+ Cflags: -I${includedir}/bytesize
+ Libs: -lbytesize
+-Libs.private: -lgmp -lmpfr
++Libs.private: -lgmp
+diff --git a/tests/libbytesize_unittest.py b/tests/libbytesize_unittest.py
+index f1ca2da..9bc8ac7 100755
+--- a/tests/libbytesize_unittest.py
++++ b/tests/libbytesize_unittest.py
+@@ -759,6 +759,119 @@ class SizeTestCase(unittest.TestCase):
+                 pass
+     #enddef
+ 
++    @requires_locales({'en_US.UTF-8'})
++    def testPowerComputationRoundingIssues(self):
++        """Test cases that expose rounding differences when using floating-point arithmetic.
++        
++        These test cases were discovered by fuzzing and demonstrate that both GMP and MPFR 
++        can produce incorrect results due to floating-point rounding errors: half of these
++        fail using GMP floating-point arithmetic, and half fail using MPFR floating-point
++        arithmetic. They all pass using rational arithmetic, so this can be considered a
++        regression test against parsing decimal strings into floats.
++        """
++        # Test cases: (input_string, expected_bytes)
++        test_cases = [
++            # Small values with various powers
++            ('0.0011085865 EB', 1108586500000000),
++            ('0.0021209044 TB', 2120904400),
++            ('0.0022392293 EB', 2239229300000000),
++            ('0.0022951087 YB', 2295108700000000000000),
++            ('0.0040214632 YB', 4021463200000000000000),
++            ('0.0041468690 YB', 4146869000000000000000),
++            ('0.0042571596 ZB', 4257159600000000000),
++            ('0.0042875429 EB', 4287542900000000),
++            ('0.0324645967 YB', 32464596700000000000000),
++            ('0.1417885628 ZB', 141788562800000000000),
++            
++            # Medium values
++            ('1.2558302853 TB', 1255830285300),
++            ('1.2808632839 TB', 1280863283900),
++            ('1.4603574651 TB', 1460357465100),
++            ('1.8062283468 ZB', 1806228346800000000000),
++            ('1.8645823412 YB', 1864582341200000000000000),
++            ('1.9238933576 ZB', 1923893357600000000000),
++            ('1.9665143540 YB', 1966514354000000000000000),
++            ('2.2322652035 TB', 2232265203500),
++            ('2.2791207143 EB', 2279120714300000000),
++            ('2.6701042923 YB', 2670104292300000000000000),
++            ('2.7289885652 ZB', 2728988565200000000000),
++            ('2.7544584366 PB', 2754458436600000),
++            ('3.0111054820 GB', 3011105482),
++            ('3.0162065825 YB', 3016206582500000000000000),
++            ('3.0843591206 ZB', 3084359120600000000000),
++            ('3.1113231336 ZB', 3111323133600000000000),
++            ('3.1515752061 PB', 3151575206100000),
++            ('3.5209720810 YB', 3520972081000000000000000),
++            ('4.8518650436 TB', 4851865043600),
++            ('5.2369996109 TB', 5236999610900),
++            ('5.3013442478 ZB', 5301344247800000000000),
++            ('5.7581197108 YB', 5758119710800000000000000),
++            ('6.3559455332 TB', 6355945533200),
++            ('6.7238548658 ZB', 6723854865800000000000),
++            ('6.8329986622 YB', 6832998662200000000000000),
++            ('6.8908620007 EB', 6890862000700000000),
++            ('7.0261924059 PB', 7026192405900000),
++            ('7.0606267555 PB', 7060626755500000),
++            ('7.0944972810 PB', 7094497281000000),
++            ('7.3977189826 PB', 7397718982600000),
++            ('7.4709433968 EB', 7470943396800000000),
++            ('8.3657937505 TB', 8365793750500),
++            ('8.4406057674 ZB', 8440605767400000000000),
++            ('8.4870627422 PB', 8487062742200000),
++            ('8.7299932796 PB', 8729993279600000),
++            ('9.3673512126 PB', 9367351212600000),
++            ('9.5884958998 ZB', 9588495899800000000000),
++            ('12.6938536209 EB', 12693853620900000000),
++            ('12.9715312556 PB', 12971531255600000),
++            ('13.9278925503 YB', 13927892550300000000000000),
++            ('16.5366973188 EB', 16536697318800000000),
++            ('16.8402344837 TB', 16840234483700),
++            ('18.1701051043 YB', 18170105104300000000000000),
++            ('20.8472056786 PB', 20847205678600000),
++            ('23.4774112918 TB', 23477411291800),
++            ('24.5449421357 ZB', 24544942135700000000000),
++            ('28.2128860554 YB', 28212886055400000000000000),
++            ('29.8952920687 EB', 29895292068700000000),
++            ('35.2174130896 TB', 35217413089600),
++            ('35.4501743352 EB', 35450174335200000000),
++            ('35.8588722037 ZB', 35858872203700000000000),
++            ('39.8097589703 TB', 39809758970300),
++            ('41.9150701874 ZB', 41915070187400000000000),
++            ('76.8145331495 YB', 76814533149500000000000000),
++            ('85.3995925075 PB', 85399592507500000),
++            ('87.1440005221 YB', 87144000522100000000000000),
++            ('87.3254482326 PB', 87325448232600000),
++            ('98.2498190219 EB', 98249819021900000000),
++            ('128.1037376252 PB', 128103737625200000),
++            ('130.4743561323 ZB', 130474356132300000000000),
++            ('138.2867513494 YB', 138286751349400000000000000),
++            
++            # Large values
++            ('18258.0630890156 PB', 18258063089015600000),
++            ('18800.1176214700 EB', 18800117621470000000000),
++            ('269636.0318459886 YB', 269636031845988600000000000000),
++            ('276686.6833125990 YB', 276686683312599000000000000000),
++            ('535817.4105711933 EB', 535817410571193300000000),
++        ]
++        
++        for test_str, expected_bytes in test_cases:
++            with self.subTest(test_str=test_str):
++                size = SizeStruct.new_from_str(test_str)
++                # Check if value exceeds 64-bit integer limit
++                if expected_bytes > 2**64 - 1:
++                    # Use get_bytes_str() for values that exceed 64-bit limit
++                    actual_str = size.get_bytes_str()
++                    expected_str = str(expected_bytes)
++                    self.assertEqual(actual_str, expected_str,
++                        f'Failed for {test_str}: got {actual_str}, expected {expected_str}')
++                else:
++                    actual = size.get_bytes()
++                    expected = (expected_bytes, 1)
++                    self.assertEqual(actual, expected,
++                        f'Failed for {test_str}: got {actual}, expected {expected}')
++
++    #enddef
++
+ #endclass
+ 
+ 
+-- 
+2.30.2
+
