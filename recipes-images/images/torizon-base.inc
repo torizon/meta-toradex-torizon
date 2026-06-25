@@ -25,7 +25,6 @@ SPLASH = "plymouth"
 
 # Base packages
 CORE_IMAGE_BASE_INSTALL:append = " \
-    apparmor \
     cpupower \
     curl \
     ethtool \
@@ -64,6 +63,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:tdx = " \
+    apparmor \
     alsa-ucm-conf \
     set-hostname \
     tdx-info \
