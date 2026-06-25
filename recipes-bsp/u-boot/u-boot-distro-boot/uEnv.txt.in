@@ -147,6 +147,16 @@ prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" |
                            if test $? != "0"; then \
                                env set fuse_status failed; \
                            fi; \
+                       fi; \
+                       setexpr index $index + 1; \
+                       if test "${index}" = "a"; then \
+                           env set index "10"; \
+                       fi; \
+                   done; \
+               elif test "${fuse_status}" = "need-reboot"; then \
+                   env set index 1; \
+                   for fuse_val in ${fuse_prog_list}; do \
+                       if test "${fuse_status}" != "failed"; then \
                            if test "${fuse_dry_run}" = "1"; then \
                                env set temp echo DRY RUN: fuse cmp \\$fuse_bank_word_$index ${fuse_val}; \
                            else \
@@ -156,16 +166,17 @@ prog_fuses=if test -n "${fuse_prog_list}" && test "${fuse_status}" = "pending" |
                            if test $? != "0"; then \
                                env set fuse_status failed; \
                            fi; \
-                       fi ; \
+                       fi; \
                        setexpr index $index + 1; \
                        if test "${index}" = "a"; then \
                            env set index "10"; \
                        fi; \
                    done; \
-               elif test "${fuse_status}" = "need-reboot"; then \
-                   @@STATUS_CMD@@; \
-                   if test $? != "0"; then \
-                       env set fuse_status failed; \
+                   if test "${fuse_status}" != "failed"; then \
+                       @@STATUS_CMD@@; \
+                       if test $? != "0"; then \
+                           env set fuse_status failed; \
+                       fi; \
                    fi; \
                    if test "${fuse_prog_close}" = "1" && test "${fuse_status}" != "failed"; then \
                        if test "${fuse_dry_run}" = "1"; then \
