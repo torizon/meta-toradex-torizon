@@ -396,8 +396,9 @@ class BootimgEFIPlugin(SourcePlugin):
 
         label = part.label if part.label else "ESP"
 
-        dosfs_cmd = "mkdosfs -n %s -i %s -C %s %d" % \
-                    (label, part.fsuuid, bootimg, blocks)
+        extraopts = part.mkfs_extraopts or ""
+        dosfs_cmd = "mkdosfs -n %s -i %s %s -C %s %d" % \
+                    (label, part.fsuuid, extraopts, bootimg, blocks)
         exec_native_cmd(dosfs_cmd, native_sysroot)
 
         # TODO: upstream it - maintain properties and dates
