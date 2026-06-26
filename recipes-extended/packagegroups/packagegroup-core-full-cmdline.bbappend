@@ -3,6 +3,7 @@ RDEPENDS:packagegroup-core-full-cmdline-utils:remove = "\
     cpio \
     findutils \
     gawk \
+    grep \
     mc \
     mc-fish \
     mc-helpers \
