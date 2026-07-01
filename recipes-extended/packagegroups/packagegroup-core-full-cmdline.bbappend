@@ -9,3 +9,6 @@ RDEPENDS:packagegroup-core-full-cmdline-utils:remove = "\
     mc-helpers-perl \
     mc-shell \
 "
+RDEPENDS:packagegroup-core-full-cmdline-multiuser:remove = "\
+    gzip \
+"
