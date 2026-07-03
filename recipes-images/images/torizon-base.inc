@@ -115,6 +115,7 @@ CORE_IMAGE_BASE_INSTALL:append:verdin-am62p = " \
 
 CORE_IMAGE_BASE_INSTALL:append:aquila-am69 = " \
     ti-img-rogue-driver \
+    ti-edgeai-firmware \
 "
 
 CORE_IMAGE_BASE_INSTALL:append:mx8mp-nxp-bsp = " \
