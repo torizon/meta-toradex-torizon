@@ -77,6 +77,10 @@ BBLAYERS += "\${OEROOT}/layers/meta-openembedded/meta-filesystems"
 BBLAYERS += "\${OEROOT}/layers/meta-openembedded/meta-python"
 BBLAYERS += "\${OEROOT}/layers/meta-openembedded/meta-oe"
 BBLAYERS += "\${OEROOT}/layers/meta-openembedded/meta-networking"
+# Security
+BBLAYERS += "\${OEROOT}/layers/meta-security"
+BBLAYERS += "\${OEROOT}/layers/meta-security/meta-tpm"
+BBLAYERS += "\${OEROOT}/layers/meta-toradex-security"
 EOF
 fi
 
