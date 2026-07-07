@@ -10,6 +10,8 @@ Code Contributor Workflow
 - Open a pull request to the default branch (currently `scarthgap-7.x.y`).
 - Open a second pull request to the `master` branch, unless not applicable.
 
+Reviewers are automatically assigned based on the [`docs/CODEOWNERS`](./CODEOWNERS) file.
+
 Commit Guidelines
 ========
 All commits must be signed-off i.e. have a 'Signed-off-by' line at the end of their messages, similar to this example:
