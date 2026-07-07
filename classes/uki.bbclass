@@ -64,12 +64,13 @@ DEPENDS += "\
     os-release \
     systemd-boot \
     systemd-boot-native \
-    virtual/cross-binutils \
+    binutils-cross-x86_64 \
     virtual/kernel \
+    python3-pefile-native \
 "
 
 inherit image-artifact-names
-require ../conf/image-uefi.conf
+require conf/image-uefi.conf
 
 INITRAMFS_IMAGE ?= "core-image-minimal-initramfs"
 
