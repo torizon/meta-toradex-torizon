@@ -11,8 +11,10 @@ OSTREE_KERNEL_ARGS:sota:append:intel-corei7-64:xenomai3 = " ${XENOMAI_KERNEL_ARG
 OSTREE_KERNEL_ARGS:sota:append:intel-corei7-64:xenomai4 = " ${XENOMAI_KERNEL_ARGS} "
 
 OSTREE_BOOTLOADER:intel-corei7-64 = "grub"
+OSTREE_BOOTLOADER:intel-corei7-64:tdx-signed = "systemd-boot"
 OSTREE_DEPLOY_DEVICETREE:intel-corei7-64 = "0"
 EFI_PROVIDER:intel-corei7-64 = "grub-efi"
+EFI_PROVIDER:intel-corei7-64:tdx-signed = "systemd-boot"
 SOTA_CLIENT_FEATURES:remove = "ubootenv"
 UBOOT_BINARY_OTA_IGNORE:intel-corei7-64 = "1"
 
@@ -34,6 +36,7 @@ PREFERRED_PROVIDER_virtual/kernel:xenomai4 = "linux-xenomai-4"
 PREFERRED_VERSION_linux-xenomai-4 = "5.10.%"
 
 IMAGE_INSTALL:append = " grub-ota-fallback"
+IMAGE_INSTALL:remove:tdx-signed = "grub-ota-fallback"
 IMAGE_INSTALL:remove = " minnowboard-efi-startup network-configuration"
 # Default linux-yocto inherits toradex-kernel-localversion (KERNEL_LOCALVERSION
 # = -${TDX_VERSION}); these extensions apply only to the xenomai kernels.
