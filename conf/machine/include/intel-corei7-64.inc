@@ -1,5 +1,6 @@
 
 WKS_FILE:intel-corei7-64:sota = "efiimage-sota.wks"
+WKS_FILE:intel-corei7-64:sota:tdx-signed = "efiimage-sota-signed.wks"
 WKS_FILE_DEPENDS:remove = "tezi-metadata virtual/dtb"
 
 OSTREE_KERNEL_ARGS:sota:append:intel-corei7-64 = "console=ttyS0,115200 root=LABEL=otaroot rootfstype=ext4 quiet logo.nologo vt.global_cursor_default=0 plymouth.ignore-serial-consoles splash fbcon=map:10 systemd.gpt_auto=0 "
