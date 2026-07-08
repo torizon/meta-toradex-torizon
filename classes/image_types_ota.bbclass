@@ -4,7 +4,8 @@ IMAGE_TYPEDEP:ota = "ostreecommit"
 do_image_ota[dirs] = "${OTA_SYSROOT}"
 do_image_ota[cleandirs] = "${OTA_SYSROOT}"
 do_image_ota[depends] = "${@'grub:do_populate_sysroot' if d.getVar('OSTREE_BOOTLOADER') == 'grub' else ''} \
-                         ${@'virtual/bootloader:do_deploy' if d.getVar('OSTREE_BOOTLOADER') == 'u-boot' else ''}"
+                         ${@'virtual/bootloader:do_deploy' if d.getVar('OSTREE_BOOTLOADER') == 'u-boot' else ''} \
+                         ${@'systemd-boot:do_deploy' if d.getVar('OSTREE_BOOTLOADER') == 'systemd-boot' else ''}"
 IMAGE_CMD:ota () {
 	ostree admin --sysroot=${OTA_SYSROOT} init-fs --modern ${OTA_SYSROOT}
 	ostree admin --sysroot=${OTA_SYSROOT} os-init ${OSTREE_OSNAME}
@@ -25,6 +26,16 @@ IMAGE_CMD:ota () {
 		mkdir -p ${OTA_SYSROOT}/boot/syslinux
 		touch ${OTA_SYSROOT}/boot/loader/syslinux.cfg
 		ln -s ../loader/syslinux.cfg ${OTA_SYSROOT}/boot/syslinux/syslinux.cfg
+	elif [ "${OSTREE_BOOTLOADER}" = "systemd-boot" ]; then
+		mkdir -p ${OTA_SYSROOT}/boot/loader/entries
+		mkdir -p ${OTA_SYSROOT}/boot/EFI/BOOT
+		# Install systemd-boot EFI binary
+		cp ${DEPLOY_DIR_IMAGE}/systemd-bootx64.efi \
+		   ${OTA_SYSROOT}/boot/EFI/BOOT/BOOTX64.EFI
+		printf 'timeout 5\ndefault @saved\n' \
+		    > ${OTA_SYSROOT}/boot/loader/loader.conf
+		# Tell libostree not to invoke grub2-editenv (C3)
+		ostree config --repo=${OTA_SYSROOT}/ostree/repo set sysroot.bootloader none
 	elif [ "${OSTREE_BOOTLOADER}" = "none" ]; then
 		ostree config --repo=${OTA_SYSROOT}/ostree/repo set sysroot.bootloader none
 	else
