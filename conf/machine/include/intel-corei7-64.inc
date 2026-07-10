@@ -47,6 +47,8 @@ LINUX_VERSION_EXTENSION:xenomai4 ?= "-torizon-${LINUX_KERNEL_TYPE}-xenomai4"
 # Enable OVMF Secure Boot build (produces ovmf.secboot.fd + EnrollDefaultKeys.efi)
 PACKAGECONFIG:append:pn-ovmf = " secureboot"
 
+PACKAGECONFIG:append:pn-systemd:tdx-signed = " efi"
+
 # Expose TPM2 to OVMF (auto-enables -D TPM_ENABLE=TRUE in the OVMF build)
 MACHINE_FEATURES:append = " tpm2"
 
