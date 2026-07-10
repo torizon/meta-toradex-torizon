@@ -174,6 +174,11 @@ CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
     composefs \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:intel-corei7-64:tdx-signed = " \
+    efitools \
+    mokutil \
+"
+
 # Enable WIC generation with images utilizing tdx-signed or inherited
 # classes (such as torizon-signed)
 IMAGE_FSTYPES_REMOVE:remove:tdx-signed = "ota-ext4 wic"
