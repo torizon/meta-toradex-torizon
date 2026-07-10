@@ -141,6 +141,14 @@ CORE_IMAGE_BASE_INSTALL:append:toradex-smarc-imx95 = " \
     mali-imx \
 "
 
+# Userspace driver stack for the Arm Ethos-U microNPU integrated in the
+# i.MX93. The Cortex-M33 firmware (ethos-u-firmware) is already added via
+# MACHINE_FIRMWARE in the machine conf and the kernel driver (CONFIG_ETHOSU)
+# is built-in; this pulls in the userspace stack needed to dispatch inferences.
+CORE_IMAGE_BASE_INSTALL:append:mx93-nxp-bsp = " \
+    ethos-u-driver-stack \
+"
+
 nss_altfiles_set_users_groups () {
 	# Make a temporary directory to be used by pseudo to find the real /etc/passwd,/etc/group
 	pseudo_dir=${WORKDIR}/pseudo-rootfs${sysconfdir}
