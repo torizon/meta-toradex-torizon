@@ -49,3 +49,10 @@ PACKAGECONFIG:append:pn-ovmf = " secureboot"
 
 # Expose TPM2 to OVMF (auto-enables -D TPM_ENABLE=TRUE in the OVMF build)
 MACHINE_FEATURES:append = " tpm2"
+
+IMAGE_EFI_BOOT_FILES:tdx-signed = " \
+    loader/keys/auto/PK.auth \
+    loader/keys/auto/KEK.auth \
+    loader/keys/auto/db.auth \
+    loader/keys/auto/dbx.auth \
+    "
