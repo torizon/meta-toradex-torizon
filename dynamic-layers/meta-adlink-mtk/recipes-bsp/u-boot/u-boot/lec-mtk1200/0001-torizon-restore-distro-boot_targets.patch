@@ -1,0 +1,33 @@
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Thu, 11 Jun 2026 00:00:00 +0000
+Subject: [PATCH] torizon: restore distro boot_targets on lec-mtk-i1200
+
+The Adlink board-support patch (0001-Added-Board-support-for-LEC-MTK-i1200)
+repoints BOOTENV_BOOT_TARGETS to a single "embedded" target - a signed boot
+script compiled into the U-Boot binary that loaded a fitImage from a raw
+"kernel" GPT partition.
+
+Common Torizon OS has no such partition: the kernel/DTB/initramfs live inside
+the OSTree deployment on the rootfs partition, and U-Boot is expected to scan
+the storage device, find the bootable rootfs partition and source Torizon's
+/boot.scr (which imports the OSTree-managed /boot/loader/uEnv.txt). Revert the
+vendor change so distro_bootcmd expands boot_targets to the upstream
+auto-generated device list (scsiN/usbN) again.
+
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ include/config_distro_bootcmd.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/config_distro_bootcmd.h b/include/config_distro_bootcmd.h
+--- a/include/config_distro_bootcmd.h
++++ b/include/config_distro_bootcmd.h
+@@ -421,7 +421,7 @@
+ #define BOOTENV_DEV_NAME(devtypeu, devtypel, instance, ...) \
+ 	BOOTENV_DEV_NAME_##devtypeu(devtypeu, devtypel, instance, ## __VA_ARGS__)
+ #define BOOTENV_BOOT_TARGETS \
+-	"boot_targets=embedded\0"
++	"boot_targets=" BOOT_TARGET_DEVICES(BOOTENV_DEV_NAME) "\0"
+
+ #define BOOTENV_DEV(devtypeu, devtypel, instance, ...) \
+ 	BOOTENV_DEV_##devtypeu(devtypeu, devtypel, instance, ## __VA_ARGS__)
