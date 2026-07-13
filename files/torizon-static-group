@@ -45,6 +45,7 @@ input:x:101:torizon
 kvm:x:102:
 render:x:103:
 sgx:x:104:
+debug:x:105:
 ptest:x:529:
 empower:x:533:
 systemd-coredump:x:980:

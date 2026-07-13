@@ -107,9 +107,9 @@ do_install:append:cfs-support() {
     install -m 0644 /dev/null ${D}${nonarch_libdir}/ostree/prepare-root.conf
     write_prepare_root_config ${D}${nonarch_libdir}/ostree/prepare-root.conf
 
-    install -m 0644 ${WORKDIR}/ostree-repo-config.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ostree-repo-config.service ${D}${systemd_system_unitdir}
     install -d ${D}${sbindir}
-    install -m 0755 ${WORKDIR}/ostree-repo-config.sh ${D}${sbindir}
+    install -m 0755 ${UNPACKDIR}/ostree-repo-config.sh ${D}${sbindir}
     sed -e 's/@@OSTREE_REPO_CFG_COMPOSEFS@@/${OSTREE_REPO_CFG_COMPOSEFS}/' \
         -e 's/@@OSTREE_REPO_CFG_FSVERITY@@/${OSTREE_REPO_CFG_FSVERITY}/' \
         -i ${D}${sbindir}/ostree-repo-config.sh
