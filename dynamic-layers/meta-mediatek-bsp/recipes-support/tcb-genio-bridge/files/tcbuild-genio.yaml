@@ -1,0 +1,38 @@
+# tcbuild-genio.yaml - torizoncore-builder Tier-1 rootfs customisation for the
+# ADLINK LEC-MTK-i1200 (MediaTek Genio 1200) genio-flash image.
+#
+# Driven by the tcb-genio-bridge wrapper, which unsparses the genio-flash system
+# image to input.wic, overlays the customisation, and re-sparses output.wic back
+# into the tarball. Only rootfs-level classes work on the raw-image path:
+# filesystem overlays, Yocto packages delivered as installed files, preloaded
+# containers, and prebuilt kernel modules dropped into the filesystem.
+# Device-tree, kernel-module-build, kernel-argument, and secboot customisations
+# are rejected by tcb on raw/WIC images and are out of scope.
+input:
+  raw-image:
+    local: input.wic
+    # rootfs filesystem label; otaroot is tcb's default for Common Torizon OS.
+    rootfs-label: otaroot
+
+customization:
+  # Files overlaid onto the OSTree rootfs, mirroring the final filesystem paths.
+  # The bridge fills changes/ from its -c argument (default ./changes). Add
+  # package files (e.g. usr/bin/, usr/lib/) and prebuilt .ko modules here; a
+  # dropped-in .ko is not depmod-indexed, so load it on the target with insmod
+  # of its full path, not modprobe. Config files go under usr/etc/ (the OSTree
+  # factory-config location), NOT a top-level etc/ — a committed /etc collides
+  # with the base /usr/etc and tcb aborts the deploy. Preloaded containers go
+  # under output.raw-image.bundle instead.
+  filesystem:
+    - changes/
+
+output:
+  raw-image:
+    local: output.wic
+    base-rootfs-label: otaroot
+    # To preload containers, uncomment and provide the compose file to the
+    # bridge with -b (default ./docker-compose.yml). Set platform to the target
+    # arch so tcb pulls the arm64 image, not the build host's.
+    # bundle:
+    #   compose-file: docker-compose.yml
+    #   platform: linux/arm64

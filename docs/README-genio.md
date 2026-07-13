@@ -138,6 +138,48 @@ torizon-lec-mtk-i1200-ufs login:
 ```
 4. Login to the board using the `torizon/torizon` credentials.
 
+Customizing with TorizonCore Builder
+======
+The `tcb-genio-bridge` wrapper
+(`dynamic-layers/meta-mediatek-bsp/recipes-support/tcb-genio-bridge/`) applies a
+TorizonCore Builder customization to the genio-flash image. The Genio target
+ships as an `aiotflash.tar` wrapping an Android-sparse WIC, which TCB's raw-image
+path can't read directly, so the bridge unwraps and unsparses the tarball, runs
+TCB against the system image, re-sparses, and repacks it — only the rootfs
+changed, partition layout preserved. Rootfs-level customizations (filesystem
+overlays, preloaded containers) are supported; device-tree, kernel-argument,
+U-Boot-env, and splash edits are not (TCB rejects them on raw/WIC images).
+
+Host prerequisites: Docker and `simg2img`/`img2simg`
+(`android-sdk-libsparse-utils`). The bridge runs TCB from its
+`torizon/torizoncore-builder` container image, pulled on first run — no separate
+`torizoncore-builder` install.
+
+Deploy the bridge and collect it beside the image:
+```
+$$ bitbake tcb-genio-bridge
+$ cd ~/yocto-workdir/build-lec-mtk-i1200/deploy/images/lec-mtk-i1200-ufs/
+$ cp tcb-genio-bridge/tcb-genio-bridge tcb-genio-bridge/tcbuild-genio.yaml .
+```
+
+Prepare your customization as usual — a `changes/` overlay and/or a container
+`bundle` in `tcbuild-genio.yaml` — then run the bridge against the tarball:
+```
+$ ./tcb-genio-bridge -o custom.tar torizon-docker-lec-mtk-i1200-ufs.aiotflash.tar
+```
+For a preloaded container, uncomment the `bundle:` block in `tcbuild-genio.yaml`
+and set `platform: linux/arm64`; the bridge auto-detects `./docker-compose.yml`.
+
+Flash the customized tarball and boot:
+```
+$ tar xf custom.tar
+$ cd torizon-docker-lec-mtk-i1200-ufs-*/
+$ genio-flash system
+```
+
+The bridge rewrites the rootfs partition in place, so the customization must fit
+its free space (about 1 GB on the default image).
+
 References
 ======
 * MediaTek IoT Yocto developer guide: https://mediatek.gitlab.io/aiot/doc/aiot-dev-guide/master/

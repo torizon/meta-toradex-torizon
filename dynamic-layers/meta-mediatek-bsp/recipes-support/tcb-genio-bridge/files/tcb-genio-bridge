@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# tcb-genio-bridge - apply a torizoncore-builder rootfs customisation to a
+# MediaTek genio-flash image and repack it for genio-flash.
+#
+# torizoncore-builder's raw-image path needs a raw WIC, but the Genio target is
+# delivered as aiotflash.tar wrapping an Android-sparse WIC. This unwraps the
+# tarball, unsparses the system image, runs tcb, re-sparses with the build's
+# 4096-byte block size, and repacks the tarball with only the rootfs changed.
+set -euo pipefail
+
+prog=${0##*/}
+here=$(cd -- "$(dirname -- "$0")" && pwd)
+
+die()  { echo "$prog: error: $*" >&2; exit 1; }
+note() { echo "$prog: $*"; }
+
+usage() {
+    cat <<EOF
+Usage: $prog [-o OUTPUT_TAR] [-f TCBUILD_YAML] [-c CHANGES_DIR] [-b COMPOSE_FILE] INPUT_TAR
+
+Apply a torizoncore-builder rootfs customisation to a genio-flash image.
+
+  INPUT_TAR        aiotflash.tar produced by the Yocto build (deploy dir)
+  -o OUTPUT_TAR    repacked tarball (default: <INPUT_TAR without .tar>-custom.tar)
+  -f TCBUILD_YAML  tcbuild config (default: tcbuild-genio.yaml beside this script)
+  -c CHANGES_DIR   directory of files to overlay onto the rootfs
+                   (default: ./changes if present)
+  -b COMPOSE_FILE  docker-compose file for the container-preload (bundle)
+                   customisation (default: ./docker-compose.yml if present).
+                   Its basename must match the tcbuild config's
+                   bundle.compose-file (default docker-compose.yml).
+
+Requires Docker (runs torizoncore-builder from its container image) and
+simg2img/img2simg (android-sdk-libsparse-utils).
+EOF
+}
+
+out=""; yaml="$here/tcbuild-genio.yaml"; changes=""; compose=""; yaml_default=1
+while getopts ":o:f:c:b:h" opt; do
+    case $opt in
+        o) out=$OPTARG ;;
+        f) yaml=$OPTARG; yaml_default=0 ;;
+        c) changes=$OPTARG ;;
+        b) compose=$OPTARG ;;
+        h) usage; exit 0 ;;
+        :) die "option -$OPTARG requires an argument" ;;
+        \?) die "unknown option -$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+[ $# -eq 1 ] || { usage >&2; die "exactly one INPUT_TAR is required"; }
+in_tar=$1
+
+# torizoncore-builder runs from its official container image, so users install
+# nothing beyond Docker. $TCB_IMAGE overrides the image tag.
+TCB_IMAGE=${TCB_IMAGE:-torizon/torizoncore-builder:3}
+
+# Run tcb in the given host workdir (mounted as tcb's /workdir) from a launcher
+# that patches it for the Genio's 4096-byte-sector WIC (see below).
+run_tcb() {
+    local workdir=$1; shift
+    # Stock tcb's raw-image path assumes 512-byte sectors end to end; the Genio
+    # UFS WIC is 4096-byte-sector. This in-container launcher patches tcb before
+    # handing off: (1) open every libguestfs drive with blocksize=4096 so tcb can
+    # read the 4K GPT; (2) build the output in place — copy the base (partition
+    # layout preserved for genio-flash) and let tcb reformat the existing rootfs
+    # partition — instead of tcb's virt-resize step, an external 512-only tool
+    # that cannot read the 4K disk.
+    local launcher
+    launcher="$(dirname "$workdir")/tcb-genio-launch.py"
+    cat > "$launcher" <<'PY'
+import sys, shutil, runpy
+sys.path.insert(0, "/builder")
+import guestfs
+_orig_add = guestfs.GuestFS.add_drive_opts
+def _add(self, filename, **kw):
+    kw.setdefault("blocksize", 4096)
+    return _orig_add(self, filename, **kw)
+guestfs.GuestFS.add_drive_opts = _add
+import tcbuilder.backend.dt          # import dt before deploy to break tcb's kernel<->dt cycle
+import tcbuilder.backend.deploy as _deploy
+def _create_output_inplace(base_raw_img, output_raw_img, *a, **k):
+    shutil.copy2(base_raw_img, output_raw_img)
+_deploy.create_output_raw_image = _create_output_inplace
+sys.argv = ["torizoncore-builder"] + sys.argv[1:]
+runpy.run_path("/builder/torizoncore-builder", run_name="__main__")
+PY
+    # tcb unpacks a scratch OS sysroot to a hard-coded /deploy (absent from the
+    # image) — give it a throwaway volume there. For the container-preload
+    # (bundle) case tcb spawns a docker-in-docker to fetch the image: the host
+    # Docker socket lets it create that helper, and --net=host lets it talk to it.
+    docker run --rm \
+        -e PYTHONDONTWRITEBYTECODE=1 \
+        -v "$workdir":/workdir \
+        -v "$launcher":/tcb-genio-launch.py:ro \
+        -v tcb-genio-storage:/storage \
+        -v /deploy \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        --net=host \
+        --entrypoint python3 \
+        "$TCB_IMAGE" /tcb-genio-launch.py "$@"
+}
+
+# Preflight every external tool so the run fails clean, not half-done.
+for t in simg2img img2simg tar; do
+    command -v "$t" >/dev/null 2>&1 \
+        || die "'$t' not found on PATH (install android-sdk-libsparse-utils)"
+done
+command -v docker >/dev/null 2>&1 \
+    || die "'docker' not found on PATH (needed to run torizoncore-builder)"
+[ -f "$in_tar" ] || die "input tarball not found: $in_tar"
+[ -f "$yaml" ]   || die "tcbuild config not found: $yaml"
+[ -n "$changes" ] || { [ -d ./changes ] && changes=./changes; }
+[ -n "$compose" ] || { [ -f ./docker-compose.yml ] && compose=./docker-compose.yml; }
+if [ -n "$changes" ]; then
+    [ -d "$changes" ] || die "changes directory not found: $changes"
+fi
+if [ -n "$compose" ]; then
+    [ -f "$compose" ] || die "compose file not found: $compose"
+fi
+if [ "$yaml_default" -eq 1 ] && [ -z "$changes" ] && [ -z "$compose" ]; then
+    # The shipped config takes files from ./changes and/or a container bundle
+    # from ./docker-compose.yml; with neither there is nothing to customise.
+    die "no customisation supplied: create ./changes (files) or ./docker-compose.yml (containers), or pass -c / -b"
+fi
+[ -n "$out" ] || out="${in_tar%.tar}-custom.tar"
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/tcb-genio.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+
+# 1. Unpack the genio-flash tarball (preserve xattrs as the build packed them).
+note "unpacking $in_tar"
+mkdir -p "$work/unpack"
+tar --xattrs --xattrs-include='*' -C "$work/unpack" -xf "$in_tar"
+
+mapfile -t sparse_imgs < <(find "$work/unpack" -name '*.wic.img' -type f)
+[ "${#sparse_imgs[@]}" -ge 1 ] || die "no *.wic.img found inside $in_tar"
+[ "${#sparse_imgs[@]}" -eq 1 ] || die "multiple *.wic.img found inside $in_tar; cannot pick one"
+sparse=${sparse_imgs[0]}
+note "system image: ${sparse#"$work"/unpack/}"
+
+# 2. Unsparse the system image to a raw WIC inside the tcb working dir.
+# Always create changes/ (empty is a no-op overlay) so the config's
+# filesystem: - changes/ holds even for a container-only customisation.
+mkdir -p "$work/tcb/changes"
+if [ -n "$changes" ]; then
+    cp -a "$changes/." "$work/tcb/changes/"
+fi
+# The bundle customisation reads its compose file from tcb's workdir; stage it
+# under the basename the tcbuild config's bundle.compose-file references.
+if [ -n "$compose" ]; then
+    cp -a "$compose" "$work/tcb/$(basename "$compose")"
+fi
+cp -a "$yaml" "$work/tcb/tcbuild-genio.yaml"
+note "unsparsing system image (simg2img)"
+simg2img "$sparse" "$work/tcb/input.wic"
+
+# 3. Run torizoncore-builder against the raw image. The raw-image input/output
+#    blocks live in the YAML; tcb rewrites only the otaroot rootfs and copies
+#    the bootloader partition through untouched.
+note "running torizoncore-builder build"
+run_tcb "$work/tcb" build --file tcbuild-genio.yaml
+[ -f "$work/tcb/output.wic" ] || die "torizoncore-builder produced no output.wic"
+
+# 4. Re-sparse with the build's 4096-byte block size, replacing the image in
+#    place. android-sdk-libsparse-utils' img2simg takes the block size as a
+#    positional 3rd argument, not a -b flag.
+note "re-sparsing customised image (img2simg, 4096-byte blocks)"
+img2simg "$work/tcb/output.wic" "$sparse" 4096
+
+# 5. Repack the tarball; rity.json and the boot chain are untouched.
+note "repacking $out"
+tar --xattrs --xattrs-include='*' --numeric-owner -C "$work/unpack" -cf "$out" .
+
+note "done: $out"
+note "flash with: tar xf $(basename "$out") && cd <dir> && genio-flash system"
