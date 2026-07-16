@@ -96,7 +96,20 @@ IMAGE_CMD:ota () {
 	fi
 	mkdir -p ${OTA_SYSROOT}/ostree/deploy/${OSTREE_OSNAME}/var/sota/import
 	echo "{\"${ostree_target_hash}\":\"${GARAGE_TARGET_NAME}-${target_version}\"}" > ${OTA_SYSROOT}/ostree/deploy/${OSTREE_OSNAME}/var/sota/import/installed_versions
+
+	# When the boot content is placed on a dedicated boot partition
+	# (systemd-boot / XBOOTLDR), stage the ostree-generated /boot tree so it
+	# can be packed into a separate ext4 image (boot-ext4), and empty the
+	# /boot directory in the otaroot so it only serves as a mountpoint.
+	if [ "${OSTREE_BOOTLOADER}" = "systemd-boot" ]; then
+		rm -rf ${BOOT_STAGING}
+		mkdir -p ${BOOT_STAGING}
+		cp -a ${OTA_SYSROOT}/boot/. ${BOOT_STAGING}/
+		rm -rf ${OTA_SYSROOT}/boot
+		mkdir ${OTA_SYSROOT}/boot
+	fi
 }
+BOOT_STAGING = "${WORKDIR}/boot-staging"
 
 EXTRA_IMAGECMD:ota-ext4 ?= "-L otaroot -i 4096 -t ext4"
 IMAGE_TYPEDEP:ota-ext4 = "ota"
@@ -108,6 +121,27 @@ IMAGE_CMD:ota-ext4 () {
 }
 do_image_ota_ext4[depends] += "e2fsprogs-native:do_populate_sysroot"
 do_image_wic[depends] += "${@bb.utils.contains('IMAGE_FSTYPES', 'ota-ext4', '%s:do_image_ota_ext4' % d.getVar('PN'), '', d)}"
+
+# Separate ext4 image holding the ostree-generated /boot tree, staged by the
+# IMAGE_CMD:ota step above (BOOT_STAGING). Packed onto the XBOOTLDR partition.
+EXTRA_IMAGECMD:boot-ext4 ?= "-L xbootldr -i 4096 -t ext4 -O ^has_journal"
+IMAGE_TYPEDEP:boot-ext4 = "ota"
+IMAGE_ROOTFS:task-image-boot-ext4 = "${BOOT_STAGING}"
+# Size the boot-ext4 filesystem to exactly fill the 1024M XBOOTLDR partition
+# (efiimage-sota-signed.wks --fixed-size=1024M) so /boot reports full capacity.
+# 1048576 KiB = 1024 MiB; overhead factor 1 overrides torizon-base.inc 2.3.
+IMAGE_ROOTFS_SIZE:task-image-boot-ext4 = "1048576"
+IMAGE_OVERHEAD_FACTOR:task-image-boot-ext4 = "1"
+IMAGE_ROOTFS_EXTRA_SPACE:task-image-boot-ext4 = "0"
+IMAGE_CMD:boot-ext4 () {
+	ln -sf ${STAGING_DIR_NATIVE}${base_sbindir_native}/mkfs.ext4 ${STAGING_DIR_NATIVE}${base_sbindir_native}/mkfs.boot-ext4
+	ln -sf ${STAGING_DIR_NATIVE}${base_sbindir_native}/fsck.ext4 ${STAGING_DIR_NATIVE}${base_sbindir_native}/fsck.boot-ext4
+	oe_mkext234fs boot-ext4 ${EXTRA_IMAGECMD}
+}
+do_image_boot_ext4[depends] += "e2fsprogs-native:do_populate_sysroot"
+# Signed images use a dedicated XBOOTLDR partition; append boot-ext4 fstype.
+IMAGE_FSTYPES:append:tdx-signed = " boot-ext4"
+do_image_wic[depends] += "${@bb.utils.contains('IMAGE_FSTYPES', 'boot-ext4', '%s:do_image_boot_ext4' % d.getVar('PN'), '', d)}"
 
 EXTRA_IMAGECMD:ota-btrfs ?= "-L otaroot -n 4096 --shrink"
 IMAGE_TYPEDEP:ota-btrfs = "ota"
