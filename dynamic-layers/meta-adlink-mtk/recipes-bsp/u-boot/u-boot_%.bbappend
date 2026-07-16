@@ -10,3 +10,12 @@ SRC_URI:append:lec-mtk1200 = " file://0001-torizon-restore-distro-boot_targets.p
 
 # Accept the legacy-format boot.scr (FIT_SIGNATURE defaults LEGACY_IMAGE_FORMAT off).
 SRC_URI:append:lec-mtk1200 = " file://legacy-image-format.cfg"
+
+# Raise SYS_MAXARGS so uEnv.txt's set_bootargs does not overflow U-Boot's argv limit.
+SRC_URI:append:lec-mtk1200 = " file://sys-maxargs.cfg"
+
+# Drop the vendor splash: it targets a "bootassets" partition Torizon does not carry.
+SRC_URI:append:lec-mtk1200 = " file://no-splash.cfg"
+
+# Drop the device-tree env import: no /config/environment node in the control DTB.
+SRC_URI:append:lec-mtk1200 = " file://no-fdt-env-import.cfg"
