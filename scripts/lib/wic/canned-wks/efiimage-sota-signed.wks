@@ -3,7 +3,7 @@
 # can directly dd to boot media.
 
 part /var/rootdirs/media/efi --source bootimg-efi-tmp --sourceparams="loader=systemd-boot" --ondisk hda --fstype=vfat --label efi --active --align 1024 --fixed-size=64M --part-type=c12a7328-f81f-11d2-ba4b-00a0c93ec93b --mkfs-extraopts="-F 32 -S 512"
-part /boot --ondisk hda --fstype=ext4 --label xbootldr --align 1024 --fixed-size=1024M --part-type=bc13c2ff-59e6-4262-a352-b275fd6f7172
+part /boot --source rawcopy --sourceparams="file=${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.boot-ext4" --ondisk hda --fstype=ext4 --label xbootldr --align 1024 --fixed-size=1024M --part-type=bc13c2ff-59e6-4262-a352-b275fd6f7172
 part / --source otaimage --ondisk hda --fstype=ext4 --label otaroot --align 1024 --use-uuid --part-type=4f68bce3-e8cd-4db1-96e7-fbcaf984b709
 
 bootloader --ptable gpt --timeout=0 --append="rootfstype=ext4 console=ttyS0,115200 console=tty0"
