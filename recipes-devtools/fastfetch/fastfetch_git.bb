@@ -11,12 +11,12 @@ HOMEPAGE = "https://github.com/fastfetch-cli/fastfetch"
 BUGTRACKER = "https://github.com/fastfetch-cli/fastfetch/issues"
 
 LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=83d9effb45945153bc98303441b5c03f"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=2090e7d93df7ad5a3d41f6fb4226ac76"
 
-PV = "2.38.0+git${SRCPV}"
+PV = "2.66.0+git${SRCPV}"
 SRC_URI = "git://github.com/fastfetch-cli/fastfetch.git;protocol=https;branch=master"
 
-SRCREV = "1b219a9d5c2a6f96b06b723152e43fed7b220cbf"
+SRCREV = "08698098579bb8b043b0a343159b8018f5cea4fc"
 
 inherit cmake
 

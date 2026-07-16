@@ -3,11 +3,11 @@ as /etc/passwd and /etc/group stored in an alternate location"
 LICENSE = "LGPL-2.1-or-later"
 LIC_FILES_CHKSUM = "file://COPYING;md5=fb1949d8d807e528c1673da700aff41f"
 
-SRC_URI = "git://github.com/flatcar-linux/nss-altfiles.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/flatcar-linux/nss-altfiles.git;protocol=https;branch=main"
 
 # Modify these as desired
-PV = "2.23.0+git${SRCPV}"
-SRCREV = "f640895a9f893390375ce5aa26ab22b5e8b14b1f"
+PV = "2.43.0+git${SRCPV}"
+SRCREV = "30ec1be7a9a253c6b723a9d2127d77b088f9ff20"
 
 # Name Service Switch is provided by GNU C library for Linux
 python __anonymous () {
