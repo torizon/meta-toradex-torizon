@@ -1,5 +1,11 @@
 require u-boot-toradex-secboot-ota.inc
 
+FILESEXTRAPATHS:prepend:aquila-am69 := "${THISDIR}/aquila-am69:"
+
+SRC_URI:append:aquila-am69 = " \
+    file://rproc.cfg \
+"
+
 deploy_uboot_with_spl () {
     #Deploy u-boot-with-spl.imx
     if [ -n "${UBOOT_CONFIG}" ]

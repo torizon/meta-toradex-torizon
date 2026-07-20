@@ -122,6 +122,7 @@ CORE_IMAGE_BASE_INSTALL:append:verdin-am62p = " \
 
 CORE_IMAGE_BASE_INSTALL:append:aquila-am69 = " \
     ti-img-rogue-driver \
+    ti-edgeai-firmware \
 "
 
 # This does not compile succesfully on master
