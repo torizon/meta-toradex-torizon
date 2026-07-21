@@ -85,6 +85,7 @@ validate_ostree_layer_revision_info() {
         bbfatal "OSTREE_LAYER_REVISION_INFO is not set, but is required for OSTree image commits"
     fi
 }
+validate_ostree_layer_revision_info[vardepsexclude] += "OSTREE_LAYER_REVISION_INFO"
 
 do_image_ostreecommit[prefuncs] += "validate_ostree_layer_revision_info ${CFS_OSTREECOMMIT_PREFUNCS}"
 do_image_ostreecommit[depends] += "${CFS_OSTREECOMMIT_DEPENDS}"
