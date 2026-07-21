@@ -18,6 +18,9 @@ SRC_URI:append = " \
     file://ostree-repo-config.sh \
     file://ostree-repo-config.service \
 "
+SRC_URI:append:intel-corei7-64:tdx-signed = " \
+    file://0008-sysroot-add-boot-counting-suffix-to-new-BLS-entry.patch \
+"
 
 # TODO: Upstream this addition.
 PACKAGECONFIG[composefs] = "--with-composefs, --without-composefs"

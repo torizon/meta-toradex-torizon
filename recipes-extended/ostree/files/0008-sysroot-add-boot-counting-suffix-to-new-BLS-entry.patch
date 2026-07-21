@@ -1,0 +1,70 @@
+From 377fd09ce494f9b863ccb26e5d9c91ee017879ec Mon Sep 17 00:00:00 2001
+From: Luc BEAUFILS <luc.beaufils@savoirfairelinux.com>
+Date: Tue, 21 Jul 2026 12:55:49 +0200
+Subject: [PATCH] sysroot: add boot-counting suffix to new BLS entry
+
+Append the systemd-boot tries counter suffix (+<TRIES>-0) to the
+/boot/loader/entries filename of the newly staged (pending) deployment
+so systemd-boot's native boot counting is armed on first install.
+
+The BLS spec allows a filename like ostree-2+3-0.conf; systemd-boot
+decrements the left counter on each boot attempt and falls back to the
+previous (unsuffixed) entry when it reaches zero.
+
+Only the deployment at index 0 (the new default / pending entry) receives
+the suffix. Booted and older deployments keep their plain .conf names and
+remain valid rollback targets. Because loader.N/entries is wiped and
+recreated on every deploy, double-suffixing is structurally impossible.
+
+OSTREE_SYSTEMD_BOOT_DEFAULT_TRIES (3) matches u-boot
+CONFIG_BOOTCOUNT_BOOTLIMIT=3 used on other Torizon platforms.
+
+Upstream-Status: Inappropriate [Toradex/SFL downstream; upstream uses a
+  runtime-configurable approach via ostree repo config
+  boot-counting-tries=N (merged v2025.3, commit 0848709)]
+---
+ src/libostree/ostree-sysroot-deploy.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/libostree/ostree-sysroot-deploy.c b/src/libostree/ostree-sysroot-deploy.c
+index f777b92..a5dd30e 100644
+--- a/src/libostree/ostree-sysroot-deploy.c
++++ b/src/libostree/ostree-sysroot-deploy.c
+@@ -1853,6 +1853,8 @@ parse_os_release (const char *contents, const char *split)
+   return ret;
+ }
+ 
++#define OSTREE_SYSTEMD_BOOT_DEFAULT_TRIES 3
++
+ /* Generate the filename we will use in /boot/loader/entries for this deployment.
+  * The provided n_deployments should be the total number of target deployments (which
+  * might be different from the cached value in the sysroot).
+@@ -1862,6 +1864,11 @@ bootloader_entry_filename (OstreeSysroot *sysroot, guint n_deployments,
+                            OstreeDeployment *deployment)
+ {
+   guint index = n_deployments - ostree_deployment_get_index (deployment);
++  // The new pending deployment always has deployment index 0 (top of list).
++  // Arm the systemd-boot tries counter only on that entry; all others are
++  // rollback targets and must remain unsuffixed.
++  gboolean is_pending = (ostree_deployment_get_index (deployment) == 0);
++  const char *tries_suffix = is_pending ? "+" G_STRINGIFY (OSTREE_SYSTEMD_BOOT_DEFAULT_TRIES) "-0" : "";
+   // Allow opt-out to dropping the stateroot in case of compatibility issues.
+   // As of 2024.5, we have a new naming scheme because grub2 parses the *filename* and ignores
+   // the version field.  xref https://github.com/ostreedev/ostree/issues/2961
+@@ -1869,11 +1876,11 @@ bootloader_entry_filename (OstreeSysroot *sysroot, guint n_deployments,
+   if (use_old_naming)
+     {
+       const char *stateroot = ostree_deployment_get_osname (deployment);
+-      return g_strdup_printf ("ostree-%d-%s.conf", index, stateroot);
++      return g_strdup_printf ("ostree-%d-%s%s.conf", index, stateroot, tries_suffix);
+     }
+   else
+     {
+-      return g_strdup_printf ("ostree-%d.conf", index);
++      return g_strdup_printf ("ostree-%d%s.conf", index, tries_suffix);
+     }
+ }
+ 
+-- 
+2.55.0
+
