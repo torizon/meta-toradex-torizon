@@ -10,7 +10,12 @@ LIC_FILES_CHKSUM = "\
     file://OpenCorePkg/LICENSE.txt;md5=628933781c2977be7031d9cbe30b2947 \
 "
 
-SRC_URI = "gitsm://github.com/acidanthera/audk.git;protocol=https;branch=audk-stable-202511"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
+SRC_URI = " \
+        gitsm://github.com/acidanthera/audk.git;protocol=https;branch=audk-stable-202511 \
+        file://0001-Ext4Pkg-Ext4Dxe-implement-in-place-file-rename-via-S.patch \
+"
 SRCREV  = "a77501f29dccb99679a92efb39783414ca700fb3"
 S = "${WORKDIR}/git"
 
