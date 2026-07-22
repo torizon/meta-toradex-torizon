@@ -1,0 +1,89 @@
+#!/bin/bash
+# -*- mode: shell-script-mode; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+#
+# TEMPLATE for a new scripts/lib/setup-devices/setup-environment-<vendor>
+# script. To add a real vendor:
+#   1. Copy this file to setup-environment-<vendor> and fill in every TODO.
+#   2. Add a MACHINE/VENDOR/BSP_DISPLAY/DISTRO_POLICY row (or block of rows)
+#      for <vendor> to scripts/lib/machines.conf.
+# No changes to scripts/setup-environment or core.sh are needed - the
+# dispatcher sources setup-environment-${VENDOR} purely by reading the
+# machines.conf row, and every helper this file calls already exists in
+# scripts/lib/core.sh.
+#
+# This walkthrough covers the "native family" shape: the vendor script
+# resolves/creates its own BUILDDIR directly and builds conf/local.conf and
+# conf/bblayers.conf itself (see setup-environment-toradex/-nvidia/-stm32mp
+# for real, complete examples of this shape).
+#
+# If your vendor instead ships its own env-setup tooling (something like
+# poky's oe-init-build-env, or a vendor-specific setup script that you
+# `source` to get an initial conf/local.conf + conf/bblayers.conf) you want
+# the "delegating family" shape instead - that pattern varies too much
+# per-vendor to usefully templatize generically. Read one of
+# setup-environment-ti/-intel/-imx/-synaptics instead: the common thread is
+# (a) `source` the vendor's own setup tooling first, (b) immediately call
+# `tdx_set_builddir_from_cwd` (it already `cd`'d you into the build dir),
+# then (c) use `tdx_needs_once`/`tdx_append_once`/`tdx_apply_integration_override`
+# exactly as shown below to patch the vendor-generated conf files.
+
+# TODO: SDKMACHINE default, if this vendor needs one (some don't - see
+# setup-environment-ti, which never sets one).
+[ -z "${SDKMACHINE}" ] && SDKMACHINE='x86_64'
+
+# 1. Resolve/create BUILDDIR (mkdir+cd into it), rebuild PATH and
+#    BB_ENV_PASSTHROUGH_ADDITIONS.
+tdx_set_builddir "${1:-}" "${DISTRO}" || return 1
+tdx_setup_path
+tdx_setup_bb_env_passthrough   # TODO: pass any vendor-specific extra var names here, e.g.
+                                #   tdx_setup_bb_env_passthrough MY_VENDOR_VAR ANOTHER_VAR
+
+# 2. Early-return if MACHINE/DISTRO/(EULA)/this script's own checksum are
+#    all unchanged since the last run - this is what makes re-sourcing fast
+#    and idempotent. Pass a conf-var name here ONLY if this vendor has a
+#    real EULA that gets written to conf/local.conf (see stm32mp's
+#    "ACCEPT_EULA_${MACHINE}"); omit the argument entirely if not (see
+#    nvidia, which has none).
+tdx_native_conf_is_current && return 0   # TODO: add eula-conf-var arg if applicable
+
+tdx_write_checksum "${_TDX_SCRIPTS}/lib/setup-devices/setup-environment-<vendor>"   # TODO: <vendor>
+
+# 3. Seed conf/local.conf from the shared template.
+tdx_conf_from_template local.conf
+
+# TODO: conf/bblayers.conf can't reuse tdx_conf_from_template for a
+# vendor-specific layer list (it always maps conf/template/<file> ->
+# conf/<file> with an identical basename, which would collide with
+# toradex's own conf/template/bblayers.conf). Use tdx_append_once instead -
+# see setup-environment-stm32mp/-nvidia for a complete BASELAYERS/BSPLAYERS
+# example:
+#   tdx_append_once conf/bblayers.conf "# Torizon" <<EOF
+#   # Torizon
+#   ... vendor-specific BBLAYERS ...
+#   EOF
+
+# 4. Symlink in the .repo manifest README (native-family convention).
+ln -sf "${_TDX_MANIFESTS}/README.md" README.md
+ln -sf "${_TDX_MANIFESTS}" "${_TDX_OEROOT}/layers/"
+
+# 5. Write conf/auto.conf (DISTRO/MACHINE/SDKMACHINE + INHERIT), then apply
+#    the integration-build override if this checkout is on an
+#    integration/next manifest.
+tdx_write_auto_conf "${DISTRO}" "${MACHINE}" "${SDKMACHINE}" "rm_work cyclonedx-export"   # TODO: inherit list
+tdx_apply_integration_override conf/auto.conf
+
+# 6. Write conf/site.conf (DL_DIR/SSTATE_DIR/TMPDIR/DEPLOY_DIR).
+tdx_write_site_conf "${_TDX_OEROOT}" "${_TDX_BUILDDIR}"
+
+# 7. TODO: if this vendor has a real EULA that needs user acceptance, prompt
+#    for it here (see setup-environment-stm32mp). If this vendor has NO
+#    EULA at all, delete this step entirely rather than calling the
+#    function with empty arguments - see setup-environment-nvidia, and
+#    setup-environment-toradex for the pattern of skipping the call only
+#    for specific machines that don't need it:
+#      tdx_eula_prompt <ACCEPT_CONF_VAR> "<path-to-EULA-file>" "<label>"
+
+# 8. Welcome banner. First arg is the title text ("Torizon OS" for
+#    genuine Toradex hardware, "Common Torizon OS" for everything else);
+#    second arg is whether to print the SDKMACHINE line.
+tdx_print_banner "Common Torizon OS" yes   # TODO: title, and yes/no for SDKMACHINE line
