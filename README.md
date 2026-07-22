@@ -59,6 +59,8 @@ Contributing
 ============
 You may also choose to actively fix issues and bugs or possibly port Common Torizon on new devices. For more details, see [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
 
+See [docs/setup-environment.md](./docs/setup-environment.md) for how the build-environment setup scripts work and how to add support for a new vendor or board.
+
 Development Process
 ===================
 Torizon is maintained by the Toradex R&D team. Development happens in this repository, including issues, PRs, and discussions. This repository is then used by our internal CI/CD infrastructure.
