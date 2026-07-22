@@ -20,91 +20,33 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-_TDX_OEROOT=$(pwd)
-cd "$_TDX_OEROOT"
-if [ -n "$ZSH_VERSION" ]; then
-    setopt sh_word_split
-    setopt clobber
-elif [ -n "$BASH_VERSION" ]; then
-    set +o noclobber
-fi
+[ -z "${SDKMACHINE}" ] && SDKMACHINE='x86_64'
 
-if [ -z "${SDKMACHINE}" ]; then
-    SDKMACHINE='x86_64'
-fi
+# ST/STM32MP is a "native family" vendor: resolve/export BUILDDIR ourselves
+# (mkdir+cd into it), then rebuild PATH and BB_ENV_PASSTHROUGH_ADDITIONS.
+tdx_set_builddir "${1:-}" "${DISTRO}" || return 1
+tdx_setup_path
+tdx_setup_bb_env_passthrough
 
-_TDX_MANIFESTS="${_TDX_OEROOT}"/.repo/manifests
-_TDX_SCRIPTS="${_TDX_OEROOT}"/layers/meta-toradex-torizon/scripts
+# Early-return if MACHINE/DISTRO/EULA/script-checksum are all unchanged.
+tdx_native_conf_is_current "ACCEPT_EULA_${MACHINE}" && return 0
 
-# We can be called with only 1 parameter max (build folder)
-_TDX_BUILDDIR=${1:-build-$DISTRO}
-# If current BUILDDIR is relative then prepend OEROOT
-case ${_TDX_BUILDDIR} in
-    /* ) ;;
-    *  ) _TDX_BUILDDIR=$(readlink -f ${_TDX_BUILDDIR});;
-esac
-# Get rid of double slash. sed calls in OE staging_processfixme
-# seems to have troubles if this makes it into OE variables.
-_TDX_BUILDDIR=${_TDX_BUILDDIR%%/}
+tdx_write_checksum "${_TDX_SCRIPTS}/lib/setup-devices/setup-environment-stm32mp"
 
-# Set BBPATH for recipetool
-BBPATH=${_TDX_BUILDDIR}
+tdx_conf_from_template local.conf
 
-# Clean up PATH, because if it includes tokens to current directories somehow,
-# wrong binaries can be used instead of the expected ones during task execution
-PATH=$(echo "${PATH}" | sed 's/\(:.\|:\)*:/:/g;s/^.\?://;s/:.\?$//')
-PATH="${_TDX_OEROOT}/bitbake/bin:${_TDX_OEROOT}/.repo/repo:${PATH}"
-PATH="${_TDX_OEROOT}/layers/openembedded-core/bitbake/bin:${PATH}"
-PATH="${_TDX_OEROOT}/layers/openembedded-core/scripts:${PATH}"
-# Remove duplicate path entries
-PATH=$(echo "$PATH" |
-       awk -F: '{for (i=1;i<=NF;i++) { if ( !x[$i]++ ) printf("%s:",$i); }}' |
-       sed 's/:$//')
-
-BB_ENV_PASSTHROUGH_ADDITIONS_OE="MACHINE DISTRO TCMODE TCLIBC HTTP_PROXY http_proxy \
-HTTPS_PROXY https_proxy FTP_PROXY ftp_proxy FTPS_PROXY ftps_proxy ALL_PROXY \
-all_proxy NO_PROXY no_proxy SSH_AGENT_PID SSH_AUTH_SOCK BB_SRCREV_POLICY \
-SDKMACHINE BB_NUMBER_THREADS BB_NO_NETWORK PARALLEL_MAKE GIT_PROXY_COMMAND \
-SOCKS5_PASSWD SOCKS5_USER SCREENDIR STAMPS_DIR BBPATH_EXTRA BB_SETSCENE_ENFORCE"
-
-BB_ENV_PASSTHROUGH_ADDITIONS="$(echo $BB_ENV_PASSTHROUGH_ADDITIONS $BB_ENV_PASSTHROUGH_ADDITIONS_OE | tr ' ' '\n' | LC_ALL=C sort --unique | tr '\n' ' ')"
-
-export PATH
-export _TDX_BUILDDIR
-export BBPATH
-export BB_ENV_PASSTHROUGH_ADDITIONS
-
-_TDX_AUTO_CONF_CREATED=0
-mkdir -p "${_TDX_BUILDDIR}"/conf && cd "${_TDX_BUILDDIR}"
-if [ -f "conf/auto.conf" ]; then
-    oldmach=$(egrep "^MACHINE \?=" "conf/auto.conf" |
-             sed -e 's%^MACHINE ?= %%' | sed -e 's/^"//' -e 's/"$//')
-    olddisto=$(egrep "^DISTRO \?=" "conf/auto.conf" |
-             sed -e 's%^DISTRO ?= %%' | sed -e 's/^"//' -e 's/"$//')
-    eulaacpt=$(egrep "^\s*ACCEPT_EULA_${MACHINE}\s*=\s*\".*\"" conf/local.conf |
-             sed -e "s%^\s*ACCEPT_EULA_${MACHINE}\s*=\s*%%" | sed -e 's/^"//' -e 's/"$//')
-
-    _TDX_AUTO_CONF_CREATED=1
-fi
-
-if [ -e conf/checksum -a "${MACHINE}" = "$oldmach" -a "${DISTRO}" = "$olddisto" -a "${EULA}" = "$eulaacpt" ]; then
-    if sha512sum --quiet -c conf/checksum >/dev/null 2>&1; then
-        return 0
-    fi
-fi
-
-# Evaluate new checksum and regenerate the conf files
-sha512sum "${_TDX_SCRIPTS}"/lib/setup-devices/setup-environment-stm32mp 2>&1 > conf/checksum
-
-if [ ! -f "conf/local.conf" ]; then
-    cp "${_TDX_SCRIPTS}"/../conf/template/local.conf conf/local.conf
-fi
-# ln -sf "${_TDX_SCRIPTS}"/../conf/template/bblayers.conf conf/bblayers.conf
-ln -sf "${_TDX_MANIFESTS}"/README.md README.md
-ln -sf "${_TDX_MANIFESTS}" "${_TDX_OEROOT}"/layers/
-
-if [ ! -f "conf/bblayers.conf" ]; then
-    cat > conf/bblayers.conf <<EOF
+# bblayers.conf is only seeded once (unlike toradex's, which is always
+# regenerated fresh) - matches this script's historical behavior. Kept as an
+# inline heredoc rather than a conf/template/*.conf file: tdx_conf_from_template
+# only supports a template whose basename matches the conf/<file> it writes
+# (conf/template/<file> -> conf/<file>), and this needs conf/bblayers.conf to
+# come from a stm32mp-specific template file, so it doesn't cleanly fit that
+# helper without changing core.sh (out of scope here). Uses tdx_append_once
+# (like every other vendor's bblayers.conf) instead of a bespoke
+# "if [ ! -f ]" check - identical behavior for the normal case (file doesn't
+# pre-exist), and correctly appends on top rather than silently doing
+# nothing if a bblayers.conf ever exists without our "# Torizon" marker.
+tdx_append_once conf/bblayers.conf "# Torizon" <<EOF
 # Torizon
 # LAYER_CONF_VERSION is increased each time build/conf/bblayers.conf
 # changes incompatibly
@@ -145,145 +87,18 @@ BBLAYERS = " \\
   \${OEROOT}/layers/openembedded-core/meta \\
 "
 EOF
-fi
 
-if [ "$_TDX_AUTO_CONF_CREATED" = "0" ]; then
-    cat >> conf/auto.conf <<EOF
-DISTRO ?= "${DISTRO}"
-MACHINE ?= "${MACHINE}"
-SDKMACHINE ?= "${SDKMACHINE}"
+ln -sf "${_TDX_MANIFESTS}/README.md" README.md
+ln -sf "${_TDX_MANIFESTS}" "${_TDX_OEROOT}/layers/"
 
-# Extra options that can be changed by the user
-INHERIT += "rm_work"
-EOF
-else
-    sed -i "s/^DISTRO ?= \"[^\"]*\"$/DISTRO ?= \"${DISTRO}\"/" conf/auto.conf
-    sed -i "s/^MACHINE ?= \"[^\"]*\"$/MACHINE ?= \"${MACHINE}\"/" conf/auto.conf
-    sed -i "s/^SDKMACHINE ?= \"[^\"]*\"$/SDKMACHINE ?= \"${SDKMACHINE}\"/" conf/auto.conf
-fi
+tdx_write_auto_conf "${DISTRO}" "${MACHINE}" "${SDKMACHINE}" "rm_work cyclonedx-export"
+tdx_apply_integration_override conf/auto.conf
 
-cat > conf/site.conf <<_EOF
-SCONF_VERSION = "1"
+tdx_write_site_conf "${_TDX_OEROOT}" "${_TDX_BUILDDIR}"
 
-# Where to store sources
-DL_DIR ?= "${_TDX_OEROOT}/downloads"
+# Unlike nvidia's vestigial EULA compare, stm32mp has a real, single-flag EULA
+# (ST's, covering the ST BSP packages/firmware) that every stm32mp machine
+# needs - unconditional call, no machine exemptions here.
+tdx_eula_prompt "ACCEPT_EULA_${MACHINE}" "${_TDX_OEROOT}/layers/meta-st-stm32mp/conf/eula/${MACHINE}" "ST"
 
-# Where to save shared state
-SSTATE_DIR ?= "${_TDX_OEROOT}/sstate-cache"
-BB_HASHSERVE_DB_DIR ?= "\${SSTATE_DIR}"
-
-# Where to save the build system work output
-TMPDIR = "${_TDX_BUILDDIR}/tmp"
-
-# Where to save the packages and images
-_COMMON_DEPLOY = "${_TDX_BUILDDIR}/deploy"
-DEPLOY_DIR = "\${_COMMON_DEPLOY}\${@'' if d.getVar('BB_CURRENT_MC') == 'default' else '/\${BB_CURRENT_MC}'}"
-
-# Go through the Firewall
-#HTTP_PROXY = "http://${PROXYHOST}:${PROXYPORT}/"
-_EOF
-
-_TDX_EULA_ACCEPTED=""
-
-if egrep -q "^\s*ACCEPT_EULA_${MACHINE}\s*=\s*\"[^\"]*\"" conf/local.conf; then
-    _TDX_EULA_ACCEPTED=1
-fi
-
-if [ -z "$_TDX_EULA_ACCEPTED" ] && [ -n "$EULA" ]; then
-    # EULA is not accepted int conf/local.conf but
-    # user set the EULA environment variable, so we set
-    # ACCEPT_EULA_$MACHINE with $EULA value
-    cat >> conf/local.conf <<EOF
-
-# BSP depends on ST packages and firmware which are covered by an
-# End User License Agreement (EULA). To have the right to use these
-# binaries in the image, ACCEPT_EULA_$MACHINE must be set to '1'
-ACCEPT_EULA_$MACHINE = "$EULA"
-EOF
-elif [ -n "$_TDX_EULA_ACCEPTED" ]; then
-    # EULA has been accepted before and it is set in conf/local.conf.
-    if [ -n "$EULA" ]; then
-        # If EULA is not null, we change it to the value passed by it
-        sed -i "s/^\s*ACCEPT_EULA_${MACHINE}\s*=\s*\"[^\"]*\"$/ACCEPT_EULA_${MACHINE} = \"${EULA}\"/" conf/local.conf
-    fi
-else
-    # EULA has not been accepted and EULA environment
-    # variable is not set. Show user the EULA and ask they accept
-    cat <<EOF
-
-The BSP for $MACHINE depends on packages and firmware which are covered by an
-End User License Agreement (EULA). To have the right to use these binaries
-in your images, you need to read and accept the following...
-
-EOF
-
-    echo
-    REPLY=
-    while [ -z "$REPLY" ]; do
-        echo -n "Would you like to read the EULA ? (y/n) "
-        read -r REPLY
-        case "$REPLY" in
-            y|Y)
-                READ_EULA=1
-                ;;
-            n|N)
-                READ_EULA=0
-                ;;
-            *)
-                REPLY=
-                ;;
-        esac
-    done
-
-    if [ "$READ_EULA" = 1 ]; then
-        more -d "${_TDX_OEROOT}/layers/meta-st-stm32mp/conf/eula/$MACHINE"
-        echo
-        REPLY=
-        while [ -z "$REPLY" ]; do
-            echo -n "Do you accept the EULA you just read? (y/n) "
-            read -r REPLY
-            case "$REPLY" in
-                y|Y)
-                    echo "EULA has been accepted."
-                    cat >> conf/local.conf <<EOF
-
-# BSP depends on ST packages and firmware which are covered by an
-# End User License Agreement (EULA). To have the right to use these
-# binaries in the image, ACCEPT_EULA_$MACHINE must be set to '1'
-ACCEPT_EULA_$MACHINE = "1"
-EOF
-                    ;;
-                n|N)
-                    echo "EULA has not been accepted."
-                    ;;
-                *)
-                    REPLY=
-                    ;;
-            esac
-        done
-    fi
-fi
-
-cat <<EOF
-
-Welcome to Toradex Torizon OS
-
-For more information about OpenEmbedded see their website:
-
-    http://www.openembedded.org/
-
-Your build environment has been configured with:
-
-    MACHINE = ${MACHINE}
-    SDKMACHINE = ${SDKMACHINE}
-    DISTRO = ${DISTRO}
-
-You can now run 'bitbake <target>'
-
-Some of common targets are:
-
-    torizon-docker
-    torizon-minimal
-    torizon-podman
-
-EOF
+tdx_print_banner "Common Torizon OS" yes

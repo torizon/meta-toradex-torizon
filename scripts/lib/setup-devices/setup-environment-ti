@@ -1,10 +1,13 @@
 #!/bin/bash
+# -*- mode: shell-script-mode; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 
-OEROOT=$(pwd)
-BUILDDIR="${1:-build-ti-$DISTRO}"
+OEROOT="${_TDX_OEROOT}"
 
-mkdir -p "${BUILDDIR}/conf"
-cd "${BUILDDIR}"
+# TI is a "delegating family" vendor, but it keeps its own custom BUILDDIR
+# default ("build-ti-$DISTRO", not core.sh's generic "build-$DISTRO"), so
+# that default is passed explicitly as tdx_set_builddir's <arg> fallback
+# rather than relying on its own build-<distro> default.
+tdx_set_builddir "${1:-build-ti-$DISTRO}" "${DISTRO}" || return 1
 
 function wget_retry {
   local url="$1"
@@ -26,6 +29,7 @@ function wget_retry {
   echo "Failed to download $url after $max_retries attempts."
   return 1
 }
+_TDX_EXTRA_CLEANUP_FUNCS+=("wget_retry")
 
 if [ ! -e "conf/bblayers.conf" ]; then
   echo "Downloading sample bblayers.conf from git.ti.com..."
@@ -88,6 +92,11 @@ SFW_FILE"
 EOF
 
 source conf/setenv
+# OEROOT is only needed as a plain shell variable up to this `source` (it's
+# looked up here via conf/setenv's own, already-generated
+# `export OEBASE="${OEROOT}"` line); register it for cleanup so it doesn't
+# leak into the user's interactive shell.
+_TDX_EXTRA_CLEANUP_VARS+=("OEROOT")
 
 # Update DISTRO and MACHINE
 sed -E -i "/(^|#|#.*( |#))DISTRO .*/c\DISTRO = '${DISTRO}'" conf/local.conf
@@ -102,8 +111,7 @@ EOF
   fi
 fi
 
-if ! grep -q "# Torizon" conf/local.conf; then
-  echo "Adapting conf/local.conf for a Torizon OS build."
+if tdx_needs_once conf/local.conf; then
   sed -i "/^TMPDIR .*/c\TMPDIR = \"\${TOPDIR}/tmp\"" conf/local.conf
   sed -i "/^PACKAGE_CLASSES .*/c\# PACKAGE_CLASSES = \"package_deb\"" conf/local.conf
   sed -i "/^EXTRA_IMAGE_FEATURES = \"debug-tweaks\"/c\# EXTRA_IMAGE_FEATURES = \"debug-tweaks\"" conf/local.conf
@@ -111,7 +119,7 @@ if ! grep -q "# Torizon" conf/local.conf; then
   sed -i "/^SSTATE_DIR .*/a BB_HASHSERVE_DB_DIR ?= \"\${SSTATE_DIR}\"" conf/local.conf
   sed -i "s/^DL_DIR = \(.*\)/DL_DIR ?= \1/" conf/local.conf
 
-  cat <<EOF >>conf/local.conf
+  tdx_append_once conf/local.conf "# Torizon" <<EOF
 # Where to save the packages and images
 TI_COMMON_DEPLOY = "\${TOPDIR}/deploy"
 
@@ -124,35 +132,13 @@ EOF
 
 fi
 
-_TDX_MANIFEST_FILE="${OEROOT}"/.repo/manifest.xml
-_TDX_INTEGRATION_BUILD=0
-if [ -L "$_TDX_MANIFEST_FILE" ]; then
-  case "$(basename "$(readlink -f "$_TDX_MANIFEST_FILE")")" in
-    integration.xml|next.xml) _TDX_INTEGRATION_BUILD=1 ;;
-  esac
-elif [ -f "$_TDX_MANIFEST_FILE" ]; then
-  if grep -qE "(integration.xml|next.xml)" "$_TDX_MANIFEST_FILE"; then
-    _TDX_INTEGRATION_BUILD=1
-  fi
-fi
-
 # When building on integration, ensure use-head-next is set so you always get
 # the newest software (u-boot, kernel, aktualizr-torizon, etc). Idempotent, so
 # it also applies when local.conf already existed from a previous run.
-if [ "$_TDX_INTEGRATION_BUILD" = "1" ] && \
-   ! grep -qF 'DISTROOVERRIDES .= ":use-head-next"' conf/local.conf; then
-  cat <<EOF >>conf/local.conf
+tdx_apply_integration_override conf/local.conf
 
-# This is needed when building on integration. With use-head-next you
-# always get the newest software (u-boot, kernel, aktualizr-torizon, etc).
-# Building on integration without use-head-next your build may fail.
-DISTROOVERRIDES .= ":use-head-next"
-EOF
-fi
-
-if ! grep -q "# Torizon" conf/bblayers.conf; then
-  echo "Adapting conf/bblayers.conf for a Torizon OS build."
-  cat <<EOF >>conf/bblayers.conf
+if tdx_needs_once conf/bblayers.conf; then
+  tdx_append_once conf/bblayers.conf "# Torizon" <<EOF
 # Torizon
 BBLAYERS += "\${OEROOT}/sources/meta-toradex-torizon"
 BBLAYERS += "\${OEROOT}/sources/meta-updater"
@@ -161,25 +147,4 @@ OEROOT := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)))}/../.."
 EOF
 fi
 
-cat <<EOF
-
-Welcome to Common Torizon OS
-
-For more information about OpenEmbedded see their website:
-
-    http://www.openembedded.org/
-
-Your build environment has been configured with:
-
-    MACHINE = ${MACHINE}
-    DISTRO = ${DISTRO}
-
-You can now run 'bitbake <target>'
-
-Some of common targets are:
-
-    torizon-docker
-    torizon-minimal
-    torizon-podman
-
-EOF
+tdx_print_banner "Common Torizon OS" no
