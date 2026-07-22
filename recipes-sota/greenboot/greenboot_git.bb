@@ -18,8 +18,8 @@ SRC_URI = "\
     file://01_log_rollback_info.sh \
     "
 
-SRCREV = "2552ba5584a96f1d7930c74f199b816c19e20129"
-PV = "0.15.8+git${SRCPV}"
+SRCREV = "0777806c88ed4f806484bc9d36d198a667576b6f"
+PV = "0.15.9+git${SRCPV}"
 
 RDEPENDS:${PN} = "bash"
 
