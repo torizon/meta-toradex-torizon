@@ -53,6 +53,7 @@ PACKAGECONFIG:append:pn-systemd:tdx-signed = " efi"
 MACHINE_FEATURES:append = " tpm2"
 
 IMAGE_EFI_BOOT_FILES:tdx-signed = " \
+    systemd-bootx64.signed.efi;EFI/BOOT/bootx64.efi \
     loader/keys/auto/PK.auth \
     loader/keys/auto/KEK.auth \
     loader/keys/auto/db.auth \
