@@ -1,37 +1,66 @@
 #!/bin/bash
+# -*- mode: shell-script-mode; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+
+# NXP EULA handling: verified against a real NXP manifest checkout that
+# imx-setup-release.sh/imx-frdm-setup.sh internally source
+# sources/base/setup-environment, which already fully implements
+# ACCEPT_FSL_EULA prompting (EULA env var, interactive y/n, conf/local.conf
+# writing) for both imx93frdm and imx95-19x19-verdin. Do NOT add a
+# tdx_eula_prompt call here - it would double-prompt/double-write
+# ACCEPT_FSL_EULA on top of what NXP's own tooling already does.
 
 # avoiding 'imx-setup-release' clean-up routine
 _TDX_MACHINE="${MACHINE}"
-_TDX_DISTRO="${_TDX_DISTRO_SELECT}"
+# Use the real, policy-resolved $DISTRO (set by the dispatcher's
+# tdx_apply_distro_policy) rather than the stale _TDX_DISTRO_SELECT, which is
+# only the user's raw pre-policy input and is never updated afterward.
+_TDX_DISTRO="${DISTRO}"
+# This script is sourced at top level (no function scope for `local`), so
+# register these one-off bookkeeping variables with core.sh's cleanup sweep
+# instead of leaving them to leak into the user's shell.
+_TDX_EXTRA_CLEANUP_VARS+=("_TDX_MACHINE" "_TDX_DISTRO" "_IMX_SETUP_SCRIPT")
 
 if [ "${_TDX_MACHINE}" = "imx93frdm" ]; then
     _IMX_SETUP_SCRIPT=imx-frdm-setup.sh
 else
     _IMX_SETUP_SCRIPT=imx-setup-release.sh
 fi
-source ${_IMX_SETUP_SCRIPT} -b "${1:-build-$_TDX_DISTRO}"
 
-if ! grep -q "# Torizon" conf/local.conf; then
+# imx-setup-release.sh/imx-frdm-setup.sh read the real $DISTRO env var to
+# derive their own FSLDISTRO and enforce a Wayland-only machine check that
+# fails outright for our "common-torizon" value (NXP's tooling has never
+# heard of it). Unset DISTRO before sourcing so NXP's own tooling falls back
+# to its own default, then restore the effective value afterward so the
+# user's shell/bitbake invocations see the correct DISTRO once this script
+# returns.
+unset DISTRO
+source "${_IMX_SETUP_SCRIPT}" -b "${1:-build-$_TDX_DISTRO}"
+export DISTRO="${_TDX_DISTRO}"
+
+# imx never used to export _TDX_BUILDDIR (only computed it, locally, inside
+# the one-time "# Torizon" guard below) - this is the fix for the historical
+# BUILDDIR-blanking bug: export it on every run, not just the first one.
+tdx_set_builddir_from_cwd
+
+if tdx_needs_once conf/local.conf; then
   sed -i "/^DISTRO .*/c\DISTRO ?= '${_TDX_DISTRO}'" conf/local.conf
 
   sed -i "/^PACKAGE_CLASSES .*/c\# PACKAGE_CLASSES = \"package_deb\"" conf/local.conf
   sed -i "/^EXTRA_IMAGE_FEATURES += \"package-management\"/c\# EXTRA_IMAGE_FEATURES += \"package-management\"" conf/local.conf
 
-  _TDX_OEROOT=$(dirname "$(pwd)")
-  _TDX_BUILDDIR=$(pwd)
-  cat <<EOF >>conf/local.conf
+  tdx_append_once conf/local.conf "# Torizon" <<EOF
 # Where to store sources
-DL_DIR ?= "${_TDX_OEROOT}/downloads"
+DL_DIR ?= "\${BSPDIR}/downloads"
 
 # Where to save shared state
-SSTATE_DIR ?= "${_TDX_OEROOT}/sstate-cache"
+SSTATE_DIR ?= "\${BSPDIR}/sstate-cache"
 BB_HASHSERVE_DB_DIR ?= "\${SSTATE_DIR}"
 
 # Where to save the build system work output
-TMPDIR = "${_TDX_BUILDDIR}/tmp"
+TMPDIR = "\${BSPDIR}/tmp"
 
 # Where to save the packages and images
-TI_COMMON_DEPLOY = "${_TDX_BUILDDIR}/deploy"
+TI_COMMON_DEPLOY = "\${BSPDIR}/deploy"
 DEPLOY_DIR = "\${TI_COMMON_DEPLOY}\${@'' if d.getVar('BB_CURRENT_MC') == 'default' else '/\${BB_CURRENT_MC}'}"
 
 # ease up disk space requirements
@@ -40,38 +69,27 @@ INHERIT += "rm_work"
 # Torizon
 include conf/machine/include/\${MACHINE}.inc
 EOF
+
 fi
 
+# When building on integration, ensure use-head-next is set so you always get
+# the newest software (u-boot, kernel, aktualizr-torizon, etc). Idempotent, so
+# it also applies when local.conf already existed from a previous run.
+tdx_apply_integration_override conf/local.conf
 
-if ! grep -q "# Torizon" conf/bblayers.conf; then 
-  cat <<EOF >>conf/bblayers.conf
+tdx_append_once conf/bblayers.conf "# Torizon" <<EOF
 # Torizon
 BBLAYERS += "\${BSPDIR}/sources/meta-toradex-torizon"
 BBLAYERS += "\${BSPDIR}/sources/meta-updater"
 
 OEROOT := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)))}/../.."
 EOF
-fi
 
-cat <<EOF
-
-Welcome to Common Torizon OS
-
-For more information about OpenEmbedded see their website:
-
-    http://www.openembedded.org/
-
-Your build environment has been configured with:
-
-    MACHINE = ${_TDX_MACHINE}
-    DISTRO = ${_TDX_DISTRO}
-
-You can now run 'bitbake <target>'
-
-Some of common targets are:
-
-    torizon-docker
-    torizon-minimal
-    torizon-podman
-
-EOF
+# The banner uses the captured _TDX_MACHINE/_TDX_DISTRO (not $MACHINE/$DISTRO
+# directly), since imx-setup-release.sh/imx-frdm-setup.sh mutate MACHINE as
+# part of their own cleanup routine. The temporary
+# MACHINE=/DISTRO= prefix below only applies for the duration of this one
+# tdx_print_banner call (bash restores the prior values afterwards) and lets
+# us reuse core.sh's shared banner text without it needing to know about
+# imx's variable-mutation quirk.
+MACHINE="${_TDX_MACHINE}" DISTRO="${_TDX_DISTRO}" tdx_print_banner "Common Torizon OS" no
