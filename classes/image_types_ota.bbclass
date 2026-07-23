@@ -27,13 +27,6 @@ IMAGE_CMD:ota () {
 		touch ${OTA_SYSROOT}/boot/loader/syslinux.cfg
 		ln -s ../loader/syslinux.cfg ${OTA_SYSROOT}/boot/syslinux/syslinux.cfg
 	elif [ "${OSTREE_BOOTLOADER}" = "systemd-boot" ]; then
-		mkdir -p ${OTA_SYSROOT}/boot/loader/entries
-		mkdir -p ${OTA_SYSROOT}/boot/EFI/BOOT
-		# Install systemd-boot EFI binary
-		cp ${DEPLOY_DIR_IMAGE}/systemd-bootx64.efi \
-		   ${OTA_SYSROOT}/boot/EFI/BOOT/BOOTX64.EFI
-		printf 'timeout 5\ndefault @saved\n' \
-		    > ${OTA_SYSROOT}/boot/loader/loader.conf
 		# Tell libostree not to invoke grub2-editenv (C3)
 		ostree config --repo=${OTA_SYSROOT}/ostree/repo set sysroot.bootloader none
 	elif [ "${OSTREE_BOOTLOADER}" = "none" ]; then
