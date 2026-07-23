@@ -88,6 +88,7 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "intel-corei7-64"    "meta-intel" \
                  "jetson-orin-nano-devkit" "meta-tegra" \
                  "jetson-orin-nano-devkit-nvme" "meta-tegra" \
+                 "lec-mtk-i1200-ufs"  "meta-adlink-mtk" \
                  "sl1680"             "meta-synaptics" \
                  "sl2619"             "meta-synaptics" \
                  "smarc-rzv2l"        "rz-community-bsp" \
@@ -191,6 +192,9 @@ else
         ;;
         jetson-orin-nano-devkit|jetson-orin-nano-devkit-nvme)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-nvidia
+        ;;
+        lec-mtk-i1200-ufs)
+            DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-mtk $@
         ;;
         smarc-rzv2l)
             DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-renesas

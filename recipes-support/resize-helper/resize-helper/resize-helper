@@ -56,25 +56,43 @@ PART_TABLE_TYPE=$(echo "${INFO}" | grep '^ID_PART_TABLE_TYPE=' | cut -d'=' -f2)
 DEVICE=$(udevadm info --query=path --name=${ROOT_DEVICE} | awk -F'/' '{print $(NF-1)}')
 DEVICE="/dev/${DEVICE}"
 
-SIZE=$(blockdev --getsz ${DEVICE})
-TYPE="p\n"
 if [ "$PART_TABLE_TYPE" = "gpt" ]; then
-	${SGDISK} -e ${DEVICE}
-	SIZE=$(($SIZE - 33)) # the GPT end of disk is 34 sectors
-	TYPE=""
-fi
-
-# Use fdisk to repartition
-# fdisk uses a ram image of the parition table until a write is performed
-# so the sequence is to delete the partition and recreate it at the same
-# starting point but making it the size of the available disk.
-#
-END=$((${SIZE} - 1))
-PARTOF=$(echo "${INFO}" | grep '^ID_PART_ENTRY_OFFSET=' | cut -d'=' -f2)
-echo -e "d\n${PART_ENTRY_NUMBER}\nn\n${TYPE}${PART_ENTRY_NUMBER}\n${PARTOF}\n${END}\nw\n" | ${FDISK} ${DEVICE}
-
-if [ -n "${PART_ENTRY_NAME}" ]; then
-	${SGDISK} --change-name=${PART_ENTRY_NUMBER}:"${PART_ENTRY_NAME}" ${DEVICE}
+	# sgdisk speaks the device's logical sector size, so the grow is
+	# correct on 4Kn media where blockdev/udev report 512-byte units.
+	# Read start and attribute flags before altering the table: the
+	# delete/recreate below resets both, and the attributes carry the
+	# legacy-BIOS-bootable flag (WIC --active) that U-Boot's distro_bootcmd
+	# scan uses to find the rootfs.
+	PART_INFO=$(${SGDISK} --info=${PART_ENTRY_NUMBER} ${DEVICE})
+	START=$(echo "${PART_INFO}" | awk '/^First sector:/ {print $3}')
+	ATTRS=$(echo "${PART_INFO}" | awk '/^Attribute flags:/ {print $3}')
+	# Recreating at an empty or zero start would place the partition at
+	# sgdisk's default offset, not the original, and corrupt the rootfs.
+	case "${START}" in
+		''|0|*[!0-9]*)
+			echo "E: could not read first sector of partition ${PART_ENTRY_NUMBER} on ${DEVICE}" >&2
+			exit 1
+			;;
+	esac
+	${SGDISK} --move-second-header ${DEVICE}
+	# end 0 = grow to the last available sector
+	${SGDISK} --delete=${PART_ENTRY_NUMBER} --new=${PART_ENTRY_NUMBER}:${START}:0 ${DEVICE}
+	if [ -n "${PART_ENTRY_NAME}" ]; then
+		${SGDISK} --change-name=${PART_ENTRY_NUMBER}:"${PART_ENTRY_NAME}" ${DEVICE}
+	fi
+	if [ -n "${ATTRS}" ]; then
+		${SGDISK} --attributes=${PART_ENTRY_NUMBER}:=:${ATTRS} ${DEVICE}
+	fi
+else
+	# Use fdisk to repartition
+	# fdisk uses a ram image of the parition table until a write is performed
+	# so the sequence is to delete the partition and recreate it at the same
+	# starting point but making it the size of the available disk.
+	#
+	SIZE=$(blockdev --getsz ${DEVICE})
+	END=$((${SIZE} - 1))
+	PARTOF=$(echo "${INFO}" | grep '^ID_PART_ENTRY_OFFSET=' | cut -d'=' -f2)
+	echo -e "d\n${PART_ENTRY_NUMBER}\nn\np\n${PART_ENTRY_NUMBER}\n${PARTOF}\n${END}\nw\n" | ${FDISK} ${DEVICE}
 fi
 
 ${PARTX} -u ${DEVICE}
