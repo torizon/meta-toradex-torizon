@@ -74,7 +74,12 @@ EOF
 
     # sd1 is the factory_setting partition, already being formatted
     partition_count=2
-    for partition in $(grep -v '#' ${EMMC_PART_LIST_FILE} | cut -d'_' -f 1); do
+    grep -v '#' ${EMMC_PART_LIST_FILE} | while read -r partition_line; do
+        # Isolate the partition name (first column) before stripping any _a/_b
+        # suffix: cut -d'_' -f1 alone would return the whole line unchanged for
+        # names with no underscore (e.g. "misc"), which then word-splits on the
+        # embedded whitespace/commas and corrupts the generated image list.
+        partition=$(echo "${partition_line}" | awk '{print $1}' | cut -d'_' -f 1)
         # factory_setting has nothing to flash and is already being formatted
         [ "${partition}" = "factory" ] && continue
         if [ "${partition}" = "rootfs" ]; then
