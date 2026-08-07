@@ -27,8 +27,6 @@ SRC_URI = " \
     git://git.ti.com/git/processor-sdk/psdk_fw.git;protocol=https;branch=${BRANCH} \
 "
 
-S = "${WORKDIR}/git"
-
 PV = "1.0.0"
 
 # Secure Build
