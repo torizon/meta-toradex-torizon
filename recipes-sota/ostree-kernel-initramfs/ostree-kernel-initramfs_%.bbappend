@@ -43,4 +43,5 @@ do_install:append () {
         fi
     fi
 }
-do_install[depends] += "${@'virtual/dtb:do_deploy' if '${PREFERRED_PROVIDER_virtual/dtb}' else ''}"
+OSTREE_DTB_DEPENDS ?= "${@'virtual/dtb:do_deploy' if d.getVar('PREFERRED_PROVIDER_virtual/dtb') else ''}"
+do_install[depends] += "${OSTREE_DTB_DEPENDS}"
