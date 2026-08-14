@@ -1,0 +1,50 @@
+From 73e78a5822224bd7640888b6b5c2ab6b3f35bd13 Mon Sep 17 00:00:00 2001
+From: Jianyong Wu <wujianyong@hygon.cn>
+Date: Wed, 7 Aug 2024 10:27:21 +0800
+Subject: [PATCH] run: fix GetList return empty issue for throttledevice
+
+Test "--device-read-bps" "--device-write-bps" will fail. The root
+cause is that GetList helper return empty as its local variable
+initialized to zero size.
+
+This patch fix it by setting the related slice size to non-zero.
+
+Signed-off-by: Jianyong Wu <wujianyong@hygon.cn>
+Fixes: #5321
+
+Upstream-Status: Backport [https://github.com/docker/cli/commit/73e78a5822224bd7640888b6b5c2ab6b3f35bd13]
+Signed-off-by: Vladimir Khusainov <vlad@emcraft.com>
+---
+Adapted for this recipe: re-rooted from opts/ to cli/opts/, because the
+client is fetched with destsuffix=git/cli and patches apply at ${S}.
+
+Without it the client accepts --device-read-bps, --device-write-bps,
+--device-read-iops and --device-write-iops, then sends an empty list to
+the daemon: no error, no warning, and no limit on the container. The
+kernel capability underneath is unaffected.
+
+Upstream released the fix in docker/cli v25.0.7 (25.0 branch cherry-pick
+a73610dc4fe8876c4e38f0feab2b629c11a4f244) and v27.1.2. Drop this patch
+once meta-virtualization carries a docker/cli at v25.0.7 / v27.1.2 or
+later -- its scarthgap tip already does. A client that already has the
+fix makes do_patch fail rather than silently reverting it.
+
+ cli/opts/throttledevice.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cli/opts/throttledevice.go b/cli/opts/throttledevice.go
+index bdf454eb27..8bf1288047 100644
+--- a/cli/opts/throttledevice.go
++++ b/cli/opts/throttledevice.go
+@@ -94,7 +94,7 @@ func (opt *ThrottledeviceOpt) String() string {
+ 
+ // GetList returns a slice of pointers to ThrottleDevices.
+ func (opt *ThrottledeviceOpt) GetList() []*blkiodev.ThrottleDevice {
+-	out := make([]*blkiodev.ThrottleDevice, 0, len(opt.values))
++	out := make([]*blkiodev.ThrottleDevice, len(opt.values))
+ 	copy(out, opt.values)
+ 	return out
+ }
+-- 
+2.34.1
+
