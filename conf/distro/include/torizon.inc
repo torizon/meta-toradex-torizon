@@ -1,6 +1,10 @@
 require conf/distro/include/tdx-base.inc
 require base-distro.inc
 
+# Required after tdx-base.inc so Torizon's own version identity (hard
+# assignments in versioning.inc) wins over the BSP's tdx-base.inc defaults.
+require conf/distro/include/versioning.inc
+
 IMAGE_CLASSES:append = " image_type_torizon"
 IMAGE_CLASSES:remove = "image_type_tezi"
 
