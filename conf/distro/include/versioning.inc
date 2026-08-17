@@ -3,13 +3,9 @@
 TDX_BUILDNBR ?= "0"
 TDX_PURPOSE ?= "Testing"
 
-# Hard assignments below: this file is the single source of truth for
-# Torizon's own version identity. Distro includes (e.g. torizon.inc) that
-# also pull in BSP config (tdx-base.inc) require this file last, so these
-# values always win regardless of what the BSP sets for its own versioning.
-TDX_MAJOR = "0"
-TDX_MINOR = "0"
-TDX_PATCH = "0"
+TDX_MAJOR ?= "0"
+TDX_MINOR ?= "0"
+TDX_PATCH ?= "0"
 
 def get_tdx_prerelease(purpose, datetime):
     if purpose == "Testing":
@@ -23,15 +19,15 @@ def get_tdx_prerelease(purpose, datetime):
     else:
         return '-devel-%s' % (datetime)
 
-TDX_BUILD = "+build.${TDX_BUILDNBR}"
-TDX_MATRIX_BUILD_TIME = "${DATETIME}"
+TDX_BUILD ?= "+build.${TDX_BUILDNBR}"
+TDX_MATRIX_BUILD_TIME ?= "${DATETIME}"
 TDX_MATRIX_BUILD_TIME[vardepsexclude] = "DATETIME"
-TDX_PRERELEASE = "${@get_tdx_prerelease(d.getVar('TDX_PURPOSE'), d.getVar('TDX_MATRIX_BUILD_TIME'))}"
-TDX_RELEASE = "${TDX_MAJOR}.${TDX_MINOR}.${TDX_PATCH}"
+TDX_PRERELEASE ?= "${@get_tdx_prerelease(d.getVar('TDX_PURPOSE'), d.getVar('TDX_MATRIX_BUILD_TIME'))}"
+TDX_RELEASE ?= "${TDX_MAJOR}.${TDX_MINOR}.${TDX_PATCH}"
 
 # Toradex Version number without date for U-Boot/Kernel and other Toradex
 # specific software artifacts.
-TDX_VERSION = "${TDX_RELEASE}${@'' if d.getVar('TDX_PURPOSE') == 'Release' else '-devel'}"
+TDX_VERSION ?= "${TDX_RELEASE}${@'' if d.getVar('TDX_PURPOSE') == 'Release' else '-devel'}"
 
 # Complete image version with date and build number
 DISTRO_VERSION = "${TDX_RELEASE}${TDX_PRERELEASE}${TDX_BUILD}"

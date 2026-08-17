@@ -1,9 +1,15 @@
-require conf/distro/include/tdx-base.inc
+# Set the default package class before requiring Poky as it also
+# specifies a default. This allows us to keep the override semantics.
+PACKAGE_CLASSES ?= "package_ipk"
+
+require conf/distro/poky.conf
+require conf/distro/include/arm-defaults.inc
+
 require base-distro.inc
 
-# Required after tdx-base.inc so Torizon's own version identity (hard
-# assignments in versioning.inc) wins over the BSP's tdx-base.inc defaults.
 require conf/distro/include/versioning.inc
+
+require tdx-bsp.inc
 
 IMAGE_CLASSES:append = " image_type_torizon"
 IMAGE_CLASSES:remove = "image_type_tezi"
