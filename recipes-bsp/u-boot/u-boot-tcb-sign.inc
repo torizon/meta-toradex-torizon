@@ -140,13 +140,118 @@ concat_dtb:prepend:verdin-am62() {
     tcbsgn_snapshot_pristine_dtb "$@"
 }
 
+# TCB signing export tree, for the AM62. Its two multiconfigs produce files with
+# identical basenames and different content, so the flat file list used on the
+# iMX8M cannot describe them: export one root per multiconfig instead, each a
+# binman working directory a consumer can enter and run binman in. Deliberately
+# absent, for the consumer to supply: arch/arm/mach-k3/keys/ and u-boot.dtb.
+
+# Root of the export tree, relative to DEPLOYDIR. TCB_SIGNING_FILELIST must
+# name the same directory; keep the two in step.
+TCB_SIGNING_EXPORT_DIR ?= "tcb-signing"
+TCB_SIGNING_EXPORT_DIR_A53 ?= "${TCB_SIGNING_EXPORT_DIR}/a53"
+
+# Where the binman descriptor's include path looks for firmware. Fixed, so that
+# distro configuration cannot move it out from under a consumer.
+TCB_SIGNING_EXPORT_FWDIR ?= "usr/lib/firmware"
+
+# Install a regular file into the export tree, creating its directory. Symlinks
+# are dereferenced, so the tarball carries no dangling link and no duplicate.
+tcbsgn_export_install() {
+    local src="${1?source file}"
+    local dstdir="${2?destination directory}"
+
+    if [ ! -f "${src}" ]; then
+        bbfatal "\"${src}\" not found, but it is required by the TCB signing" \
+                "export for MACHINE \"${MACHINE}\". Either the U-Boot build" \
+                "layout changed or this artifact is no longer produced;" \
+                "do_deploy() must be reviewed."
+    fi
+
+    install -d "${dstdir}"
+    install -m 0644 "${src}" "${dstdir}/"
+}
+
+# Everything binman needs to rebuild and re-sign tispl.bin, u-boot.img and
+# firmware-verdin-am62-*. All of it comes from this recipe's own workdir, ${S}
+# or sysroot, which is why the tarball recipe needs no other producer.
+tcbsgn_deploy_am62_export_a53() {
+    local def_dt="k3-am625-verdin-wifi-dev"
+    local boarddir="board/toradex/verdin-am62"
+    local root="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_A53}"
+    local srcfw="${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware"
+    local dstfw="${root}/${TCB_SIGNING_EXPORT_FWDIR}"
+    local f
+
+    tcbsgn_uboot_set_config_dir
+
+    # Assumptions the paths below are written against. The of-list checks also
+    # guard the layout: one DTB per root holds only while binman builds one DT.
+    tcbsgn_check_config "CONFIG_SYS_VENDOR" "toradex"
+    tcbsgn_check_config "CONFIG_SYS_BOARD" "verdin-am62"
+    tcbsgn_check_config "CONFIG_DEFAULT_DEVICE_TREE" "${def_dt}"
+    tcbsgn_check_config "CONFIG_OF_LIST" "${def_dt}"
+    tcbsgn_check_config "CONFIG_SPL_OF_LIST" "${def_dt}"
+
+    # The binman image descriptor, taken from the key-free snapshot: u-boot.dtb
+    # in the build tree already carries this build's FIT key.
+    tcbsgn_export_install "${tcbsgn_cfgdir}/${TCB_SIGNING_UBOOT_DTB_NOKEYS}" "${root}"
+
+    # Payload of the u-boot FIT subimage.
+    tcbsgn_export_install "${tcbsgn_cfgdir}/u-boot-nodtb.bin" "${root}"
+
+    # Only u-boot-spl-nodtb.bin is a payload; binman reads the unstripped ELF
+    # and u-boot-spl.sym to resolve SPL symbols.
+    for f in u-boot-spl u-boot-spl.bin u-boot-spl-dtb.bin u-boot-spl-nodtb.bin \
+             u-boot-spl.sym; do
+        tcbsgn_export_install "${tcbsgn_cfgdir}/spl/${f}" "${root}/spl"
+    done
+
+    # SPL control DTB: tispl.bin's signed fdt-0 payload.
+    tcbsgn_export_install "${tcbsgn_cfgdir}/spl/dts/${def_dt}.dtb" "${root}/spl/dts"
+
+    # of-list DTB. Same basename as the SPL control and kernel DTBs, different
+    # content, which is why this export is a tree and not a file list.
+    tcbsgn_export_install "${tcbsgn_cfgdir}/arch/arm/dts/${def_dt}.dtb" \
+                          "${root}/arch/arm/dts"
+
+    # binman regenerates the TIFS and DM config blobs from these rather than
+    # reusing the built ones; each root keeps its own copy to stay independent.
+    for f in board pm rm sec; do
+        tcbsgn_export_install "${S}/${boarddir}/${f}-cfg.yaml" "${root}/${boarddir}"
+    done
+    tcbsgn_export_install "${S}/arch/arm/mach-k3/schema.yaml" \
+                          "${root}/arch/arm/mach-k3"
+
+    # Firmware subimage inputs, at the sysroot paths meta-ti's u-boot-ti.inc
+    # uses (PACKAGECONFIG[atf], [optee], [dm]). bl31.bin sits at the root.
+    tcbsgn_export_install "${RECIPE_SYSROOT}/firmware/bl31.bin" "${root}/firmware"
+    tcbsgn_export_install "${srcfw}/bl32.bin" "${dstfw}"
+    tcbsgn_export_install "${srcfw}/ti-dm/${PLAT_SFX}/${DM_FIRMWARE}" \
+                          "${dstfw}/ti-dm/${PLAT_SFX}"
+
+    # All three stub blobs go into tispl.bin whatever the device type; the
+    # per-variant ones belong to the k3r5 root.
+    for f in gp hs-cert hs-enc; do
+        tcbsgn_export_install "${srcfw}/ti-sysfw/ti-fs-stub-firmware-am62x-${f}.bin" \
+                              "${dstfw}/ti-sysfw"
+    done
+
+    # The A53 descriptor assembles the OTA container byproducts from these;
+    # do_compile stages them from the k3r5 multiconfig through mcdepends.
+    for f in gp hs hs-fs; do
+        tcbsgn_export_install "${srcfw}/tiboot3-am62x-${f}-verdin.bin" "${root}"
+    done
+}
+
 do_deploy:append:verdin-am62() {
     # Mirrors the condition under which uboot_assemble_fitimage_helper() calls
-    # concat_dtb(), i.e. exactly the case in which the snapshot is taken.
+    # concat_dtb(): without the snapshot the export tree is incomplete anyway.
     #
     # TODO: gate this on the K3 counterpart of TCB_SIGNING_SUPPORT once the
     # tarball export defines it, instead of repeating the condition here.
     if [ "${UBOOT_SIGN_ENABLE}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
         tcbsgn_deploy_pristine_dtb
+        tcbsgn_deploy_am62_export_a53
     fi
 }
