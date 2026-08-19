@@ -19,6 +19,18 @@ tcbsgn_uboot_set_config_dir() {
     fi
 }
 
+# Set ${tcbsgn_cfgtype} to the UBOOT_CONFIG entry U-Boot was built for, which
+# names the per-type files left in the build directory. More than one entry is
+# fatal, and the result comes back in a variable, as above.
+tcbsgn_uboot_set_config_type() {
+    set -- ${UBOOT_CONFIG}
+    if [ $# -ne 1 ]; then
+        bbfatal "Expected a single U-Boot config type in UBOOT_CONFIG" \
+                "(\"${UBOOT_CONFIG}\"); do_deploy() must be reviewed."
+    fi
+    tcbsgn_cfgtype="$1"
+}
+
 tcbsgn_check_config() {
     local cfg="${1?property name in the U-Boot config}"
     local exp="${2?property value}"
@@ -152,6 +164,11 @@ TCB_SIGNING_EXPORT_DIR ?= "tcb-signing"
 TCB_SIGNING_EXPORT_DIR_A53 ?= "${TCB_SIGNING_EXPORT_DIR}/a53"
 TCB_SIGNING_EXPORT_DIR_K3R5 ?= "${TCB_SIGNING_EXPORT_DIR}/k3r5"
 
+# Bump the format version only for a change consumers have to notice; the roots
+# list must name every root the deploy code produces.
+TCB_SIGNING_MANIFEST_VERSION ?= "1"
+TCB_SIGNING_MANIFEST_ROOTS ?= "k3r5 a53"
+
 # Where the A53 binman descriptor's include path looks for firmware. Fixed, so
 # distro configuration cannot move it; the k3r5 one names ti-sysfw/ instead.
 TCB_SIGNING_EXPORT_FWDIR ?= "usr/lib/firmware"
@@ -245,6 +262,52 @@ tcbsgn_deploy_am62_export_a53() {
     done
 }
 
+# Manifest at the root of the export tree: which layout to expect, and which
+# U-Boot produced the artifacts, so that a consumer whose binman comes from
+# another revision is detectable instead of silently producing different output.
+# The A53 side writes it alone, since everything in it is build-wide and both
+# multiconfigs build one recipe at one SRCREV.
+tcbsgn_write_am62_manifest() {
+    local outdir="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR}"
+    local verfile ubootversion ubootrelease roots sep r
+
+    tcbsgn_uboot_set_config_dir
+    tcbsgn_uboot_set_config_type
+
+    # Read the version from the file u-boot-ota.inc already generates in
+    # do_compile, so the two cannot disagree and no second make run is needed.
+    verfile="${tcbsgn_cfgdir}/u-boot-version.json-${tcbsgn_cfgtype}"
+    if [ ! -f "${verfile}" ]; then
+        bbfatal "\"${verfile}\" not found; the TCB signing manifest takes the" \
+                "U-Boot version from it. Check whether u-boot-ota.inc still" \
+                "generates it in do_compile()."
+    fi
+
+    ubootversion=$(sed -ne 's/^[[:space:]]*"ubootversion"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "${verfile}")
+    ubootrelease=$(sed -ne 's/^[[:space:]]*"ubootrelease"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "${verfile}")
+    if [ -z "${ubootversion}" -o -z "${ubootrelease}" ]; then
+        bbfatal "Could not read ubootversion/ubootrelease out of" \
+                "\"${verfile}\"; its format must have changed."
+    fi
+
+    roots=""
+    sep=""
+    for r in ${TCB_SIGNING_MANIFEST_ROOTS}; do
+        roots="${roots}${sep}\"${r}\""
+        sep=", "
+    done
+
+    install -d "${outdir}"
+    printf '{\n  "format_version": %s,\n  "machine": "%s",\n  "uboot": {\n    "version": "%s",\n    "release": "%s"\n  },\n  "roots": [%s]\n}\n' \
+           "${TCB_SIGNING_MANIFEST_VERSION}" "${MACHINE}" \
+           "${ubootversion}" "${ubootrelease}" "${roots}" \
+           > "${outdir}/manifest.json"
+
+    # Explicit mode: the tarball preserves it, and a umask-dependent one would
+    # make the archive differ between builds.
+    chmod 0644 "${outdir}/manifest.json"
+}
+
 # Everything binman needs to rebuild and re-sign the tiboot3-am62x-*-verdin
 # containers, sourced from this recipe's own workdir as in the A53 root above.
 tcbsgn_deploy_am62_export_k3r5() {
@@ -313,5 +376,6 @@ do_deploy:append:verdin-am62() {
     if [ "${UBOOT_SIGN_ENABLE}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
         tcbsgn_deploy_pristine_dtb
         tcbsgn_deploy_am62_export_a53
+        tcbsgn_write_am62_manifest
     fi
 }
