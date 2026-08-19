@@ -150,9 +150,10 @@ concat_dtb:prepend:verdin-am62() {
 # name the same directory; keep the two in step.
 TCB_SIGNING_EXPORT_DIR ?= "tcb-signing"
 TCB_SIGNING_EXPORT_DIR_A53 ?= "${TCB_SIGNING_EXPORT_DIR}/a53"
+TCB_SIGNING_EXPORT_DIR_K3R5 ?= "${TCB_SIGNING_EXPORT_DIR}/k3r5"
 
-# Where the binman descriptor's include path looks for firmware. Fixed, so that
-# distro configuration cannot move it out from under a consumer.
+# Where the A53 binman descriptor's include path looks for firmware. Fixed, so
+# distro configuration cannot move it; the k3r5 one names ti-sysfw/ instead.
 TCB_SIGNING_EXPORT_FWDIR ?= "usr/lib/firmware"
 
 # Install a regular file into the export tree, creating its directory. Symlinks
@@ -242,6 +243,65 @@ tcbsgn_deploy_am62_export_a53() {
     for f in gp hs hs-fs; do
         tcbsgn_export_install "${srcfw}/tiboot3-am62x-${f}-verdin.bin" "${root}"
     done
+}
+
+# Everything binman needs to rebuild and re-sign the tiboot3-am62x-*-verdin
+# containers, sourced from this recipe's own workdir as in the A53 root above.
+tcbsgn_deploy_am62_export_k3r5() {
+    local def_dt="k3-am625-verdin-r5"
+    local boarddir="board/toradex/verdin-am62"
+    local root="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_K3R5}"
+    local srcfw="${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware"
+    local f
+
+    tcbsgn_uboot_set_config_dir
+
+    # Same checks as the A53 root, against this multiconfig's own values.
+    tcbsgn_check_config "CONFIG_SYS_VENDOR" "toradex"
+    tcbsgn_check_config "CONFIG_SYS_BOARD" "verdin-am62"
+    tcbsgn_check_config "CONFIG_DEFAULT_DEVICE_TREE" "${def_dt}"
+    tcbsgn_check_config "CONFIG_OF_LIST" "${def_dt}"
+    tcbsgn_check_config "CONFIG_SPL_OF_LIST" "${def_dt}"
+
+    # The binman image descriptor. No snapshot is needed: FIT signing is off in
+    # this multiconfig, so u-boot.dtb never receives a key.
+    tcbsgn_export_install "${tcbsgn_cfgdir}/${UBOOT_DTB_BINARY}" "${root}"
+
+    # u-boot-spl.bin is the payload; binman reads the unstripped ELF and
+    # u-boot-spl.sym to resolve SPL symbols.
+    for f in u-boot-spl u-boot-spl.bin u-boot-spl-dtb.bin u-boot-spl-nodtb.bin \
+             u-boot-spl.sym; do
+        tcbsgn_export_install "${tcbsgn_cfgdir}/spl/${f}" "${root}/spl"
+    done
+
+    # of-list DTB. Same basename as the A53 root's, different content, which is
+    # why each multiconfig gets a root of its own.
+    tcbsgn_export_install "${tcbsgn_cfgdir}/arch/arm/dts/${def_dt}.dtb" \
+                          "${root}/arch/arm/dts"
+
+    # binman regenerates the TIFS and DM config blobs from these rather than
+    # reusing the built ones; each root keeps its own copy to stay independent.
+    for f in board pm rm sec; do
+        tcbsgn_export_install "${S}/${boarddir}/${f}-cfg.yaml" "${root}/${boarddir}"
+    done
+    tcbsgn_export_install "${S}/arch/arm/mach-k3/schema.yaml" \
+                          "${root}/arch/arm/mach-k3"
+
+    # All five TIFS blobs: the descriptor declares gp, hs and hs-fs whatever
+    # the device type, and --allow-missing turns a gap into an invalid container.
+    for f in gp hs-cert hs-enc hs-fs-cert hs-fs-enc; do
+        tcbsgn_export_install "${srcfw}/ti-sysfw/ti-fs-firmware-am62x-${f}.bin" \
+                              "${root}/ti-sysfw"
+    done
+}
+
+do_deploy:append:verdin-am62-k3r5() {
+    # MACHINE gains a "-k3r5" suffix here, so a :verdin-am62 override does not
+    # reach this task. No FIT is built, so there is no condition to mirror.
+    #
+    # TODO: gate this on the K3 counterpart of TCB_SIGNING_SUPPORT once the
+    # tarball export defines it.
+    tcbsgn_deploy_am62_export_k3r5
 }
 
 do_deploy:append:verdin-am62() {
