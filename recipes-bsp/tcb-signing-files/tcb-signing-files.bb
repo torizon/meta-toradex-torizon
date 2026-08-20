@@ -12,7 +12,9 @@ require recipes-bsp/tcb-signing-files/tcb-signing-files.inc
 inherit deploy nopackages
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
-COMPATIBLE_MACHINE = "(verdin-imx8mp|verdin-imx8mm)"
+# Anchored: unanchored, "verdin-am62" would also match verdin-am62p and the
+# k3r5 multiconfig's verdin-am62-k3r5, neither of which this recipe packs for.
+COMPATIBLE_MACHINE = "^(verdin-imx8mp|verdin-imx8mm|verdin-am62)$"
 
 # bitbake world would otherwise build this on machines where the feature is off
 # and nothing ever deploys the files below.
@@ -31,6 +33,10 @@ B = "${WORKDIR}/build"
 # DEPLOY_DIR_IMAGE is otherwise just a directory that may not have been filled
 # in yet, so wait on the deploy tasks of the recipes that fill it.
 do_compile[depends] += "${@' '.join('%s:do_deploy' % r for r in d.getVar('TCB_SIGNING_INPUT_DEPENDS').split())}"
+
+# Some machines build part of their input in another multiconfig, which needs an
+# edge of its own; see TCB_SIGNING_INPUT_MCDEPENDS.
+do_compile[mcdepends] += "${TCB_SIGNING_INPUT_MCDEPENDS}"
 
 # The filelist decides the archive's contents, and the enable condition decides
 # whether anything downstream uses it.
