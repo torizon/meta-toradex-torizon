@@ -154,8 +154,12 @@ tcbsgn_deploy_pristine_dtb() {
                     "${DEPLOYDIR}/${TCB_SIGNING_UBOOT_DTB_NOKEYS}"
 }
 
+# Gated: oe-core calls concat_dtb() for every K3 machine with FIT signing on,
+# and the snapshot's guards would fail builds that export nothing.
 concat_dtb:prepend:verdin-am62() {
-    tcbsgn_snapshot_pristine_dtb "$@"
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" ]; then
+        tcbsgn_snapshot_pristine_dtb "$@"
+    fi
 }
 
 # TCB signing export tree, for the AM62. Its two multiconfigs produce files with
@@ -364,21 +368,18 @@ tcbsgn_deploy_am62_export_k3r5() {
 }
 
 do_deploy:append:verdin-am62-k3r5() {
-    # MACHINE gains a "-k3r5" suffix here, so a :verdin-am62 override does not
-    # reach this task. No FIT is built, so there is no condition to mirror.
-    #
-    # TODO: gate this on the K3 counterpart of TCB_SIGNING_SUPPORT once the
-    # tarball export defines it.
-    tcbsgn_deploy_am62_export_k3r5
+    # MACHINE gains a "-k3r5" suffix here, so :verdin-am62 overrides do not
+    # reach this task, TCB_SIGNING_SUPPORT included, hence its own value for it.
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" ]; then
+        tcbsgn_deploy_am62_export_k3r5
+    fi
 }
 
 do_deploy:append:verdin-am62() {
-    # Mirrors the condition under which uboot_assemble_fitimage_helper() calls
-    # concat_dtb(): without the snapshot the export tree is incomplete anyway.
-    #
-    # TODO: gate this on the K3 counterpart of TCB_SIGNING_SUPPORT once the
-    # tarball export defines it, instead of repeating the condition here.
-    if [ "${UBOOT_SIGN_ENABLE}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
+    # TCB_SIGNING_SUPPORT already requires FIT signing here, which is what
+    # leaves the snapshot behind; the second test completes the condition under
+    # which uboot_assemble_fitimage_helper() calls concat_dtb().
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
         tcbsgn_deploy_pristine_dtb
         tcbsgn_deploy_am62_export_a53
         tcbsgn_write_am62_manifest
