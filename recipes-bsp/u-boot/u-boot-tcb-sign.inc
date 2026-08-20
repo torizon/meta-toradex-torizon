@@ -1,5 +1,11 @@
 # Deploy additional files needed by TorizonCore Builder to recreate the
 # bootloader container from its constituent parts, for TCB's signing feature.
+#
+# Both the u-boot-toradex (NXP) and u-boot-toradex-ti (K3) bbappends parse this,
+# so nothing here may assume one SoC family: every task append is keyed to a
+# machine override. The export root comes from the include below, whose file
+# list must name the same directory this file installs into.
+require recipes-bsp/tcb-signing-files/tcb-signing-files.inc
 
 # Set ${tcbsgn_cfgdir} to the directory U-Boot was built in, following the same
 # two branches as oe-core's do_uboot_assemble_fitimage(). More than one
@@ -158,9 +164,8 @@ concat_dtb:prepend:verdin-am62() {
 # binman working directory a consumer can enter and run binman in. Deliberately
 # absent, for the consumer to supply: arch/arm/mach-k3/keys/ and u-boot.dtb.
 
-# Root of the export tree, relative to DEPLOYDIR. TCB_SIGNING_FILELIST must
-# name the same directory; keep the two in step.
-TCB_SIGNING_EXPORT_DIR ?= "tcb-signing"
+# One root per multiconfig inside the export tree. TCB_SIGNING_EXPORT_DIR names
+# the tree itself and is defined in the include required above.
 TCB_SIGNING_EXPORT_DIR_A53 ?= "${TCB_SIGNING_EXPORT_DIR}/a53"
 TCB_SIGNING_EXPORT_DIR_K3R5 ?= "${TCB_SIGNING_EXPORT_DIR}/k3r5"
 

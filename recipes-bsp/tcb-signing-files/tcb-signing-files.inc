@@ -1,12 +1,18 @@
-# Definitions shared by both sides of the "TCB signing files" tarball: the
-# intermediate, pre-signing bootloader artifacts that TorizonCore Builder needs
-# to re-sign a pre-built Torizon OS image. The tcb-signing-files recipe builds
-# and deploys it; classes/image_type_torizon.bbclass puts it in the Tezi image.
+# Definitions shared by everything that handles the "TCB signing files" tarball:
+# the intermediate, pre-signing bootloader artifacts that TorizonCore Builder
+# needs to re-sign a pre-built Torizon OS image. The tcb-signing-files recipe
+# builds and deploys it, image_type_torizon.bbclass puts it in the Tezi image,
+# and u-boot-tcb-sign.inc deploys what it packs.
 
 # Name of the tarball, as deployed and as seen inside the Tezi image.
 TCB_SIGNING_FILES_TARBALL = "tcb_signing_files.tar.gz"
 
 TCB_SIGNING_FILES_RECIPE = "tcb-signing-files"
+
+# Root of the export tree, for machines that export a tree instead of loose
+# files. The U-Boot recipe installs into it and the file list packs it, so the
+# name lives here rather than being repeated on both sides.
+TCB_SIGNING_EXPORT_DIR ?= "tcb-signing"
 
 def is_hab_signed_bootloader_and_fit_enabled(d):
     if d.getVar('TDX_IMX_HAB_ENABLE') == '1' and d.getVar('UBOOT_SIGN_ENABLE') == '1':
