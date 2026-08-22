@@ -20,9 +20,8 @@ def is_hab_signed_bootloader_and_fit_enabled(d):
 
     return '0'
 
-# The TI K3 counterpart of the above, kept separate: TCB_SIGNING_SUPPORT is in
-# the packing task's vardeps, so rewording the iMX helper would repack the
-# tarball on machines that ship today.
+# The TI K3 counterpart of the above. A separate function so that each names the
+# condition it tests, and the k3r5 multiconfig needs a third form anyway.
 def is_k3_secboot_and_fit_enabled(d):
     if d.getVar('TDX_K3_SECBOOT_ENABLE') == '1' and d.getVar('UBOOT_SIGN_ENABLE') == '1':
         return '1'
@@ -47,6 +46,11 @@ TCB_SIGNING_SUPPORT:verdin-imx8mp ?= "${@is_hab_signed_bootloader_and_fit_enable
 TCB_SIGNING_SUPPORT:verdin-imx8mm ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
 TCB_SIGNING_SUPPORT:verdin-am62 ?= "${@is_k3_secboot_and_fit_enabled(d)}"
 TCB_SIGNING_SUPPORT:verdin-am62-k3r5 ?= "${@is_k3_secboot_enabled(d)}"
+
+# Hash by the value this resolves to: otherwise every task reading it also
+# depends on the helper's text, which BitBake captures down to the comments
+# that follow it.
+TCB_SIGNING_SUPPORT[vardepvalue] = "${TCB_SIGNING_SUPPORT}"
 
 # What goes into the tarball, relative to DEPLOY_DIR_IMAGE. The shell expands
 # these in that directory, so globs work and an entry matching nothing fails
