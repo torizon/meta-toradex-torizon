@@ -234,8 +234,7 @@ do_install() {
     if  [ "$?" -ne 0 ]; then
         log "Could not create reboot sentinel file; falling back to normal reboot"
         # Fall back to using reboot.
-        REBOOT 2>/dev/null
-        if [ "$?" -eq 0 ]; then
+        if ! REBOOT 2>/dev/null; then
             clear_uboot_vars
             die "Failed to reboot device"
         fi
