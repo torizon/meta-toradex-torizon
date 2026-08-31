@@ -1,0 +1,7 @@
+# Name the UFS boot1 LU after the controller it hangs off. sd* names are handed
+# out in SCSI probe order across every SCSI-class device, so they move when USB
+# mass storage is attached at power-on; the by-path name is stable but unusable
+# here, because libubootenv splits its device path at the first ':' as UBI
+# device:volume syntax and every SCSI by-path name carries three of them.
+# Runs after 60-persistent-storage.rules, which is what sets ID_PATH.
+SUBSYSTEM=="block", KERNEL=="sd*", ENV{DEVTYPE}=="disk", ENV{ID_PATH}=="platform-11270000.ufshci-scsi-*:0:0:1", SYMLINK+="ufs-boot1"

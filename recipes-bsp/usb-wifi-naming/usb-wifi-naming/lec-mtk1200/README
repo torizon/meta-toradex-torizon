@@ -1,0 +1,48 @@
+USB Wi-Fi interface naming on the LEC-MTK-i1200
+===============================================
+
+A USB wireless adapter is named after the module USB connection it is
+plugged into. The name belongs to the socket rather than to the adapter:
+it is the same on every unit and after every boot, and it is known
+before the units are built, so it can be written into a shared image.
+
+  Module USB connection   Interface name   Where the adapter attaches
+  ---------------------   --------------   --------------------------
+  SMARC USB0              wlan-usb0        SoC host controller 112a0000
+  SMARC USB1              wlan-usb1        SoC host controller 112b0000
+  SMARC USB2              wlan-usb2        module hub, downstream port 3
+  SMARC USB3              wlan-usb3        module hub, downstream port 4
+  SMARC USB4              wlan-usb4        module hub, downstream port 5
+  SMARC USB5              wlan-usb5        module hub, downstream port 6
+
+Everything the naming keys on is fixed on the module, so the table holds
+on any carrier board. Which carrier socket each connection reaches is a
+property of the carrier. To find the name for a socket, plug an adapter
+into it and read the name:
+
+  # ls /sys/class/net/ | grep '^wl'
+
+To see which policy file named an interface, and so which connection it
+is on:
+
+  # udevadm info /sys/class/net/wlan-usb3 | grep ID_NET_LINK_FILE
+
+An adapter that is not attached directly to one of the six connections
+-- one behind a hub on the carrier board -- is named from its own
+hardware address instead, as wlx followed by the twelve hexadecimal
+digits of that address. Such a name is unique to the adapter, so it
+differs from unit to unit and cannot be written into a shared image.
+
+The policy files are in /usr/lib/systemd/network/. A file of your own in
+/etc/systemd/network/ takes precedence only if it carries the same file
+name as the one it replaces, or sorts before 60-wlan-usb0.link.
+
+Because the name belongs to the socket, moving an adapter to a different
+connection renames it, and so does a carrier revision that moves a
+socket to a different connection. A connection profile that should
+survive either matches a set of names rather than naming one:
+
+  [match]
+  interface-name=wlan-usb*;wlx*
+
+Wired interfaces are not affected by any of this.

@@ -1,0 +1,44 @@
+# tcbuild-genio.yaml - torizoncore-builder Tier-1 rootfs customisation for the
+# ADLINK LEC-MTK-i1200 (MediaTek Genio 1200) genio-flash image, driven
+# directly by a released torizoncore-builder (one that can open 4096-byte-sector
+# raw images; the sector-size keys below are what request it).
+#
+# genio2img stages this file into its working directory; run
+# `torizoncore-builder build --file tcbuild-genio.yaml` from there.
+# Only rootfs-level classes work on the raw-image path: filesystem overlays,
+# Yocto packages delivered as installed files, preloaded containers, and
+# prebuilt kernel modules dropped into the filesystem. Device-tree,
+# kernel-module-build, kernel-argument, and secboot customisations are
+# rejected by tcb on raw/WIC images and are out of scope.
+input:
+  raw-image:
+    local: input.wic
+    # rootfs filesystem label; otaroot is tcb's default for Common Torizon OS.
+    rootfs-label: otaroot
+    # The Genio UFS WIC is 4Kn; tcb must open the disk at 4096-byte sectors.
+    sector-size: 4096
+
+customization:
+  # Files overlaid onto the OSTree rootfs, mirroring the final filesystem paths.
+  # genio2img fills changes/ from its -c argument (default ./changes). Add
+  # package files (e.g. usr/bin/, usr/lib/) and prebuilt .ko modules here; a
+  # dropped-in .ko is not depmod-indexed, so load it on the target with insmod
+  # of its full path, not modprobe. Config files go under usr/etc/ (the OSTree
+  # factory-config location), NOT a top-level etc/ — a committed /etc collides
+  # with the base /usr/etc and tcb aborts the deploy. Preloaded containers go
+  # under output.raw-image.bundle instead.
+  filesystem:
+    - changes/
+
+output:
+  raw-image:
+    local: output.wic
+    base-rootfs-label: otaroot
+    # Base image is the same 4Kn WIC; keep tcb at 4096-byte sectors on output.
+    base-sector-size: 4096
+    # To preload containers, uncomment and provide the compose file to
+    # genio2img with -b (default ./docker-compose.yml). Set platform to the
+    # target arch so tcb pulls the arm64 image, not the build host's.
+    # bundle:
+    #   compose-file: docker-compose.yml
+    #   platform: linux/arm64

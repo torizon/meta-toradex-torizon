@@ -1,0 +1,9 @@
+# SMARC USB4 = module hub USB5807C downstream port 5 (USB2DN_DP5).
+[Match]
+Type=wlan
+Path=platform-11200000.usb-usb-0:1.5:*
+
+[Link]
+NamePolicy=keep
+Name=wlan-usb4
+MACAddressPolicy=persistent

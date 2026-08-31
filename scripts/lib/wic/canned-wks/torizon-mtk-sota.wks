@@ -1,0 +1,13 @@
+# short-description: OTA-enabled OSTree image for MediaTek Genio (bootloader + single rootfs)
+# long-description: GPT image for the genio-flash flow in Torizon's OSTree layout:
+# a raw FIP bootloader partition plus a single ext4 partition carrying the OSTree
+# sysroot (no /boot partition - kernel/DTB/initramfs live in the OSTree deployment).
+# Matches the genio-flash partition table (rity.json: "bootloaders" + "rootfs").
+# Reworked from meta-mediatek-bsp mediatek-bootimg.wks, keeping the "bootloaders"
+# partition identical so BL2's FIP lookup is unaffected.
+
+bootloader --ptable gpt --timeout=0
+part --source rawcopy --sourceparams="file=fip.bin" --part-name bootloaders --align 512 --fixed-size 4M
+# --active marks the rootfs bootable; the distro_bootcmd scan keys off that flag,
+# not the partition index, so the rootfs is found here at partition 2.
+part / --source otaimage --fstype=ext4 --part-name rootfs --align 4096 --use-uuid --active

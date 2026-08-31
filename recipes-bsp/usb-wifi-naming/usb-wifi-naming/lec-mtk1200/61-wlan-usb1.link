@@ -1,0 +1,9 @@
+# SMARC USB1 = MT8395 USB_DP_P3 (module pin table).
+[Match]
+Type=wlan
+Path=platform-112b0000.usb-usb-0:1:*
+
+[Link]
+NamePolicy=keep
+Name=wlan-usb1
+MACAddressPolicy=persistent

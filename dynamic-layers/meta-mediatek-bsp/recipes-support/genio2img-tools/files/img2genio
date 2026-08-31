@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# img2genio - re-sparse a torizoncore-builder-customised raw WIC and repack it
+# into a MediaTek genio-flash tarball. Companion to genio2img, which prepares
+# the WORKDIR this script consumes.
+set -euo pipefail
+
+prog=${0##*/}
+
+die()  { echo "$prog: error: $*" >&2; exit 1; }
+note() { echo "$prog: $*"; }
+
+usage() {
+    cat <<EOF
+Usage: $prog [-o OUTPUT_TAR] WORKDIR
+
+Re-sparse a customised raw WIC and repack it into a genio-flash tarball.
+
+  WORKDIR      the directory genio2img created (must still hold unpack/ and
+               a customised output.wic — torizoncore-builder's
+               output.raw-image.local, run from WORKDIR)
+  -o OUTPUT_TAR  repacked tarball (default: WORKDIR-custom.tar)
+
+Requires img2simg (android-sdk-libsparse-utils).
+EOF
+}
+
+out=""
+while getopts ":o:h" opt; do
+    case $opt in
+        o) out=$OPTARG ;;
+        h) usage; exit 0 ;;
+        :) die "option -$OPTARG requires an argument" ;;
+        \?) die "unknown option -$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+[ $# -eq 1 ] || { usage >&2; die "exactly one WORKDIR is required"; }
+workdir=$1
+
+command -v img2simg >/dev/null 2>&1 \
+    || die "'img2simg' not found on PATH (install android-sdk-libsparse-utils)"
+command -v tar >/dev/null 2>&1 || die "'tar' not found on PATH"
+[ -d "$workdir/unpack" ] || die "not a genio2img WORKDIR (no unpack/): $workdir"
+[ -f "$workdir/output.wic" ] || die "no customised output.wic in $workdir — run torizoncore-builder from there first"
+
+mapfile -t sparse_imgs < <(find "$workdir/unpack" -name '*.wic.img' -type f)
+[ "${#sparse_imgs[@]}" -ge 1 ] || die "no *.wic.img found under $workdir/unpack"
+[ "${#sparse_imgs[@]}" -eq 1 ] || die "multiple *.wic.img found under $workdir/unpack; cannot pick one"
+sparse=${sparse_imgs[0]}
+
+[ -n "$out" ] || out="${workdir%/}-custom.tar"
+
+# 1. img2simg takes the block size as a positional 3rd arg, not -b. Temp
+#    file + rename on success: a failed run must not half-write $sparse.
+note "re-sparsing customised image (img2simg, 4096-byte blocks)"
+trap 'rm -f "$sparse.new"' ERR INT TERM
+img2simg "$workdir/output.wic" "$sparse.new" 4096
+mv -f "$sparse.new" "$sparse"
+trap - ERR INT TERM
+
+# 2. Repack; rity.json and the boot chain are untouched. Same temp+rename
+#    discipline as step 1 -- $out is what the user flashes.
+note "repacking $out"
+trap 'rm -f "$out.new"' ERR INT TERM
+tar --xattrs --xattrs-include='*' --numeric-owner -C "$workdir/unpack" -cf "$out.new" .
+mv -f "$out.new" "$out"
+trap - ERR INT TERM
+
+note "done: $out"
+# The tarball carries the image directory genio-flash expects to be run from;
+# name it rather than leaving the reader to guess.
+imgdir=$(cd "$workdir/unpack" && ls -1d */ 2>/dev/null | head -1)
+imgdir=${imgdir%/}
+note "flash with: tar xf $(basename "$out") && cd ${imgdir:-<image-dir>} && genio-flash system"

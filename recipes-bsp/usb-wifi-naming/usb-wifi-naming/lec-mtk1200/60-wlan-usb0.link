@@ -1,0 +1,10 @@
+# SMARC USB0: the USB_P0_P2_MUX_SEL hog routes the OTG signal to SoC USB port 2,
+# not to USB_DP_P0 as the module pin table has it.
+[Match]
+Type=wlan
+Path=platform-112a0000.usb-usb-0:1:*
+
+[Link]
+NamePolicy=keep
+Name=wlan-usb0
+MACAddressPolicy=persistent

@@ -4,13 +4,12 @@ SRC_URI:append:common-torizon = " \
     file://torizon.scc \
 "
 
-# Synaptics sl1680 and Toradex Luna (sl1680 based) need the cfg fragment
-# in order to merge with the generated .config. Otherwise the fragments won't apply.
-# 
-# NXP's Kernel recipe needs the cfg fragment in order to merge with
-# with the generated .config. Otherwise the fragments won't apply.
+# These machines need the raw cfg fragment in SRC_URI: the Synaptics and NXP
+# kernel recipes have to merge it with the generated .config themselves, or the
+# fragments won't apply, and the MediaTek Genio bbappend reads the requests back
+# from it after configure to check they reached the built .config.
 SRC_URI:append = " \
-    ${@bb.utils.contains_any('MACHINE', 'sl1680 imx95-19x19-verdin imx93frdm', 'file://torizon.cfg', '', d)} \
+    ${@bb.utils.contains_any('MACHINE', 'sl1680 imx95-19x19-verdin imx93frdm lec-mtk-i1200-ufs', 'file://torizon.cfg', '', d)} \
 "
 
 SRC_URI:append:cfs-support = "\

@@ -1,0 +1,12 @@
+# Catch-all for adapters below the module's own sockets. net_id emits no
+# host-controller component for a device-tree platform xHCI, so two at the same
+# port index collide; name from the MAC, path last because a first match here
+# means 99-default.link is never reached.
+
+[Match]
+Type=wlan
+Property=ID_BUS=usb
+
+[Link]
+NamePolicy=keep kernel database onboard slot mac path
+MACAddressPolicy=persistent

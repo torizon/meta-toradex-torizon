@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# genio2img - unpack a MediaTek genio-flash tarball and unsparse its system
+# image to a raw WIC, staging everything a plain torizoncore-builder run needs
+# alongside it. Companion to img2genio, which reverses the process.
+set -euo pipefail
+
+prog=${0##*/}
+here=$(cd -- "$(dirname -- "$0")" && pwd)
+
+die()  { echo "$prog: error: $*" >&2; exit 1; }
+note() { echo "$prog: $*"; }
+
+usage() {
+    cat <<EOF
+Usage: $prog [-d WORKDIR] [-f TCBUILD_YAML] [-c CHANGES_DIR] [-b COMPOSE_FILE] INPUT_TAR
+
+Unpack a genio-flash tarball and stage a torizoncore-builder customisation run.
+
+  INPUT_TAR        aiotflash.tar produced by the Yocto build (deploy dir)
+  -d WORKDIR       working directory to create (default: INPUT_TAR's basename,
+                    with .aiotflash.tar / .tar stripped). Must not already
+                    exist.
+  -f TCBUILD_YAML  tcbuild config to stage (default: tcbuild-genio.yaml
+                    beside this script, carrying the sector-size/
+                    base-sector-size keys a plain torizoncore-builder run
+                    needs for the Genio's 4Kn system image)
+  -c CHANGES_DIR   directory of files to stage as the rootfs overlay
+                    (default: ./changes if present)
+  -b COMPOSE_FILE  docker-compose file for a container-preload customisation
+                    (default: ./docker-compose.yml if present). Its basename
+                    must match the tcbuild config's bundle.compose-file
+                    (default docker-compose.yml).
+
+On success, WORKDIR contains:
+  unpack/          the tarball's contents, minus the system image
+  input.wic        the unsparsed system image — torizoncore-builder's
+                    input.raw-image.local
+  tcbuild-genio.yaml (staged from -f's source, tcbuild-genio.yaml beside
+                    this script by default), and any staged changes/ or
+                    compose file
+
+Run torizoncore-builder from WORKDIR (its config uses relative paths that
+resolve against the invoking process's CWD), then pass WORKDIR to img2genio
+to repack. WORKDIR may be reused for more than one customisation — rerun
+torizoncore-builder / img2genio as needed; only genio2img itself refuses to
+overwrite an existing WORKDIR.
+
+Requires simg2img (android-sdk-libsparse-utils).
+EOF
+}
+
+workdir=""; yaml="$here/tcbuild-genio.yaml"; changes=""; compose=""
+while getopts ":d:f:c:b:h" opt; do
+    case $opt in
+        d) workdir=$OPTARG ;;
+        f) yaml=$OPTARG ;;
+        c) changes=$OPTARG ;;
+        b) compose=$OPTARG ;;
+        h) usage; exit 0 ;;
+        :) die "option -$OPTARG requires an argument" ;;
+        \?) die "unknown option -$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+[ $# -eq 1 ] || { usage >&2; die "exactly one INPUT_TAR is required"; }
+in_tar=$1
+
+for t in simg2img tar; do
+    command -v "$t" >/dev/null 2>&1 \
+        || die "'$t' not found on PATH (install android-sdk-libsparse-utils)"
+done
+[ -f "$in_tar" ] || die "input tarball not found: $in_tar"
+[ -f "$yaml" ]   || die "tcbuild config not found: $yaml"
+[ -n "$changes" ] || { [ -d ./changes ] && changes=./changes; }
+[ -n "$compose" ] || { [ -f ./docker-compose.yml ] && compose=./docker-compose.yml; }
+if [ -n "$changes" ]; then
+    [ -d "$changes" ] || die "changes directory not found: $changes"
+fi
+if [ -n "$compose" ]; then
+    [ -f "$compose" ] || die "compose file not found: $compose"
+fi
+if [ -z "$workdir" ]; then
+    base=$(basename "$in_tar")
+    base=${base%.aiotflash.tar}
+    base=${base%.tar}
+    workdir=$base
+fi
+
+if [ -z "$changes" ] && [ -z "$compose" ]; then
+    # A bare WORKDIR is a legitimate intermediate state (customise it later,
+    # or reuse it for more than one run) — so this warns rather than refuses.
+    note "warning: no -c/./changes or -b/./docker-compose.yml supplied;" \
+         "customise $workdir/changes/ (or add a compose file) before running torizoncore-builder"
+fi
+[ -e "$workdir" ] && die "WORKDIR already exists: $workdir (choose a fresh name or remove it first)"
+
+# EXIT, not ERR: die() exits explicitly (ERR doesn't catch that), and a
+# signal (e.g. Ctrl-C mid-unpack) still runs an EXIT trap but leaves $? at
+# whatever the last completed command returned -- not a reliable "did this
+# succeed" signal. Track success explicitly instead of inspecting $?.
+success=""
+trap '[ -n "$success" ] || rm -rf "$workdir"' EXIT
+mkdir -p "$workdir"
+
+# 1. Unpack the genio-flash tarball (preserve xattrs as the build packed them).
+note "unpacking $in_tar"
+mkdir -p "$workdir/unpack"
+tar --xattrs --xattrs-include='*' -C "$workdir/unpack" -xf "$in_tar"
+
+mapfile -t sparse_imgs < <(find "$workdir/unpack" -name '*.wic.img' -type f)
+[ "${#sparse_imgs[@]}" -ge 1 ] || die "no *.wic.img found inside $in_tar"
+[ "${#sparse_imgs[@]}" -eq 1 ] || die "multiple *.wic.img found inside $in_tar; cannot pick one"
+sparse=${sparse_imgs[0]}
+note "system image: ${sparse#"$workdir"/unpack/}"
+
+# 2. Unsparse the system image to a raw WIC — torizoncore-builder's input.
+note "unsparsing system image (simg2img)"
+simg2img "$sparse" "$workdir/input.wic"
+
+# Stage the config and any customisation inputs so a plain `torizoncore-builder
+# build` run from WORKDIR finds everything --file/filesystem/bundle reference
+# by relative path -- those paths resolve against the CWD of whoever invokes
+# torizoncore-builder, which the caller is expected to make WORKDIR.
+cp -a "$yaml" "$workdir/tcbuild-genio.yaml"
+mkdir -p "$workdir/changes"
+if [ -n "$changes" ]; then
+    cp -a "$changes/." "$workdir/changes/"
+fi
+if [ -n "$compose" ]; then
+    cp -a "$compose" "$workdir/$(basename "$compose")"
+fi
+
+success=1
+note "done: $workdir"
+note "next: cd $workdir && torizoncore-builder build --file tcbuild-genio.yaml"
