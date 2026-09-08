@@ -20,9 +20,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # Build environment setup for the Adlink LEC-MTK-i1200 (MediaTek Genio 1200 /
-# MT8395) on the I-Pi SMARC 1200 carrier board. The MediaTek (meta-mediatek-bsp)
-# and Adlink (meta-adlink-mtk) BSP layers are cloned manually into layers/ - see
-# layers/meta-toradex-torizon/docs/README-genio.md.
+# MT8395) on the I-Pi SMARC 1200 carrier board.
 
 _TDX_OEROOT=$(pwd)
 cd "$_TDX_OEROOT"
