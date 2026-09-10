@@ -22,58 +22,26 @@ python adjust_tezi_artifacts() {
     d.setVar('TEZI_ARTIFACTS', artifacts)
 }
 
-def is_hab_signed_bootloader_and_fit_enabled(d):
-    if d.getVar('TDX_IMX_HAB_ENABLE') == '1' and d.getVar('UBOOT_SIGN_ENABLE') == '1':
-        return '1'
+# Definitions shared with the recipe that builds the "TCB signing files" tarball.
+require recipes-bsp/tcb-signing-files/tcb-signing-files.inc
 
-    return '0'
-
-TCB_SIGNING_FILES_TARBALL = "tcb_signing_files.tar.gz"
-TCB_SIGNING_SUPPORT ?= "0"
-TCB_SIGNING_SUPPORT:verdin-imx8mp ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
-TCB_SIGNING_FILELIST:verdin-imx8mp ?= "uboot_config bl31* lpddr4_pmu_train_* u-boot.dtb u-boot-nodtb.bin spl/ u-boot-dtbs/"
-TCB_SIGNING_SUPPORT:verdin-imx8mm ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
-TCB_SIGNING_FILELIST:verdin-imx8mm ?= "uboot_config bl31* lpddr4_pmu_train_* u-boot.dtb u-boot-nodtb.bin spl/ u-boot-dtbs/"
-
-pack_tcb_signing_binaries_in_teziimg() {
-    if [ "${TCB_SIGNING_SUPPORT}" != "1" ]; then
-        # TorizonCore Builder signing support feature not enabled
-        return 0
-    fi
-
-    if [ "${TDX_IMX_HAB_ENABLE}" != "1" ]; then
-        bbwarn "TCB signing support enabled but HAB support is disabled. Skipping."
-        return 0
-    fi
-
-    if [ "${UBOOT_SIGN_ENABLE}" != "1" ]; then
-        bbwarn "TCB signing support enabled but signed kernel FIT image generation is disabled. Skipping."
-        return 0
-    fi
-
-    if [ -z "${TCB_SIGNING_FILELIST}" ]; then
-        bbwarn "TCB signing support enabled but TCB_SIGNING_FILELIST is empty (MACHINE likely not supported). Skipping."
-        return 0
-    fi
-
-    bbnote "Packing TorizonCore Builder signing files"
-
-    # Here we explicitly change to DEPLOY_DIR_IMAGE because the shell tries to expand filenames
-    # with wildcards (e.g. with asterisk) before running the tar command, so they're relative
-    # to the directory the tar command was called (the shell doesn't know that tar will grab
-    # the files from somewhere else)
-    (cd "${DEPLOY_DIR_IMAGE}" && tar --preserve-permissions --dereference \
-        -czf "${WORKDIR}/${TCB_SIGNING_FILES_TARBALL}" ${TCB_SIGNING_FILELIST})
-
-    cp "${WORKDIR}/${TCB_SIGNING_FILES_TARBALL}" \
-       "${IMGDEPLOYDIR}/${TCB_SIGNING_FILES_TARBALL}"
-}
+# Pull the tarball into the build only when this image is meant to carry it.
+do_image_teziimg[depends] += "${@d.getVar('TCB_SIGNING_FILES_RECIPE') + ':do_deploy' if d.getVar('TCB_SIGNING_SUPPORT') == '1' else ''}"
 
 python add_signing_files_to_tezi_artifacts() {
-    signing_files_path = d.getVar('WORKDIR') + '/' + d.getVar('TCB_SIGNING_FILES_TARBALL')
+    if d.getVar('TCB_SIGNING_SUPPORT') != '1':
+        return
 
-    if os.path.isfile(signing_files_path):
-        d.appendVar('TEZI_ARTIFACTS', ' ' + signing_files_path)
+    # rootfs_tezi_run_json() sets TEZI_ARTIFACTS instead of appending to it, so
+    # this prefunc has to run after it or the tarball is dropped without a trace.
+    if not d.getVar('TEZI_ARTIFACTS'):
+        bb.fatal('TEZI_ARTIFACTS is empty when adding the TCB signing files: '
+                 'add_signing_files_to_tezi_artifacts must run after '
+                 'rootfs_tezi_run_json, which sets that variable. Check the '
+                 'ordering of TEZI_IMAGE_TEZIIMG_PREFUNCS.')
+
+    tarball = os.path.join(d.getVar('DEPLOY_DIR_IMAGE'), d.getVar('TCB_SIGNING_FILES_TARBALL'))
+    d.appendVar('TEZI_ARTIFACTS', ' ' + tarball)
 }
 
 TEZI_IMAGE_TEZIIMG_PREFUNCS:append = " add_signing_files_to_tezi_artifacts adjust_tezi_artifacts"
@@ -113,7 +81,7 @@ UBOOT_BINARY_OTA_IGNORE:genericx86-64 = "1"
 UBOOT_BINARY_OTA_IGNORE:lino-imx93 = "1"
 UBOOT_BINARY_OTA_IGNORE:toradex-osm-imx93 = "1"
 
-TEZI_IMAGE_TEZIIMG_PREFUNCS:prepend = "gen_torizon_prov_data pack_tcb_signing_binaries_in_teziimg "
+TEZI_IMAGE_TEZIIMG_PREFUNCS:prepend = "gen_torizon_prov_data "
 
 do_image_teziimg[cleandirs] += "${WORKDIR}/prov-data"
 do_image_teziimg[vardeps] += "${TORIZON_IMG_VARDEPS}"
