@@ -186,22 +186,26 @@ EOF
 
 # Creates target_name file if it does not already exist
 create_target_file () {
-    local fuse_dir
-    fuse_dir=$(DIRNAME "$SECONDARY_FIRMWARE_PATH")
-
-    target_file="${fuse_dir}/target_name"
-    if [ ! -e "${target_file}" ]; then
-        log "Generating target_name file"
-	echo "fuse.yml" > "$target_file"
-    fi
+    log "Generating target_name file"
+    printf '%s' "fuse.yml" > "$1"
 }
 
 # Create firmware file from information available from U-boot if file does not exist
 do_create_firmware() {
     log "Generating firmware file based on information in U-Boot"
+    local target_file
 
-    create_yaml_content
-    create_target_file
+    if [ ! -s "${SECONDARY_FIRMWARE_PATH}" ]; then
+        create_yaml_content
+    fi
+
+    local fuse_dir
+    fuse_dir=$(DIRNAME "$SECONDARY_FIRMWARE_PATH")
+    target_file="${fuse_dir}/target_name"
+    if [ ! -s "${target_file}" ]; then
+        create_target_file "${target_file}"
+    fi
+
     return 0
 }
 
@@ -295,7 +299,7 @@ log_action "$@"
 
 case "$1" in
     get-firmware-info)
-        if [ -n "${SECONDARY_FIRMWARE_PATH}" ] && [ ! -e "${SECONDARY_FIRMWARE_PATH}" ]; then
+        if [ -n "${SECONDARY_FIRMWARE_PATH}" ]; then
             # Try to create firmware file so some hash can be sent to server
             do_create_firmware
         fi
