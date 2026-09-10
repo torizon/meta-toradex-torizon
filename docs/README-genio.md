@@ -4,9 +4,9 @@ MediaTek Genio 1200 (Adlink LEC-MTK-i1200 / I-Pi SMARC 1200)
 This describes how to build Common Torizon OS for the Adlink LEC-MTK-i1200 SoM
 (MediaTek Genio 1200 / MT8395 SoC) on the I-Pi SMARC 1200 carrier board.
 
-The MediaTek and Adlink dependency layers are cloned manually after
-`repo sync`. They come from MediaTek's IoT Yocto **v25.0** release, which is the
-**scarthgap** line (kernel 6.6) and matches the scarthgap Torizon base.
+The MediaTek and Adlink dependency layers come from MediaTek's IoT Yocto
+**v25.0** release, which is the **scarthgap** line (kernel 6.6) and matches
+the scarthgap Torizon base.
 
 Setup
 ======
@@ -30,24 +30,11 @@ $ cd ~/yocto-workdir
 ```
 4. Initialize the Torizon repository:
 ```
-$ repo init -u https://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m torizon/default.xml
+$ repo init -u https://git.toradex.com/toradex-manifest.git -b scarthgap-7.x.y -m common-torizon/mediatek/integration.xml
 ```
 5. Sync the repositories:
 ```
 $ repo sync
-```
-6. Download the MediaTek and Adlink BSP layers into `layers/`. All of these
-track MediaTek IoT Yocto v25.0 (scarthgap):
-```
-# MediaTek core BSP for MT8395: machine, kernel 6.6, TF-A v2.6, U-Boot 2022.10,
-# OP-TEE 3.19, Mali DDK r48 / Panfrost (gpu-provider.inc)
-$ git -C layers clone -b rity-scarthgap-v25.0 https://gitlab.com/mediatek/aiot/rity/meta-mediatek-bsp.git
-
-# Adlink board layer: lec-mtk-i1200-ufs machine + SMARC DTS
-$ git -C layers clone -b rity-scarthgap-v25.0 https://github.com/ADLINK/meta-adlink-mtk.git
-
-# Clang toolchain required by parts of the MediaTek graphics/multimedia stack
-$ git -C layers clone -b scarthgap https://github.com/kraj/meta-clang.git
 ```
 
 Build
