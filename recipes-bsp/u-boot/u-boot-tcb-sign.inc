@@ -11,7 +11,7 @@ require recipes-bsp/tcb-signing-files/tcb-signing-files.inc
 # two branches as oe-core's do_uboot_assemble_fitimage(). More than one
 # UBOOT_MACHINE entry is fatal, since every deploy name here is flat. The result
 # comes back in a variable because BitBake emits only the shell functions it
-# sees called, and a call inside a command substitution is not one of them.
+# sees called, and scarthgap's parser misses a call inside a quoted expansion.
 tcbsgn_uboot_set_config_dir() {
     if [ -n "${UBOOT_CONFIG}" ]; then
         set -- ${UBOOT_MACHINE}
@@ -271,14 +271,40 @@ tcbsgn_deploy_am62_export_a53() {
     done
 }
 
-# Manifest at the root of the export tree: which layout to expect, and which
-# U-Boot produced the artifacts, so that a consumer whose binman comes from
-# another revision is detectable instead of silently producing different output.
-# The A53 side writes it alone, since everything in it is build-wide and both
-# multiconfigs build one recipe at one SRCREV.
+# Echoes whether the certificate's validity was pinned. Measured, not taken
+# from the switch that asks for it: the signing tool pins validity only when
+# its openssl is new enough, so intent and outcome can differ. Pass a k3r5
+# artifact: the A53's own outputs are FIT images, whose certificates are not
+# at offset 0. Unreadable is "false", the answer that costs a consumer least.
+tcbsgn_am62_certificates_pinned() {
+    local notbefore epoch
+    local certfile="${1?certificate file}"
+
+    [ -f "${certfile}" ] || { echo "false"; return 0; }
+
+    notbefore=$(openssl x509 -inform DER -in "${certfile}" -noout -startdate \
+                2>/dev/null | sed -ne 's/^notBefore=//p')
+    [ -n "${notbefore}" ] || { echo "false"; return 0; }
+
+    # Task scripts run under set -e, where a bare assignment from a failing
+    # command ends the shell on dash even though bash survives it.
+    epoch=$(date -u -d "${notbefore}" +%s 2>/dev/null) || epoch=""
+    if [ -n "${epoch}" -a "${epoch}" = "${SOURCE_DATE_EPOCH}" ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+# Manifest at the root of the export tree: which layout to expect, which U-Boot
+# produced the artifacts, and under which conditions they were signed, so a
+# consumer whose binman differs is detectable instead of silently producing
+# different output. The A53 side writes it alone: everything in it is
+# build-wide, and both multiconfigs build one recipe at one SRCREV.
 tcbsgn_write_am62_manifest() {
     local outdir="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR}"
     local verfile ubootversion ubootrelease roots sep r
+    local pinned opensslver epoch
 
     tcbsgn_uboot_set_config_dir
     tcbsgn_uboot_set_config_type
@@ -306,10 +332,29 @@ tcbsgn_write_am62_manifest() {
         sep=", "
     done
 
+    # The a53 root's own copy, installed earlier in this same append, so this
+    # reaches into no other multiconfig's deploy directory.
+    pinned=$(tcbsgn_am62_certificates_pinned \
+             "${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_A53}/tiboot3-am62x-hs-fs-verdin.bin")
+
+    # Provenance only: this task's openssl, which the k3r5 side takes from the
+    # same recipe at the same version. Consumers do not branch on it.
+    opensslver=$(openssl version | awk '{print $2}')
+    if [ -z "${opensslver}" ]; then
+        bbfatal "\"openssl version\" produced nothing; the manifest records it" \
+                "as the provenance of the certificates the export carries."
+    fi
+
+    # Empty would leave the field with no value at all, which is not JSON. A
+    # shell default here would read as BitBake's and be the shell's, so: two lines.
+    epoch="${SOURCE_DATE_EPOCH}"
+    [ -n "${epoch}" ] || epoch="null"
+
     install -d "${outdir}"
-    printf '{\n  "format_version": %s,\n  "machine": "%s",\n  "uboot": {\n    "version": "%s",\n    "release": "%s"\n  },\n  "roots": [%s]\n}\n' \
+    printf '{\n  "format_version": %s,\n  "machine": "%s",\n  "uboot": {\n    "version": "%s",\n    "release": "%s"\n  },\n  "roots": [%s],\n  "signing": {\n    "source_date_epoch": %s,\n    "certificates_pinned": %s,\n    "openssl": "%s"\n  }\n}\n' \
            "${TCB_SIGNING_MANIFEST_VERSION}" "${MACHINE}" \
            "${ubootversion}" "${ubootrelease}" "${roots}" \
+           "${epoch}" "${pinned}" "${opensslver}" \
            > "${outdir}/manifest.json"
 
     # Explicit mode: the tarball preserves it, and a umask-dependent one would
