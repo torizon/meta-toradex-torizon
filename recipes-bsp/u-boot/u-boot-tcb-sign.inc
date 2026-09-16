@@ -11,6 +11,14 @@ require recipes-bsp/tcb-signing-files/tcb-signing-files.inc
 # recipe's WORKDIR has to outlive the packing task; see the include above.
 do_rm_work[depends] += "${TCB_SIGNING_PACK_DEPENDS}"
 
+# The k3r5 multiconfig deploys its half of the export into the same shared
+# directory, but the packing recipe is not built there, so no task dependency
+# can reach it. An mcdepends back into the packing multiconfig does not work
+# either: bitbake applies a multiconfig's whole mcdepends list to every task
+# that declares one, so it also lands on this recipe's do_compile and closes a
+# loop through do_deploy. Keeping the workdir for the build is what is left.
+RM_WORK_EXCLUDE:append:verdin-am62-k3r5 = "${@' ' + d.getVar('PN') if d.getVar('TCB_SIGNING_SUPPORT') == '1' else ''}"
+
 # Set ${tcbsgn_cfgdir} to the directory U-Boot was built in, following the same
 # two branches as oe-core's do_uboot_assemble_fitimage(). More than one
 # UBOOT_MACHINE entry is fatal, since every deploy name here is flat. The result
