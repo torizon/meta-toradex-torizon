@@ -7,6 +7,10 @@
 # list must name the same directory this file installs into.
 require recipes-bsp/tcb-signing-files/tcb-signing-files.inc
 
+# The export this file deploys is packed out of DEPLOY_DIR_IMAGE, so this
+# recipe's WORKDIR has to outlive the packing task; see the include above.
+do_rm_work[depends] += "${TCB_SIGNING_PACK_DEPENDS}"
+
 # Set ${tcbsgn_cfgdir} to the directory U-Boot was built in, following the same
 # two branches as oe-core's do_uboot_assemble_fitimage(). More than one
 # UBOOT_MACHINE entry is fatal, since every deploy name here is flat. The result

@@ -77,3 +77,11 @@ TCB_SIGNING_INPUT_DEPENDS:verdin-am62 ?= "virtual/bootloader"
 # express: an mcdepends entry has to name the multiconfigs it crosses.
 TCB_SIGNING_INPUT_MCDEPENDS ?= ""
 TCB_SIGNING_INPUT_MCDEPENDS:verdin-am62 ?= "mc::k3r5:virtual/bootloader:do_deploy"
+
+# Every recipe whose deployed files are packed adds this to do_rm_work[depends]:
+# DEPLOY_DIR_IMAGE serves them as hardlinks into that recipe's WORKDIR, which
+# rm_work is otherwise free to remove while the tarball is still being packed.
+# Empty unless this machine both enables the export and packs a file list -- the
+# k3r5 multiconfig deploys into the shared directory but builds no packing
+# recipe to name, and with the export off the recipe must not enter the build.
+TCB_SIGNING_PACK_DEPENDS ?= "${@d.getVar('TCB_SIGNING_FILES_RECIPE') + ':do_compile' if d.getVar('TCB_SIGNING_SUPPORT') == '1' and d.getVar('TCB_SIGNING_FILELIST') else ''}"
