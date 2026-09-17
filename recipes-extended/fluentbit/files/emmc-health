@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# /dev/emmc is an alias the Toradex udev rules create, and they are not
+# installed on other machines -- emit nothing rather than failing the read.
+[ -e /dev/emmc ] || exit 0
+
 # Parse Type A Liftime and EoL Data.
 # Convert hex to decimal to be more human readable.
 # Multiply Type A data by 10 to get a percentage.
