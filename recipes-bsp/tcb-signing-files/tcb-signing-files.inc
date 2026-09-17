@@ -52,6 +52,11 @@ TCB_SIGNING_SUPPORT:verdin-am62-k3r5 ?= "${@is_k3_secboot_enabled(d)}"
 # that follow it.
 TCB_SIGNING_SUPPORT[vardepvalue] = "${TCB_SIGNING_SUPPORT}"
 
+# The machines that pack a tarball. The packing recipe's COMPATIBLE_MACHINE and
+# the hold at the end of this file both derive from this list, so neither can
+# name a machine the other does not; each entry also needs a file list below.
+TCB_SIGNING_PACK_MACHINES ?= "verdin-imx8mp verdin-imx8mm verdin-am62"
+
 # What goes into the tarball, relative to DEPLOY_DIR_IMAGE. The shell expands
 # these in that directory, so globs work and an entry matching nothing fails
 # the build rather than producing a short tarball.
@@ -81,7 +86,8 @@ TCB_SIGNING_INPUT_MCDEPENDS:verdin-am62 ?= "mc::k3r5:virtual/bootloader:do_deplo
 # Every recipe whose deployed files are packed adds this to do_rm_work[depends]:
 # DEPLOY_DIR_IMAGE serves them as hardlinks into that recipe's WORKDIR, which
 # rm_work is otherwise free to remove while the tarball is still being packed.
-# Empty unless this machine both enables the export and packs a file list -- the
-# k3r5 multiconfig deploys into the shared directory but builds no packing
-# recipe to name, and with the export off the recipe must not enter the build.
-TCB_SIGNING_PACK_DEPENDS ?= "${@d.getVar('TCB_SIGNING_FILES_RECIPE') + ':do_compile' if d.getVar('TCB_SIGNING_SUPPORT') == '1' and d.getVar('TCB_SIGNING_FILELIST') else ''}"
+# Naming a machine the packing recipe is not built for would leave every
+# producer depending on a recipe nothing provides, so the test is the same list
+# that recipe's COMPATIBLE_MACHINE comes from; with the export off it must not
+# enter the build at all, which is the other half.
+TCB_SIGNING_PACK_DEPENDS ?= "${@d.getVar('TCB_SIGNING_FILES_RECIPE') + ':do_compile' if d.getVar('TCB_SIGNING_SUPPORT') == '1' and d.getVar('MACHINE') in d.getVar('TCB_SIGNING_PACK_MACHINES').split() else ''}"
