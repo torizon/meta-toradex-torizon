@@ -84,6 +84,7 @@ _TDX_COMMON_MACHINES=("am62lxx-evm"   "meta-ti-bsp" \
                  "am62pxx-evm"        "meta-ti-bsp" \
                  "am62xx-evm"         "meta-ti-bsp" \
                  "beagley-ai"         "meta-beagle" \
+                 "imx6sxsabresd"      "meta-freescale" \
                  "imx93frdm"          "meta-imx-frdm/meta-imx-bsp" \
                  "imx95-19x19-verdin" "meta-imx" \
                  "intel-corei7-64"    "meta-intel" \
@@ -172,6 +173,10 @@ else
         am62xx-evm|am62pxx-evm|am62lxx-evm|beagley-ai)
             # for TI boards there's only common-torizon as possible DISTRO
             MACHINE="${MACHINE}" DISTRO="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-ti $@
+        ;;
+        imx6sxsabresd)
+            # for iMX6SoloX, there's only common-torizon as possible DISTRO
+            _TDX_DISTRO_SELECT="common-torizon" . ${_TDX_SCRIPTS_PATH}/setup-environment-imx $@
         ;;
         imx95-19x19-verdin)
             # for iMX95, there's only common-torizon as possible DISTRO
