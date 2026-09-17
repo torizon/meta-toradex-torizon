@@ -1,0 +1,34 @@
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Wed, 17 Sep 2026 00:00:00 +0200
+Subject: [PATCH] ARM: dts: imx6sx-sdb-reva: reset through the internal path
+
+imx6sx-sdb.dtsi marks wdog1 fsl,ext-reset-output, so imx2_wdt_restart()
+sets WCR[SRS] to suppress the internal reset and drives WDOG_B instead.
+The only watchdog pad the board muxes is WDOG1_WDOG_ANY, and on RevA
+nothing that pad reaches resets the system: reboot(8) leaves the kernel
+at "Reboot failed -- System halted" until the watchdog times out roughly
+two minutes later and resets the board itself.
+
+Both internal reset paths work on this silicon. U-Boot resets it
+immediately, because reset_cpu() calls imx_watchdog_expire_now(wdog,
+false) unconditionally, and the watchdog timeout resets it as well.
+Only the software-asserted external path is dead.
+
+Drop the property on RevA alone, so the kernel takes the same internal
+path. RevB and later keep the external reset, which also cycles the
+PMIC.
+
+Upstream-Status: Pending
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-sdb-reva.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-sdb-reva.dts
+@@ -167,3 +167,8 @@
+ &snvs_pwrkey {
+ 	status = "okay";
+ };
++
++/* WDOG_ANY does not reset this revision; reboot through the internal path. */
++&wdog1 {
++	/delete-property/ fsl,ext-reset-output;
++};
