@@ -1,0 +1,10 @@
+uuu_version 1.4.182
+
+# The version floor is load-bearing: uuu gained this board's fastboot gadget
+# (1fc9:0152) in December 2021, and before October 2021 its flash command
+# issued `getvar logical-block-size`, which U-Boot has never implemented.
+
+# Written for torizon-docker; another image needs its own name below.
+SDP: boot -f u-boot.imx
+FB: flash -raw2sparse all torizon-docker-imx6sxsabresd.wic
+FB: done
