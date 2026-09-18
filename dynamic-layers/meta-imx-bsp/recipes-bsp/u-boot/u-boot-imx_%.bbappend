@@ -30,3 +30,20 @@ do_configure:prepend:common-imx6() {
 }
 
 SRC_URI:append:imx6sxsabresd = " file://torizon-boot.cfg file://fastboot.cfg"
+
+FILESEXTRAPATHS:prepend:imx6sx-blaze := "${THISDIR}/files/imx6sx-blaze:"
+
+SRC_URI:append:imx6sx-blaze = " \
+    file://imx6sx-blaze.dts \
+    file://imximage.cfg \
+    file://uboot.cfg \
+    file://torizon-boot.cfg \
+    file://fastboot.cfg \
+"
+
+# No board port exists for this board: the SABRE-SD defconfig is built with this
+# board's control device tree and DDR in place of the SABRE-SD's own.
+do_configure:prepend:imx6sx-blaze() {
+    install -m 0644 ${WORKDIR}/imx6sx-blaze.dts ${S}/arch/arm/dts/imx6sx-blaze.dts
+    install -m 0644 ${WORKDIR}/imximage.cfg ${S}/board/freescale/mx6sxsabresd/imximage.cfg
+}
