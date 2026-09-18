@@ -10,6 +10,14 @@ DELTA_KERNEL_DEFCONFIG:append:mx6-generic-bsp = " torizon-container.cfg"
 SRC_URI:append:common-imx6 = " file://no-fw-fallback.cfg"
 DELTA_KERNEL_DEFCONFIG:append:common-imx6 = " no-fw-fallback.cfg"
 
+# Patches are committed to the kernel tree by git am at build time, so the tree's
+# hash changes on every build; keep it out of the kernel release, as
+# toradex-kernel-localversion does, or sstate can pair a kernel with another
+# build's modules.
+SCMVERSION:common-imx6 = "n"
+SRC_URI:append:common-imx6 = " file://no-localversion-auto.cfg"
+DELTA_KERNEL_DEFCONFIG:append:common-imx6 = " no-localversion-auto.cfg"
+
 SRC_URI:append:imx6sxsabresd = " file://0001-ARM-dts-imx6sx-sdb-reva-reset-through-the-internal-wa.patch"
 
 SRC_URI:append:imx6sx-blaze = " \
