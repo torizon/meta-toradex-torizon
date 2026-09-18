@@ -39,6 +39,9 @@ SRC_URI:append:imx6sx-blaze = " \
     file://uboot.cfg \
     file://torizon-boot.cfg \
     file://fastboot.cfg \
+    file://0001-imx6sx-blaze-UART3-console-PFUZE3000-PMIC-eMMC-environment.patch \
+    file://0002-imx6sx-blaze-take-the-MAC-address-from-the-board-s-EEPROM.patch \
+    file://0003-imx6sx-blaze-RMII-clocking-for-ENET1.patch \
 "
 
 # No board port exists for this board: the SABRE-SD defconfig is built with this

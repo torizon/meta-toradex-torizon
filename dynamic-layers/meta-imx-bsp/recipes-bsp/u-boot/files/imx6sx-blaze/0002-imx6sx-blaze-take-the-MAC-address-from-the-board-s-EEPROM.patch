@@ -1,0 +1,88 @@
+From 00a08dbbc00ba99ea7502f3f58dbeffa63750987 Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 18 Sep 2026 12:54:43 +0200
+Subject: [PATCH] imx6sx-blaze: take the MAC address from the board's EEPROM
+
+The interface came up with a random address on every boot, taking a new DHCP
+lease each time: the OCOTP MAC fuses are blank on this board, so U-Boot had
+nothing to hand Linux.
+
+The address is on the board. A Microchip 24AA02E48 on I2C3 holds a globally
+unique EUI-48 in its last six bytes, assigned by the part's manufacturer, so
+each board carries an address of its own.
+
+If the EEPROM does not answer, ethaddr is left unset rather than filled with a
+locally administered substitute: the board has no other source of a unique
+address, and a made-up one would hide a hardware fault behind an interface that
+looks like it works.
+
+The environment wins, so a provisioned board is untouched. Only ethaddr is set:
+ENET1 is the only interface wired on this board, and the EEPROM carries one
+address, not two.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ board/freescale/mx6sxsabresd/mx6sxsabresd.c | 37 +++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+diff --git a/board/freescale/mx6sxsabresd/mx6sxsabresd.c b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+index bb1dece..137d7af 100644
+--- a/board/freescale/mx6sxsabresd/mx6sxsabresd.c
++++ b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+@@ -26,6 +26,7 @@
+ #include <common.h>
+ #include <fsl_esdhc_imx.h>
+ #include <mmc.h>
++#include <dm.h>
+ #include <i2c.h>
+ #include <miiphy.h>
+ #include <netdev.h>
+@@ -846,8 +847,44 @@ static bool is_reva(void)
+ 	return (nxp_board_rev() == 1);
+ }
+ 
++/*
++ * The board carries a Microchip 24AA02E48 on I2C3 whose last six bytes hold a
++ * globally unique EUI-48, assigned by the part's manufacturer, which serves
++ * as this board's MAC address.
++ */
++#define BLAZE_MAC_EEPROM_BUS	2
++#define BLAZE_MAC_EEPROM_ADDR	0x50
++#define BLAZE_MAC_EEPROM_OFF	0xfa
++
++static int blaze_mac_from_eeprom(u8 mac[6])
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = i2c_get_chip_for_busnum(BLAZE_MAC_EEPROM_BUS,
++				      BLAZE_MAC_EEPROM_ADDR, 1, &dev);
++	if (ret)
++		return ret;
++
++	ret = dm_i2c_read(dev, BLAZE_MAC_EEPROM_OFF, mac, 6);
++	if (ret)
++		return ret;
++
++	return is_valid_ethaddr(mac) ? 0 : -EINVAL;
++}
++
+ int board_late_init(void)
+ {
++	u8 mac[6];
++
++	/* Only ENET1 is wired on this board, so only ethaddr is set. */
++	if (!eth_env_get_enetaddr("ethaddr", mac)) {
++		if (blaze_mac_from_eeprom(mac))
++			printf("MAC: EEPROM unreadable, ethaddr unset\n");
++		else
++			eth_env_set_enetaddr("ethaddr", mac);
++	}
++
+ #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+ 	if (is_reva())
+ 		env_set("board_rev", "REVA");
+-- 
+2.43.0
+
