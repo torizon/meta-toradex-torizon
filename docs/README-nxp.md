@@ -18,6 +18,7 @@ Build
 |---|---|---|
 | FRDM i.MX 93 | imx93frdm  | Supported  |
 | Verdin i.MX95 EVK  | imx95-19x19-verdin  | Supported |
+| SABRE-SD i.MX 6SoloX | imx6sxsabresd | Supported |
 
 1. Source `setup-environment`, specifying the machine to build with the MACHINE variable e.g.:
 ```bash
@@ -58,6 +59,17 @@ zstdcat if=torizon-docker-imx93-11x11-lpddr4x-frdm-7.0.0-devel-20250602173442+bu
 Flash the Device (FRDM i.MX93 eMMC)
 ======
 Coming Soon
+
+Flash the Device (SABRE-SD i.MX 6SoloX SDCard)
+======
+1. Insert a microSD card into `J4` (`SD4 BOOT`) and change boot switch `S1` to `OFF ON` (Serial Download).
+2. Download [uuu](https://github.com/nxp-imx/mfgtools/releases/tag/uuu_1.5.201) or build it from [source](https://github.com/nxp-imx/mfgtools)
+3. From `<build-directory>/deploy/images/imx6sxsabresd`, flash the card through the board:
+```bash
+sudo /path/to/uuu imx6sxsabresd.uuu
+```
+The script reads `u-boot.imx` and `torizon-docker-imx6sxsabresd.wic` from that directory.
+4. Change boot switch `S1` to `ON OFF` (Internal Boot) and press the reset button `SW3`.
 
 Manual Setup
 ======
