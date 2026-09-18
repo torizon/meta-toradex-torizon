@@ -1,0 +1,31 @@
+uuu_version 1.4.182
+
+# Full install for the i.MX 6SoloX Blaze board: bootloader into the eMMC boot0
+# hardware partition, OS image into the user area. Run with the board in the
+# serial downloader (15a2:0071):
+#
+#   uuu imx6sx-blaze.uuu
+#
+# THIS OVERWRITES THE USER AREA and erases the environment in boot0;
+# whatever the board carried before is lost.
+
+SDP: boot -f u-boot.imx
+
+FB: ucmd setenv fastboot_dev mmc
+FB: ucmd setenv mmcdev 0
+FB: ucmd mmc dev 0
+
+# "bootloader" is boot0, 1 KiB in, where the ROM reads the IVT.
+FB: flash bootloader u-boot.imx
+
+# -raw2sparse so the image's zero regions cost nothing on the wire.
+FB: flash -raw2sparse all torizon-docker-imx6sx-blaze.wic
+
+# boot0 survives both writes above, so without this a reinstalled board keeps
+# the previous bootcmd, fdtfile and OTA state.
+FB: ucmd env erase
+
+# BOOT_ACK 1, BOOT_PARTITION_ENABLE 1 (boot0), PARTITION_ACCESS 0 (user).
+FB: ucmd mmc partconf 0 1 1 0
+
+FB: done

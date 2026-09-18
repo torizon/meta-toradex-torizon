@@ -29,4 +29,4 @@ do_deploy() {
 }
 addtask deploy before do_build after do_compile
 
-COMPATIBLE_MACHINE = "(imx6sxsabresd)"
+COMPATIBLE_MACHINE = "(imx6sxsabresd|imx6sx-blaze)"

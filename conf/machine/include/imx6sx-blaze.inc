@@ -5,3 +5,5 @@ require common-imx6.inc
 WKS_FILE:sota = "torizon-imx6sx-blaze-sota.wks"
 
 TORIZON_TTY_DEVICE = "ttymxc2,115200"
+
+EXTRA_IMAGEDEPENDS:append = " torizon-uuu"
