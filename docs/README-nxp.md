@@ -19,6 +19,7 @@ Build
 | FRDM i.MX 93 | imx93frdm  | Supported  |
 | Verdin i.MX95 EVK  | imx95-19x19-verdin  | Supported |
 | SABRE-SD i.MX 6SoloX | imx6sxsabresd | Supported |
+| i.MX 6SoloX Blaze | imx6sx-blaze | Supported |
 
 1. Source `setup-environment`, specifying the machine to build with the MACHINE variable e.g.:
 ```bash
@@ -70,6 +71,17 @@ sudo /path/to/uuu imx6sxsabresd.uuu
 ```
 The script reads `u-boot.imx` and `torizon-docker-imx6sxsabresd.wic` from that directory.
 4. Change boot switch `S1` to `ON OFF` (Internal Boot) and press the reset button `SW3`.
+
+Flash the Device (i.MX 6SoloX Blaze eMMC)
+======
+1. Close boot switch `SW2200` position 1 (Serial Download), leave positions 2 and 4 open, and connect the USB OTG port on `J1300` to the host. The board enumerates as `15a2:0071`. Position 4 grounds the OTG ID pin: closed, the port is a host and the serial downloader does not appear.
+2. Download [uuu](https://github.com/nxp-imx/mfgtools/releases/tag/uuu_1.5.201) or build it from [source](https://github.com/nxp-imx/mfgtools)
+3. From `<build-directory>/deploy/images/imx6sx-blaze`, write the bootloader and the image through the board:
+```bash
+sudo /path/to/uuu imx6sx-blaze.uuu
+```
+The script reads `u-boot.imx` and `torizon-docker-imx6sx-blaze.wic` from that directory. It overwrites the eMMC user area and erases the U-Boot environment.
+4. Open boot switch `SW2200` position 1 (Internal Boot) and power-cycle the board.
 
 Manual Setup
 ======
