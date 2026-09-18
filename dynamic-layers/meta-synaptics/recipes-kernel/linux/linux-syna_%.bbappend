@@ -3,16 +3,29 @@ require recipes-kernel/linux/linux-torizon.inc
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRC_URI += " \
-    file://fragment.cfg \
     file://CVE-2026-31431-01-crypto-scatterwalk-Backport-memcpy_sglist.patch \
     file://CVE-2026-31431-02-crypto-algif_aead-Revert-to-operating-out-of-place.patch \
     file://CVE-2026-43284-xfrm-esp-avoid-in-place-decrypt-on-shared-skb-frags.patch \
 "
 
-# Enable SDIO support in the device tree for Luna SL1680
+SL1680_KERNEL_CONFIG_FRAGMENTS = " \
+    file://platform/core.cfg \
+    file://platform/community.cfg \
+    file://sl1680/core.cfg \
+    file://sl1680/community.cfg \
+"
+
+# luna-sl1680 inherits the sl1680 override. Test MACHINE directly so that
+# SL1680-board-specific fragments do not also apply to Luna.
+SRC_URI:append = "${@bb.utils.contains('MACHINE', 'sl1680', '${SL1680_KERNEL_CONFIG_FRAGMENTS}', '', d)}"
+
+# SDIO support in the device tree, and kernel configuration fragments, for Luna SL1680
 SRC_URI:append:luna-sl1680 = " \
     file://0001-dolphin-rdk.dts-enable-sdio-connection.patch \
-    file://luna-sl1680.cfg \
+    file://platform/core.cfg \
+    file://platform/community.cfg \
+    file://luna-sl1680/core.cfg \
+    file://luna-sl1680/community.cfg \
     file://0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch;patchdir=drivers/synaptics \
 "
 
