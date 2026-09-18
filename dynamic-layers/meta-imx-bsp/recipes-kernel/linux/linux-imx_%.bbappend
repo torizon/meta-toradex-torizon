@@ -11,3 +11,8 @@ SRC_URI:append:common-imx6 = " file://no-fw-fallback.cfg"
 DELTA_KERNEL_DEFCONFIG:append:common-imx6 = " no-fw-fallback.cfg"
 
 SRC_URI:append:imx6sxsabresd = " file://0001-ARM-dts-imx6sx-sdb-reva-reset-through-the-internal-wa.patch"
+
+SRC_URI:append:imx6sx-blaze = " \
+    file://0001-ARM-imx6sx-take-the-FEC1-reference-clock-from-the-pad.patch \
+    file://0002-ARM-dts-imx6sx-add-the-i.MX6SoloX-Blaze-board.patch \
+"

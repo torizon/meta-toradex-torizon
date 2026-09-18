@@ -1,0 +1,374 @@
+From f625d233818c939eb39294bc17ed34da75c92c2b Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 18 Sep 2026 12:54:59 +0200
+Subject: [PATCH] ARM: dts: imx6sx: add the i.MX6SoloX Blaze board
+
+A custom i.MX6SoloX board: the console on UART3, the eMMC on uSDHC1 and
+the SD socket on uSDHC3, the PFUZE3000 PMIC, the RMII Ethernet PHY and the
+watchdog.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/Makefile         |   1 +
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 336 +++++++++++++++++++++
+ 2 files changed, 337 insertions(+)
+ create mode 100644 arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+
+diff --git a/arch/arm/boot/dts/nxp/imx/Makefile b/arch/arm/boot/dts/nxp/imx/Makefile
+index 12e091d..68b9a83 100644
+--- a/arch/arm/boot/dts/nxp/imx/Makefile
++++ b/arch/arm/boot/dts/nxp/imx/Makefile
+@@ -317,6 +317,7 @@ dtb-$(CONFIG_SOC_IMX6SLL) += \
+ 	imx6sll-kobo-clarahd.dtb \
+ 	imx6sll-kobo-librah2o.dtb
+ dtb-$(CONFIG_SOC_IMX6SX) += \
++	imx6sx-blaze.dtb \
+ 	imx6sx-nitrogen6sx.dtb \
+ 	imx6sx-sabreauto.dtb \
+ 	imx6sx-sdb-reva.dtb \
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+new file mode 100644
+index 0000000..506372a
+--- /dev/null
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -0,0 +1,336 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
++ * A custom i.MX6SoloX board.
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include "imx6sx.dtsi"
++
++/ {
++	model = "i.MX 6SoloX Blaze";
++	compatible = "fsl,imx6sx-blaze", "fsl,imx6sx";
++
++	chosen {
++		stdout-path = &uart3;
++	};
++
++	/*
++	 * 512 MB, not the SABRE-SD's 1 GiB.
++	 */
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x20000000>;
++	};
++
++	reg_peri_3v3: regulator-peri-3v3 {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_peri_3v3>;
++		regulator-name = "peri_3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&gpio2 15 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		/*
++		 * Feeds ENET, SD2, LVDS and BT. The enable has a pull-up, so
++		 * the rail comes up on its own; this is what holds it.
++		 */
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_enet_3v3: regulator-enet-3v3 {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_enet_3v3>;
++		regulator-name = "enet_3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&gpio4 16 GPIO_ACTIVE_LOW>;
++		vin-supply = <&reg_peri_3v3>;
++		/*
++		 * Without this the PHY latches its straps on a supply that is
++		 * still ramping.
++		 */
++		startup-delay-us = <50000>;
++	};
++
++	/* The SD socket's 3V0 is switched on GPIO2_11, enable active high. */
++	vcc_sd3: regulator-vcc-sd3 {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_vcc_sd3>;
++		regulator-name = "VCC_SD3";
++		regulator-min-microvolt = <3000000>;
++		regulator-max-microvolt = <3000000>;
++		gpio = <&gpio2 11 GPIO_ACTIVE_HIGH>;
++		off-on-delay-us = <20000>;
++		enable-active-high;
++	};
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	status = "okay";
++};
++
++&i2c1 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c1>;
++	status = "okay";
++
++	pmic: pmic@8 {
++		compatible = "fsl,pfuze3000";
++		reg = <0x08>;
++
++		regulators {
++			sw1a_reg: sw1a {
++				regulator-min-microvolt = <700000>;
++				regulator-max-microvolt = <1475000>;
++				regulator-boot-on;
++				regulator-always-on;
++				regulator-ramp-delay = <6250>;
++			};
++
++			/* sw1c_reg label to align with pfuze100/pfuze200 */
++			sw1c_reg: sw1b {
++				regulator-min-microvolt = <700000>;
++				regulator-max-microvolt = <1475000>;
++				regulator-boot-on;
++				regulator-always-on;
++				regulator-ramp-delay = <6250>;
++			};
++
++			sw2_reg: sw2 {
++				regulator-min-microvolt = <2500000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			sw3a_reg: sw3 {
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <1650000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			swbst_reg: swbst {
++				regulator-min-microvolt = <5000000>;
++				regulator-max-microvolt = <5150000>;
++			};
++
++			snvs_reg: vsnvs {
++				regulator-min-microvolt = <1000000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			vref_reg: vrefddr {
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			vgen1_reg: vldo1 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			vgen2_reg: vldo2 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <1550000>;
++			};
++
++			vgen3_reg: vccsd {
++				regulator-min-microvolt = <2850000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++			vgen4_reg: v33 {
++				regulator-min-microvolt = <2850000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++			vgen5_reg: vldo3 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			vgen6_reg: vldo4 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++		};
++	};
++};
++
++/*
++ * Micrel KSZ8081RNBIA on ENET1, MDIO address 1, RMII. The GPIO5_12 reset is
++ * not optional: held asserted, the part never answers MDIO.
++ */
++&fec1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_enet1>;
++	phy-supply = <&reg_enet_3v3>;
++	phy-mode = "rmii";
++	phy-handle = <&ethphy1>;
++
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ethphy1: ethernet-phy@1 {
++			reg = <1>;
++			micrel,led-mode = <1>;
++			reset-gpios = <&gpio5 12 GPIO_ACTIVE_LOW>;
++			reset-assert-us = <15000>;
++			reset-deassert-us = <10000>;
++		};
++	};
++};
++
++/*
++ * The reference design's low-power DDR timings corrupt this board's memory.
++ * Nothing is lost by disabling it: the FEC pins BUS_FREQ_HIGH from probe
++ * until suspend, so the low-power path is unreachable anyway.
++ */
++&{/soc/busfreq} {
++	status = "disabled";
++};
++
++&usdhc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc1>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
++};
++
++/*
++ * no-1-8-v: the socket is 3V0 only, and a card negotiating 1.8 V panics on
++ * this hardware.
++ */
++&usdhc3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc3>;
++	bus-width = <4>;
++	no-1-8-v;
++	vmmc-supply = <&vcc_sd3>;
++	cd-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&wdog1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_wdog>;
++	fsl,ext-reset-output;
++};
++
++/* SW1A and SW1C supply the core LDOs. */
++&reg_arm {
++	vin-supply = <&sw1a_reg>;
++	regulator-allow-bypass;
++};
++
++&reg_soc {
++	vin-supply = <&sw1c_reg>;
++	regulator-allow-bypass;
++};
++
++&iomuxc {
++	pinctrl_uart3: uart3grp {
++		fsl,pins = <
++			MX6SX_PAD_QSPI1B_SS0_B__UART3_DCE_TX	0x1b0b1
++			MX6SX_PAD_QSPI1B_SCLK__UART3_DCE_RX	0x1b0b1
++		>;
++	};
++
++	pinctrl_i2c1: i2c1grp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO01__I2C1_SDA		0x4001b088
++			MX6SX_PAD_GPIO1_IO00__I2C1_SCL		0x4001b088
++		>;
++	};
++
++	pinctrl_usdhc1: usdhc1grp {
++		fsl,pins = <
++			MX6SX_PAD_NAND_WP_B__USDHC1_RESET_B	0x17059
++			MX6SX_PAD_SD1_CMD__USDHC1_CMD		0x17059
++			MX6SX_PAD_SD1_CLK__USDHC1_CLK		0x10059
++			MX6SX_PAD_SD1_DATA0__USDHC1_DATA0	0x17059
++			MX6SX_PAD_SD1_DATA1__USDHC1_DATA1	0x17059
++			MX6SX_PAD_SD1_DATA2__USDHC1_DATA2	0x17059
++			MX6SX_PAD_SD1_DATA3__USDHC1_DATA3	0x17059
++			MX6SX_PAD_NAND_DATA00__USDHC1_DATA4	0x17059
++			MX6SX_PAD_NAND_DATA01__USDHC1_DATA5	0x17059
++			MX6SX_PAD_NAND_DATA02__USDHC1_DATA6	0x17059
++			MX6SX_PAD_NAND_DATA03__USDHC1_DATA7	0x17059
++		>;
++	};
++
++	pinctrl_usdhc3: usdhc3grp {
++		fsl,pins = <
++			MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17059
++			MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10061
++			MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17059
++			MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17059
++			MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17059
++			MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17059
++			MX6SX_PAD_KEY_COL0__GPIO2_IO_10		0x17059
++		>;
++	};
++
++	pinctrl_vcc_sd3: vccsd3grp {
++		fsl,pins = <
++			MX6SX_PAD_KEY_COL1__GPIO2_IO_11		0x17059
++		>;
++	};
++
++	pinctrl_wdog: wdoggrp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO13__WDOG1_WDOG_ANY	0x30b0
++		>;
++	};
++
++	pinctrl_enet1: enet1grp {
++		fsl,pins = <
++			MX6SX_PAD_ENET1_MDIO__ENET1_MDIO		0xa0b1
++			MX6SX_PAD_ENET1_MDC__ENET1_MDC			0xa0b1
++			MX6SX_PAD_RGMII1_TD0__ENET1_TX_DATA_0		0xa0b1
++			MX6SX_PAD_RGMII1_TD1__ENET1_TX_DATA_1		0xa0b1
++			MX6SX_PAD_RGMII1_TX_CTL__ENET1_TX_EN		0xa0b1
++			MX6SX_PAD_RGMII1_RXC__ENET1_RX_ER		0x3081
++			MX6SX_PAD_RGMII1_RD0__ENET1_RX_DATA_0		0x3081
++			MX6SX_PAD_RGMII1_RD1__ENET1_RX_DATA_1		0x3081
++			MX6SX_PAD_RGMII1_RX_CTL__ENET1_RX_EN		0x3081
++			MX6SX_PAD_ENET1_TX_CLK__ENET1_REF_CLK1		0x91
++			MX6SX_PAD_ENET1_RX_CLK__ENET1_REF_CLK_25M	0x91
++			MX6SX_PAD_RGMII1_TD2__GPIO5_IO_8		0x80000000
++			MX6SX_PAD_RGMII2_RD0__GPIO5_IO_12		0x80000000
++		>;
++	};
++
++	pinctrl_enet_3v3: enet3v3grp {
++		fsl,pins = <
++			MX6SX_PAD_QSPI1A_DATA0__GPIO4_IO_16	0x80000000
++		>;
++	};
++
++	pinctrl_peri_3v3: peri3v3grp {
++		fsl,pins = <
++			MX6SX_PAD_KEY_ROW0__GPIO2_IO_15		0x80000000
++		>;
++	};
++};
+-- 
+2.43.0
+
