@@ -7,5 +7,7 @@ DELTA_KERNEL_DEFCONFIG:append = "torizon.cfg"
 FILESEXTRAPATHS:prepend:mx6-generic-bsp := "${THISDIR}/files:"
 SRC_URI:append:mx6-generic-bsp = " file://torizon-container.cfg"
 DELTA_KERNEL_DEFCONFIG:append:mx6-generic-bsp = " torizon-container.cfg"
+SRC_URI:append:common-imx6 = " file://no-fw-fallback.cfg"
+DELTA_KERNEL_DEFCONFIG:append:common-imx6 = " no-fw-fallback.cfg"
 
 SRC_URI:append:imx6sxsabresd = " file://0001-ARM-dts-imx6sx-sdb-reva-reset-through-the-internal-wa.patch"
