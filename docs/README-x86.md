@@ -29,6 +29,23 @@ $ bitbake torizon-docker
 
 All artifacts should be inside `build-corei7-64/deploy/images/intel-corei7-64`, including the `.wic` file.
 
+Kernel
+======
+The default kernel is `linux-yocto` 6.6 from Poky (scarthgap), not meta-intel's `linux-intel`.
+Scarthgap has no newer `linux-yocto` series; plan a migration to Torizon 8 when 6.6 LTS reaches EOL (kernel.org: December 2027).
+
+The release string (`uname -r`) follows the Toradex convention via `toradex-kernel-localversion`
+(e.g. `6.6.x-<TDX_VERSION>`), matching `qemuarm64` and Toradex BSPs — not the older
+`6.6.x-torizon-standard` form from `linux-intel`.
+
+To switch back to `linux-intel`, set the provider in `local.conf` (anywhere is fine;
+this layer uses `?=`, so a hard `=` wins):
+
+```bash
+PREFERRED_PROVIDER_virtual/kernel:intel-corei7-64 = "linux-intel"
+PREFERRED_VERSION_linux-intel:intel-corei7-64 ?= "6.6%"
+```
+
 Test on Virtual Box
 ======
 Setup a virtual machine to test the image built, using the generated `.wic.vdi` or `.wic.vmdk`.
