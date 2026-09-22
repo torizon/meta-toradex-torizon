@@ -108,3 +108,15 @@ Additional Setup for i.MX93 FRDM boards
 $ git clone https://github.com/nxp-imx-support/meta-imx-frdm.git -b imx-frdm-4.0 sources/meta-imx-frdm
 $ ln -s sources/meta-imx-frdm/tools/imx-frdm-setup.sh imx-frdm-setup.sh
 ```
+
+Additional Setup for i.MX 6SoloX Blaze boards
+======
+1. The Wi-Fi module's calibration file, `wl18xx-conf.bin`, is the board vendor's and is not distributed with this layer. Obtain it from the board vendor and, before building, place it in the directory `repo sync` ran in (`common-torizon` above), next to the build directory:
+```bash
+$ cp /path/to/wl18xx-conf.bin .
+```
+To keep it elsewhere, set its full path in `<build-directory>/conf/local.conf`:
+```
+WL18XX_CONF_BIN = "/path/to/wl18xx-conf.bin"
+```
+Without the file the build still succeeds, but the image carries no calibration and the Wi-Fi driver uses its built-in defaults.

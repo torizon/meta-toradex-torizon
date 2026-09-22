@@ -1,0 +1,133 @@
+From 999831a27c5fc1b49b090a2b094ad95453c5da05 Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Tue, 22 Sep 2026 06:24:28 +0200
+Subject: [PATCH] ARM: dts: imx6sx-blaze: add the on-board Wi-Fi module
+
+A Jorjin WG7833-B0A (TI WL1833) on uSDHC2, SDIO only, with its enable
+line modelled as the controller's vmmc supply.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 77 ++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+index 506372a..f6f1e5f 100644
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -8,6 +8,7 @@
+ /dts-v1/;
+ 
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ #include "imx6sx.dtsi"
+ 
+ / {
+@@ -71,6 +72,25 @@
+ 		off-on-delay-us = <20000>;
+ 		enable-active-high;
+ 	};
++
++	/*
++	 * Not a rail. This is WLAN_EN on the Wi-Fi module, modelled as a
++	 * regulator so the MMC core asserts it as usdhc2's vmmc and then waits
++	 * out the module's power-up before the first SDIO command. The module
++	 * itself is fed from PERI_3V3. The voltage is nominal (nothing reads
++	 * it), but the delay is not: the part does not answer sooner.
++	 */
++	reg_wlan_en: regulator-wlan-en {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_wlan_en>;
++		regulator-name = "wlan_en";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		gpio = <&gpio6 15 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		startup-delay-us = <70000>;
++	};
+ };
+ 
+ &uart3 {
+@@ -218,6 +238,40 @@
+ 	status = "okay";
+ };
+ 
++/*
++ * The Jorjin WG7833-B0 Wi-Fi module, SDIO only; its Bluetooth side is not
++ * described. The part is a TI WL1833, which the driver's match table does not
++ * name; every ti,wl18xx entry there selects the same wl18xx_data, and wl1835
++ * is the one TI's own device trees use for this module.
++ */
++&usdhc2 {
++	pinctrl-names = "default";
++	/*
++	 * The interrupt pad is muxed here, not on the wlcore node: that node is
++	 * an SDIO function device the MMC core only creates once the card has
++	 * enumerated, so pinctrl placed on it is applied too late to help the
++	 * enumeration it depends on.
++	 */
++	pinctrl-0 = <&pinctrl_usdhc2 &pinctrl_wlan_irq>;
++	bus-width = <4>;
++	non-removable;
++	no-1-8-v;
++	keep-power-in-suspend;
++	wakeup-source;
++	cap-power-off-card;
++	vmmc-supply = <&reg_wlan_en>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	wlcore@2 {
++		compatible = "ti,wl1835";
++		reg = <2>;
++		interrupt-parent = <&gpio6>;
++		interrupts = <16 IRQ_TYPE_EDGE_RISING>;
++	};
++};
++
+ /*
+  * no-1-8-v: the socket is 3V0 only, and a card negotiating 1.8 V panics on
+  * this hardware.
+@@ -280,6 +334,17 @@
+ 		>;
+ 	};
+ 
++	pinctrl_usdhc2: usdhc2grp {
++		fsl,pins = <
++			MX6SX_PAD_SD2_CMD__USDHC2_CMD		0x17061
++			MX6SX_PAD_SD2_CLK__USDHC2_CLK		0x10071
++			MX6SX_PAD_SD2_DATA0__USDHC2_DATA0	0x17061
++			MX6SX_PAD_SD2_DATA1__USDHC2_DATA1	0x17061
++			MX6SX_PAD_SD2_DATA2__USDHC2_DATA2	0x17061
++			MX6SX_PAD_SD2_DATA3__USDHC2_DATA3	0x17061
++		>;
++	};
++
+ 	pinctrl_usdhc3: usdhc3grp {
+ 		fsl,pins = <
+ 			MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17059
+@@ -298,6 +363,18 @@
+ 		>;
+ 	};
+ 
++	pinctrl_wlan_en: wlanengrp {
++		fsl,pins = <
++			MX6SX_PAD_SD4_DATA1__GPIO6_IO_15	0x17059
++		>;
++	};
++
++	pinctrl_wlan_irq: wlanirqgrp {
++		fsl,pins = <
++			MX6SX_PAD_SD4_DATA2__GPIO6_IO_16	0x13059
++		>;
++	};
++
+ 	pinctrl_wdog: wdoggrp {
+ 		fsl,pins = <
+ 			MX6SX_PAD_GPIO1_IO13__WDOG1_WDOG_ANY	0x30b0
+-- 
+2.43.0
+
