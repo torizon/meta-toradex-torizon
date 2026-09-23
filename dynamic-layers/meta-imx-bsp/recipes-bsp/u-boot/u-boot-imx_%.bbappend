@@ -1,6 +1,9 @@
 require ${@bb.utils.contains_any('MACHINE', 'imx95-19x19-verdin imx93frdm', 'recipes-bsp/u-boot/u-boot-rollback.inc', '', d)}
 # `require` is resolved before overrides apply, so the family is read out of MACHINEOVERRIDES.
 require ${@'recipes-bsp/u-boot/u-boot-rollback.inc' if 'common-imx6' in (d.getVar('MACHINEOVERRIDES') or '').split(':') else ''}
+# The bootloader-update secondary needs u-boot-version.json and
+# u-boot-initial-env.raw, which only this include produces.
+require ${@'recipes-bsp/u-boot/u-boot-ota.inc' if d.getVar('MACHINE') == 'imx6sx-blaze' else ''}
 
 FILESEXTRAPATHS:prepend:imx95-19x19-verdin := "${THISDIR}/files:"
 FILESEXTRAPATHS:prepend:imx93-11x11-lpddr4x-frdm := "${THISDIR}/files:"
