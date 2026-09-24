@@ -18,6 +18,7 @@ do_rm_work[depends] += "${TCB_SIGNING_PACK_DEPENDS}"
 # that declares one, so it also lands on this recipe's do_compile and closes a
 # loop through do_deploy. Keeping the workdir for the build is what is left.
 RM_WORK_EXCLUDE:append:verdin-am62-k3r5 = "${@' ' + d.getVar('PN') if d.getVar('TCB_SIGNING_SUPPORT') == '1' else ''}"
+RM_WORK_EXCLUDE:append:verdin-am62p-k3r5 = "${@' ' + d.getVar('PN') if d.getVar('TCB_SIGNING_SUPPORT') == '1' else ''}"
 
 # Set ${tcbsgn_cfgdir} to the directory U-Boot was built in, following the same
 # two branches as oe-core's do_uboot_assemble_fitimage(). More than one
@@ -174,6 +175,12 @@ concat_dtb:prepend:verdin-am62() {
     fi
 }
 
+concat_dtb:prepend:verdin-am62p() {
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" ]; then
+        tcbsgn_snapshot_pristine_dtb "$@"
+    fi
+}
+
 # TCB signing export tree, for the K3 machines. Their two multiconfigs produce
 # files with identical basenames and different content, so the flat file list
 # used on the iMX8M cannot describe them: export one root per multiconfig
@@ -204,6 +211,8 @@ TCB_SIGNING_EXPORT_FWDIR ?= "usr/lib/firmware"
 TCB_SIGNING_K3_SOC ?= ""
 TCB_SIGNING_K3_SOC:verdin-am62 ?= "am62x"
 TCB_SIGNING_K3_SOC:verdin-am62-k3r5 ?= "am62x"
+TCB_SIGNING_K3_SOC:verdin-am62p ?= "am62px"
+TCB_SIGNING_K3_SOC:verdin-am62p-k3r5 ?= "am62px"
 
 # U-Boot board name: both the CONFIG_SYS_BOARD value checked before the export
 # is written and the leaf of the board/toradex/<board> directory the config
@@ -211,6 +220,8 @@ TCB_SIGNING_K3_SOC:verdin-am62-k3r5 ?= "am62x"
 TCB_SIGNING_K3_BOARD ?= ""
 TCB_SIGNING_K3_BOARD:verdin-am62 ?= "verdin-am62"
 TCB_SIGNING_K3_BOARD:verdin-am62-k3r5 ?= "verdin-am62"
+TCB_SIGNING_K3_BOARD:verdin-am62p ?= "verdin-am62p"
+TCB_SIGNING_K3_BOARD:verdin-am62p-k3r5 ?= "verdin-am62p"
 
 # The device tree this multiconfig's U-Boot is configured for: the one entry of
 # CONFIG_DEFAULT_DEVICE_TREE, CONFIG_OF_LIST and CONFIG_SPL_OF_LIST alike. The
@@ -219,6 +230,8 @@ TCB_SIGNING_K3_BOARD:verdin-am62-k3r5 ?= "verdin-am62"
 TCB_SIGNING_K3_DT ?= ""
 TCB_SIGNING_K3_DT:verdin-am62 ?= "k3-am625-verdin-wifi-dev"
 TCB_SIGNING_K3_DT:verdin-am62-k3r5 ?= "k3-am625-verdin-r5"
+TCB_SIGNING_K3_DT:verdin-am62p ?= "k3-am62p5-verdin-wifi-dev"
+TCB_SIGNING_K3_DT:verdin-am62p-k3r5 ?= "k3-am62p5-verdin-r5"
 
 # TIFS blobs the k3r5 descriptor declares. It declares them whatever the device
 # type, and one binman run builds every variant's container from them. The
@@ -228,18 +241,27 @@ TCB_SIGNING_K3_DT:verdin-am62-k3r5 ?= "k3-am625-verdin-r5"
 # with.
 TCB_SIGNING_K3_TIFS_VARIANTS ?= ""
 TCB_SIGNING_K3_TIFS_VARIANTS:verdin-am62-k3r5 ?= "gp hs-cert hs-enc hs-fs-cert hs-fs-enc"
+# TI ships no ti-fs-firmware-am62px-gp.bin, the descriptor declares no gp image
+# and the build deploys no gp container: the AM62P has no GP device type, so
+# this list and its stub and boot container lists below are the AM62's with gp
+# removed.
+TCB_SIGNING_K3_TIFS_VARIANTS:verdin-am62p-k3r5 ?= "hs-cert hs-enc hs-fs-cert hs-fs-enc"
 
 # TIFS stub blobs the A53 descriptor declares; all of them go into tispl.bin
 # whatever the device type. The per-variant TIFS blobs above belong to the
 # k3r5 root instead.
 TCB_SIGNING_K3_STUB_VARIANTS ?= ""
 TCB_SIGNING_K3_STUB_VARIANTS:verdin-am62 ?= "gp hs-cert hs-enc"
+# No gp on the verdin-am62p; see its TIFS variants above.
+TCB_SIGNING_K3_STUB_VARIANTS:verdin-am62p ?= "hs-cert hs-enc"
 
 # Boot container variants the A53 root carries, for the OTA container
 # byproducts the full binman call assembles. Built by the k3r5 multiconfig and
 # staged into this recipe's sysroot, so the A53 root reads them from there.
 TCB_SIGNING_K3_BOOT_VARIANTS ?= ""
 TCB_SIGNING_K3_BOOT_VARIANTS:verdin-am62 ?= "gp hs hs-fs"
+# No gp on the verdin-am62p; see its TIFS variants above.
+TCB_SIGNING_K3_BOOT_VARIANTS:verdin-am62p ?= "hs hs-fs"
 
 # SoM family, the last field of a boot container's name. This is the machine's
 # SYSFW_CONFIG ("verdin", "aquila"), which like SYSFW_SOC is set only in the
@@ -248,6 +270,7 @@ TCB_SIGNING_K3_BOOT_VARIANTS:verdin-am62 ?= "gp hs hs-fs"
 # k3r5 multiconfig's output, not one of its inputs.
 TCB_SIGNING_K3_SOM ?= ""
 TCB_SIGNING_K3_SOM:verdin-am62 ?= "verdin"
+TCB_SIGNING_K3_SOM:verdin-am62p ?= "verdin"
 
 # Fail on an export value the machine did not set. tcbsgn_export_install()
 # catches a missing file, but nothing catches a missing variable: the paths it
@@ -543,6 +566,23 @@ do_deploy:append:verdin-am62() {
     # TCB_SIGNING_SUPPORT already requires FIT signing here, which is what
     # leaves the snapshot behind; the second test completes the condition under
     # which uboot_assemble_fitimage_helper() calls concat_dtb().
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
+        tcbsgn_deploy_pristine_dtb
+        tcbsgn_deploy_k3_export_a53
+        tcbsgn_write_k3_manifest
+    fi
+}
+
+do_deploy:append:verdin-am62p-k3r5() {
+    # As in the verdin-am62-k3r5 append: :verdin-am62p overrides do not reach
+    # this multiconfig's MACHINE, hence its own TCB_SIGNING_SUPPORT value.
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" ]; then
+        tcbsgn_deploy_k3_export_k3r5
+    fi
+}
+
+do_deploy:append:verdin-am62p() {
+    # The same condition as in the verdin-am62 append, for the same reason.
     if [ "${TCB_SIGNING_SUPPORT}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
         tcbsgn_deploy_pristine_dtb
         tcbsgn_deploy_k3_export_a53
