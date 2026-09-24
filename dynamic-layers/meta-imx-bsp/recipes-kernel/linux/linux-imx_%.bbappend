@@ -24,4 +24,5 @@ SRC_URI:append:imx6sx-blaze = " \
     file://0001-ARM-imx6sx-take-the-FEC1-reference-clock-from-the-pad.patch \
     file://0002-ARM-dts-imx6sx-add-the-i.MX6SoloX-Blaze-board.patch \
     file://0003-ARM-dts-imx6sx-blaze-add-the-on-board-Wi-Fi-module.patch \
+    file://0004-ARM-dts-imx6sx-blaze-enable-the-USB-host-controller.patch \
 "

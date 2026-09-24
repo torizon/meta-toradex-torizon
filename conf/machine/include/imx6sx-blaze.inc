@@ -21,5 +21,5 @@ UBOOT_BINARY_OTA:imx6sx-blaze = "u-boot.imx"
 # The module's PHY calibration, wl18xx-conf, carries the board vendor's
 # wl18xx-conf.bin when the builder supplies it (see wl18xx-conf.bb); without it
 # the package is empty and the driver falls back to built-in defaults.
-MACHINE_FEATURES += "wifi"
+MACHINE_FEATURES += "wifi usbhost"
 MACHINE_EXTRA_RRECOMMENDS:append = " linux-firmware-wl18xx wl18xx-conf"
