@@ -174,11 +174,12 @@ concat_dtb:prepend:verdin-am62() {
     fi
 }
 
-# TCB signing export tree, for the AM62. Its two multiconfigs produce files with
-# identical basenames and different content, so the flat file list used on the
-# iMX8M cannot describe them: export one root per multiconfig instead, each a
-# binman working directory a consumer can enter and run binman in. Deliberately
-# absent, for the consumer to supply: arch/arm/mach-k3/keys/ and u-boot.dtb.
+# TCB signing export tree, for the K3 machines. Their two multiconfigs produce
+# files with identical basenames and different content, so the flat file list
+# used on the iMX8M cannot describe them: export one root per multiconfig
+# instead, each a binman working directory a consumer can enter and run binman
+# in. Deliberately absent, for the consumer to supply: arch/arm/mach-k3/keys/
+# and the a53 root's u-boot.dtb.
 
 # One root per multiconfig inside the export tree. TCB_SIGNING_EXPORT_DIR names
 # the tree itself and is defined in the include required above.
@@ -281,23 +282,33 @@ tcbsgn_export_install() {
     install -m 0644 "${src}" "${dstdir}/"
 }
 
-# Everything binman needs to rebuild and re-sign tispl.bin, u-boot.img and
-# firmware-verdin-am62-*. All of it comes from this recipe's own workdir, ${S}
+# Everything binman needs to rebuild and re-sign tispl.bin, u-boot.img and the
+# OTA container byproducts. All of it comes from this recipe's own workdir, ${S}
 # or sysroot, which is why the tarball recipe needs no other producer.
-tcbsgn_deploy_am62_export_a53() {
-    local def_dt="k3-am625-verdin-wifi-dev"
-    local boarddir="board/toradex/verdin-am62"
+tcbsgn_deploy_k3_export_a53() {
+    local def_dt="${TCB_SIGNING_K3_DT}"
+    local board="${TCB_SIGNING_K3_BOARD}"
+    local soc="${TCB_SIGNING_K3_SOC}"
+    local som="${TCB_SIGNING_K3_SOM}"
+    local boarddir="board/toradex/${board}"
     local root="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_A53}"
     local srcfw="${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware"
     local dstfw="${root}/${TCB_SIGNING_EXPORT_FWDIR}"
     local f
+
+    tcbsgn_require_var TCB_SIGNING_K3_DT "${def_dt}"
+    tcbsgn_require_var TCB_SIGNING_K3_BOARD "${board}"
+    tcbsgn_require_var TCB_SIGNING_K3_SOC "${soc}"
+    tcbsgn_require_var TCB_SIGNING_K3_SOM "${som}"
+    tcbsgn_require_var TCB_SIGNING_K3_STUB_VARIANTS "${TCB_SIGNING_K3_STUB_VARIANTS}"
+    tcbsgn_require_var TCB_SIGNING_K3_BOOT_VARIANTS "${TCB_SIGNING_K3_BOOT_VARIANTS}"
 
     tcbsgn_uboot_set_config_dir
 
     # Assumptions the paths below are written against. The of-list checks also
     # guard the layout: one DTB per root holds only while binman builds one DT.
     tcbsgn_check_config "CONFIG_SYS_VENDOR" "toradex"
-    tcbsgn_check_config "CONFIG_SYS_BOARD" "verdin-am62"
+    tcbsgn_check_config "CONFIG_SYS_BOARD" "${board}"
     tcbsgn_check_config "CONFIG_DEFAULT_DEVICE_TREE" "${def_dt}"
     tcbsgn_check_config "CONFIG_OF_LIST" "${def_dt}"
     tcbsgn_check_config "CONFIG_SPL_OF_LIST" "${def_dt}"
@@ -324,8 +335,7 @@ tcbsgn_deploy_am62_export_a53() {
     tcbsgn_export_install "${tcbsgn_cfgdir}/arch/arm/dts/${def_dt}.dtb" \
                           "${root}/arch/arm/dts"
 
-    # binman regenerates the TIFS and DM config blobs from these rather than
-    # reusing the built ones; each root keeps its own copy to stay independent.
+    # Not read by the A53 descriptor, whose config-blob nodes are R5-only.
     for f in board pm rm sec; do
         tcbsgn_export_install "${S}/${boarddir}/${f}-cfg.yaml" "${root}/${boarddir}"
     done
@@ -339,17 +349,17 @@ tcbsgn_deploy_am62_export_a53() {
     tcbsgn_export_install "${srcfw}/ti-dm/${PLAT_SFX}/${DM_FIRMWARE}" \
                           "${dstfw}/ti-dm/${PLAT_SFX}"
 
-    # All three stub blobs go into tispl.bin whatever the device type; the
-    # per-variant ones belong to the k3r5 root.
-    for f in gp hs-cert hs-enc; do
-        tcbsgn_export_install "${srcfw}/ti-sysfw/ti-fs-stub-firmware-am62x-${f}.bin" \
+    # Every stub blob the descriptor declares goes into tispl.bin whatever the
+    # device type; the per-variant TIFS blobs belong to the k3r5 root.
+    for f in ${TCB_SIGNING_K3_STUB_VARIANTS}; do
+        tcbsgn_export_install "${srcfw}/ti-sysfw/ti-fs-stub-firmware-${soc}-${f}.bin" \
                               "${dstfw}/ti-sysfw"
     done
 
     # The A53 descriptor assembles the OTA container byproducts from these;
     # do_compile stages them from the k3r5 multiconfig through mcdepends.
-    for f in gp hs hs-fs; do
-        tcbsgn_export_install "${srcfw}/tiboot3-am62x-${f}-verdin.bin" "${root}"
+    for f in ${TCB_SIGNING_K3_BOOT_VARIANTS}; do
+        tcbsgn_export_install "${srcfw}/tiboot3-${soc}-${f}-${som}.bin" "${root}"
     done
 }
 
@@ -358,7 +368,7 @@ tcbsgn_deploy_am62_export_a53() {
 # its openssl is new enough, so intent and outcome can differ. Pass a k3r5
 # artifact: the A53's own outputs are FIT images, whose certificates are not
 # at offset 0. Unreadable is "false", the answer that costs a consumer least.
-tcbsgn_am62_certificates_pinned() {
+tcbsgn_k3_certificates_pinned() {
     local notbefore epoch
     local certfile="${1?certificate file}"
 
@@ -383,10 +393,16 @@ tcbsgn_am62_certificates_pinned() {
 # consumer whose binman differs is detectable instead of silently producing
 # different output. The A53 side writes it alone: everything in it is
 # build-wide, and both multiconfigs build one recipe at one SRCREV.
-tcbsgn_write_am62_manifest() {
+tcbsgn_write_k3_manifest() {
     local outdir="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR}"
+    local soc="${TCB_SIGNING_K3_SOC}"
+    local som="${TCB_SIGNING_K3_SOM}"
+    local variant="hs-fs"
     local verfile ubootversion ubootrelease roots sep r
     local pinned opensslver epoch
+
+    tcbsgn_require_var TCB_SIGNING_K3_SOC "${soc}"
+    tcbsgn_require_var TCB_SIGNING_K3_SOM "${som}"
 
     tcbsgn_uboot_set_config_dir
     tcbsgn_uboot_set_config_type
@@ -415,9 +431,22 @@ tcbsgn_write_am62_manifest() {
     done
 
     # The a53 root's own copy, installed earlier in this same append, so this
-    # reaches into no other multiconfig's deploy directory.
-    pinned=$(tcbsgn_am62_certificates_pinned \
-             "${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_A53}/tiboot3-am62x-hs-fs-verdin.bin")
+    # reaches into no other multiconfig's deploy directory. Measured on one
+    # variant, which has to be one the root carries: an absent file reads as
+    # "false", so a machine without it would get a well-formed manifest with a
+    # wrong answer instead of a failed build.
+    case " ${TCB_SIGNING_K3_BOOT_VARIANTS} " in
+    *" ${variant} "*)
+        ;;
+    *)
+        bbfatal "The TCB signing manifest measures certificate pinning on the" \
+                "\"${variant}\" boot container, but TCB_SIGNING_K3_BOOT_VARIANTS" \
+                "(\"${TCB_SIGNING_K3_BOOT_VARIANTS}\") does not export it for" \
+                "MACHINE \"${MACHINE}\"; tcbsgn_write_k3_manifest() must be reviewed."
+        ;;
+    esac
+    pinned=$(tcbsgn_k3_certificates_pinned \
+             "${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_A53}/tiboot3-${soc}-${variant}-${som}.bin")
 
     # Provenance only: this task's openssl, which the k3r5 side takes from the
     # same recipe at the same version. Consumers do not branch on it.
@@ -444,20 +473,27 @@ tcbsgn_write_am62_manifest() {
     chmod 0644 "${outdir}/manifest.json"
 }
 
-# Everything binman needs to rebuild and re-sign the tiboot3-am62x-*-verdin
-# containers, sourced from this recipe's own workdir as in the A53 root above.
-tcbsgn_deploy_am62_export_k3r5() {
-    local def_dt="k3-am625-verdin-r5"
-    local boarddir="board/toradex/verdin-am62"
+# Everything binman needs to rebuild and re-sign the boot containers, sourced
+# from this recipe's own workdir as in the A53 root above.
+tcbsgn_deploy_k3_export_k3r5() {
+    local def_dt="${TCB_SIGNING_K3_DT}"
+    local board="${TCB_SIGNING_K3_BOARD}"
+    local soc="${TCB_SIGNING_K3_SOC}"
+    local boarddir="board/toradex/${board}"
     local root="${DEPLOYDIR}/${TCB_SIGNING_EXPORT_DIR_K3R5}"
     local srcfw="${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware"
     local f
+
+    tcbsgn_require_var TCB_SIGNING_K3_DT "${def_dt}"
+    tcbsgn_require_var TCB_SIGNING_K3_BOARD "${board}"
+    tcbsgn_require_var TCB_SIGNING_K3_SOC "${soc}"
+    tcbsgn_require_var TCB_SIGNING_K3_TIFS_VARIANTS "${TCB_SIGNING_K3_TIFS_VARIANTS}"
 
     tcbsgn_uboot_set_config_dir
 
     # Same checks as the A53 root, against this multiconfig's own values.
     tcbsgn_check_config "CONFIG_SYS_VENDOR" "toradex"
-    tcbsgn_check_config "CONFIG_SYS_BOARD" "verdin-am62"
+    tcbsgn_check_config "CONFIG_SYS_BOARD" "${board}"
     tcbsgn_check_config "CONFIG_DEFAULT_DEVICE_TREE" "${def_dt}"
     tcbsgn_check_config "CONFIG_OF_LIST" "${def_dt}"
     tcbsgn_check_config "CONFIG_SPL_OF_LIST" "${def_dt}"
@@ -486,10 +522,11 @@ tcbsgn_deploy_am62_export_k3r5() {
     tcbsgn_export_install "${S}/arch/arm/mach-k3/schema.yaml" \
                           "${root}/arch/arm/mach-k3"
 
-    # All five TIFS blobs: the descriptor declares gp, hs and hs-fs whatever
-    # the device type, and --allow-missing turns a gap into an invalid container.
-    for f in gp hs-cert hs-enc hs-fs-cert hs-fs-enc; do
-        tcbsgn_export_install "${srcfw}/ti-sysfw/ti-fs-firmware-am62x-${f}.bin" \
+    # Every TIFS blob the descriptor declares, which it does whatever the
+    # device type. Each is optional to binman, so a missing one would yield a
+    # container without it and nothing but a warning.
+    for f in ${TCB_SIGNING_K3_TIFS_VARIANTS}; do
+        tcbsgn_export_install "${srcfw}/ti-sysfw/ti-fs-firmware-${soc}-${f}.bin" \
                               "${root}/ti-sysfw"
     done
 }
@@ -498,7 +535,7 @@ do_deploy:append:verdin-am62-k3r5() {
     # MACHINE gains a "-k3r5" suffix here, so :verdin-am62 overrides do not
     # reach this task, TCB_SIGNING_SUPPORT included, hence its own value for it.
     if [ "${TCB_SIGNING_SUPPORT}" = "1" ]; then
-        tcbsgn_deploy_am62_export_k3r5
+        tcbsgn_deploy_k3_export_k3r5
     fi
 }
 
@@ -508,7 +545,7 @@ do_deploy:append:verdin-am62() {
     # which uboot_assemble_fitimage_helper() calls concat_dtb().
     if [ "${TCB_SIGNING_SUPPORT}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
         tcbsgn_deploy_pristine_dtb
-        tcbsgn_deploy_am62_export_a53
-        tcbsgn_write_am62_manifest
+        tcbsgn_deploy_k3_export_a53
+        tcbsgn_write_k3_manifest
     fi
 }
