@@ -1,0 +1,6 @@
+# short-description: Create OTA-enabled SD card image for i.MX 6 boards
+# long-description: Creates an SD card image with U-Boot raw at the 1 KiB
+# offset the i.MX 6 boot ROM reads, not the 32 KiB the i.MX 8/9 boards use,
+# and an OSTree physical sysroot as the payload. There is no boot partition.
+part u-boot --source rawcopy --sourceparams="file=u-boot.imx.tagged" --ondisk mmcblk --no-table --align 1
+part / --source otaimage --ondisk mmcblk --fstype=ext4 --align 8192
