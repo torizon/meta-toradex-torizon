@@ -14,8 +14,10 @@ inherit deploy nopackages
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 # Derived from the one list, so that the machines this recipe is built for and
 # the machines its producers hold a workdir for cannot drift apart. Anchored:
-# unanchored, "verdin-am62" would also match verdin-am62p and the k3r5
-# multiconfig's verdin-am62-k3r5, neither of which this recipe packs for.
+# unanchored, an entry would also match every machine name it is a prefix of --
+# its own k3r5 multiconfig (verdin-am62-k3r5 for verdin-am62), which this recipe
+# does not pack for, and other machines (verdin-am62p), which must be listed on
+# their own.
 COMPATIBLE_MACHINE = "^(${@'|'.join(d.getVar('TCB_SIGNING_PACK_MACHINES').split())})$"
 
 # bitbake world would otherwise build this on machines where the feature is off
