@@ -194,6 +194,76 @@ TCB_SIGNING_MANIFEST_ROOTS ?= "k3r5 a53"
 # distro configuration cannot move it; the k3r5 one names ti-sysfw/ instead.
 TCB_SIGNING_EXPORT_FWDIR ?= "usr/lib/firmware"
 
+# Values the k3r5 side reads need an override per machine name: that multiconfig
+# has no per-SoC override, and its MACHINE carries a "-k3r5" suffix.
+
+# SoC suffix as it appears in the TI firmware and boot container file names.
+# SYSFW_SOC holds the same string, but is set only in the *-k3r5 machine
+# configurations, so it is empty on the A53 side and cannot serve here.
+TCB_SIGNING_K3_SOC ?= ""
+TCB_SIGNING_K3_SOC:verdin-am62 ?= "am62x"
+TCB_SIGNING_K3_SOC:verdin-am62-k3r5 ?= "am62x"
+
+# U-Boot board name: both the CONFIG_SYS_BOARD value checked before the export
+# is written and the leaf of the board/toradex/<board> directory the config
+# YAML sources come from.
+TCB_SIGNING_K3_BOARD ?= ""
+TCB_SIGNING_K3_BOARD:verdin-am62 ?= "verdin-am62"
+TCB_SIGNING_K3_BOARD:verdin-am62-k3r5 ?= "verdin-am62"
+
+# The device tree this multiconfig's U-Boot is configured for: the one entry of
+# CONFIG_DEFAULT_DEVICE_TREE, CONFIG_OF_LIST and CONFIG_SPL_OF_LIST alike. The
+# two multiconfigs of one machine are configured for different trees, so there
+# is no value that could be shared between them.
+TCB_SIGNING_K3_DT ?= ""
+TCB_SIGNING_K3_DT:verdin-am62 ?= "k3-am625-verdin-wifi-dev"
+TCB_SIGNING_K3_DT:verdin-am62-k3r5 ?= "k3-am625-verdin-r5"
+
+# TIFS blobs the k3r5 descriptor declares. It declares them whatever the device
+# type, and one binman run builds every variant's container from them. The
+# descriptor marks them optional, so a missing one does not fail that run:
+# binman only warns and emits the container without it, which does not boot.
+# So the list is what the descriptor names and not what this device would boot
+# with.
+TCB_SIGNING_K3_TIFS_VARIANTS ?= ""
+TCB_SIGNING_K3_TIFS_VARIANTS:verdin-am62-k3r5 ?= "gp hs-cert hs-enc hs-fs-cert hs-fs-enc"
+
+# TIFS stub blobs the A53 descriptor declares; all of them go into tispl.bin
+# whatever the device type. The per-variant TIFS blobs above belong to the
+# k3r5 root instead.
+TCB_SIGNING_K3_STUB_VARIANTS ?= ""
+TCB_SIGNING_K3_STUB_VARIANTS:verdin-am62 ?= "gp hs-cert hs-enc"
+
+# Boot container variants the A53 root carries, for the OTA container
+# byproducts the full binman call assembles. Built by the k3r5 multiconfig and
+# staged into this recipe's sysroot, so the A53 root reads them from there.
+TCB_SIGNING_K3_BOOT_VARIANTS ?= ""
+TCB_SIGNING_K3_BOOT_VARIANTS:verdin-am62 ?= "gp hs hs-fs"
+
+# SoM family, the last field of a boot container's name. This is the machine's
+# SYSFW_CONFIG ("verdin", "aquila"), which like SYSFW_SOC is set only in the
+# *-k3r5 machine configurations and so is empty on the A53 side, where the
+# names are needed. Only the A53 root reads it: the boot containers are the
+# k3r5 multiconfig's output, not one of its inputs.
+TCB_SIGNING_K3_SOM ?= ""
+TCB_SIGNING_K3_SOM:verdin-am62 ?= "verdin"
+
+# Fail on an export value the machine did not set. tcbsgn_export_install()
+# catches a missing file, but nothing catches a missing variable: the paths it
+# builds would simply be wrong, and an empty list would export nothing at all.
+tcbsgn_require_var() {
+    local name="${1?variable name}"
+    local value="$2"
+
+    if [ -z "${value}" ]; then
+        bbfatal "\"${name}\" is empty for MACHINE \"${MACHINE}\", but this machine" \
+                "exports the K3 TCB signing tree. The TCB_SIGNING_K3_* values need an" \
+                "override per machine name; note that the k3r5 multiconfig's MACHINE" \
+                "carries a \"-k3r5\" suffix, so a plain machine override does not" \
+                "reach it."
+    fi
+}
+
 # Install a regular file into the export tree, creating its directory. Symlinks
 # are dereferenced, so the tarball carries no dangling link and no duplicate.
 tcbsgn_export_install() {
