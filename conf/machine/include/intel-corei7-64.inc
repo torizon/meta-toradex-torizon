@@ -24,10 +24,7 @@ hostname:pn-base-files = "torizon-x86"
 PREFERRED_PROVIDER_u-boot-default-script = ""
 PREFERRED_PROVIDER_virtual/dtb = ""
 
-# Weak assignment so a local.conf override (before or after this include)
-# wins; local.conf is fully parsed before meta-intel's machine conf
-# ?= "linux-intel", so this still beats that default. See docs/README-x86.md.
-PREFERRED_PROVIDER_virtual/kernel:intel-corei7-64 ?= "linux-yocto"
+PREFERRED_PROVIDER_virtual/kernel:intel-corei7-64 = "linux-yocto"
 PREFERRED_VERSION_linux-yocto:intel-corei7-64 ?= "6.6%"
 
 PREFERRED_PROVIDER_virtual/kernel:xenomai3 = "linux-xenomai-3"
