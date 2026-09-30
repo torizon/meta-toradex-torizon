@@ -31,9 +31,10 @@ SYNA_SDK_CONFIG_FILE = "sl1680_poky_aarch64_rdk_defconfig"
 
 UBOOT_BOOT_PARTITION_NUMBER = "6"
 
+# Don't overwrite 'fdtfile' if already set (fw_setenv, TCB, or rollback).
 UENV_EXTRA_CONFIGS = "\
     env set skip_fdt_overlays 1; \
-    env set fdtfile ${@ os.path.basename(d.getVar('SYNA_KERNEL_DTS_FILE'))}; \
+    if test -z "${fdtfile}"; then env set fdtfile ${@ os.path.basename(d.getVar('SYNA_KERNEL_DTS_FILE'))}; fi; \
     env set skip_fdt_update 0x2; \
     env set kernel_addr_r 0x7c00000; \
     env set ramdisk_addr_r 0xcf00000; \
