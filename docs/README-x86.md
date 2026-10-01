@@ -38,13 +38,9 @@ The release string (`uname -r`) follows the Toradex convention via `toradex-kern
 (e.g. `6.6.x-<TDX_VERSION>`), matching `qemuarm64` and Toradex BSPs — not the older
 `6.6.x-torizon-standard` form from `linux-intel`.
 
-To switch back to `linux-intel`, set the provider in `local.conf` (anywhere is fine;
-this layer uses `?=`, so a hard `=` wins):
-
-```bash
-PREFERRED_PROVIDER_virtual/kernel:intel-corei7-64 = "linux-intel"
-PREFERRED_VERSION_linux-intel:intel-corei7-64 ?= "6.6%"
-```
+> [!IMPORTANT]
+> `linux-intel' is not supported: its 6.6 series is effectively unmaintained and carries unpatched CVEs.
+> The provider is set unconditionally by this layer.
 
 Test on Virtual Box
 ======
