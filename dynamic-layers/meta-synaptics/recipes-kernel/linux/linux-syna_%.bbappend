@@ -30,9 +30,12 @@ SRC_URI:append:luna-sl1680 = " \
 # kernel-yocto.bbclass) - any other patchdir value, including ours, is silently
 # excluded from the applied series instead of being applied or erroring out. The
 # patchdir parameter above only serves to keep it out of that automatic series;
-# apply it for real here, directly against the nested repo.
+# apply it for real here, directly against the nested repo. do_patch can re-run
+# without a fresh do_unpack, so skip it when already applied.
 do_patch:append:luna-sl1680() {
-    ( cd ${S}/drivers/synaptics && git apply ${WORKDIR}/0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch )
+    ( cd ${S}/drivers/synaptics && \
+      p=${WORKDIR}/0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch && \
+      { git apply --reverse --check $p 2>/dev/null || git apply $p; } )
 }
 
 # Synaptics kernel recipe is overwriting INITRAMFS_IMAGE
