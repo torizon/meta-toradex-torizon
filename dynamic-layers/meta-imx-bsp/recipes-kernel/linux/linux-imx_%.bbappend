@@ -27,7 +27,9 @@ SRC_URI:append:imx6sx-blaze = " \
     file://0004-ARM-dts-imx6sx-blaze-enable-the-USB-host-controller.patch \
     file://0005-ARM-dts-imx6sx-blaze-enable-the-USB-OTG-controller.patch \
     file://0006-ARM-dts-imx6sx-blaze-add-the-PCF85363-RTC.patch \
+    file://0007-ARM-dts-imx6sx-blaze-add-the-LVDS-display.patch \
     file://rtc.cfg \
+    file://display.cfg \
 "
 
-DELTA_KERNEL_DEFCONFIG:append:imx6sx-blaze = " rtc.cfg"
+DELTA_KERNEL_DEFCONFIG:append:imx6sx-blaze = " rtc.cfg display.cfg"
