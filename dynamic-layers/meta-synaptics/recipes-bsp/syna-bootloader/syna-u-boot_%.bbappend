@@ -1,18 +1,15 @@
 require recipes-bsp/u-boot/u-boot-rollback.inc
 
-# Patching build.sh to fix bash dependency on sh environment
-# where build.sh is executed with /bin/sh which may not support all bash features
-# and causes build failures on some systems.
-
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRC_URI += "\
-    file://0001-uboot-build.sh-change-build-script-to-accept-extra-c.patch;patchdir=./build \
-    file://0002-boot-sm_temperature.c-silence-chip-temperature-messa.patch;patchdir=./boot \
     file://extra-uboot-config.cfg \
 "
 
-do_compile:prepend () {
-    sed -i "s/@@BOOT_PART@@/${UBOOT_BOOT_PARTITION_NUMBER}/" ${WORKDIR}/extra-uboot-config.cfg
-    export extra_uboot_config=${WORKDIR}/extra-uboot-config.cfg
+# extra-uboot-config.cfg is merged straight from this layer's tree, so the
+# per-machine boot partition can't be substituted into it; set
+# CONFIG_BOOTCOMMAND in the merged .config instead.
+do_configure:append () {
+    sed -i '/^CONFIG_BOOTCOMMAND=/d' ${B}/.config
+    echo 'CONFIG_BOOTCOMMAND="setenv devtype mmc; setenv devnum 0; ext4load ${devtype} ${devnum}:${UBOOT_BOOT_PARTITION_NUMBER} ${loadaddr} /boot.scr && source ${loadaddr};"' >> ${B}/.config
 }
