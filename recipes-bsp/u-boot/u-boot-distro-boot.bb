@@ -23,6 +23,12 @@ DTB_PREFIX ??= "${@d.getVar('KERNEL_DTB_PREFIX').replace("/", "_") if d.getVar('
 # representing device-tree overlays) to be used when booting.
 FITCONF_FDT_OVERLAYS ??= ""
 
+# FDT_OVERLAYS_RESIZE: extra space added to the device tree (fdt resize) before
+# applying device-tree overlays, when not booting a FIT image. It must fit all
+# overlays applied at boot, otherwise fdt apply fails and leaves the device
+# tree unusable.
+FDT_OVERLAYS_RESIZE ??= "0x20000"
+
 # Fusing support inside uEnv.txt:
 #
 # - FUSE_SUPPORT_SIGNED_BUILD: internal usage (automatically set to "1" on tdx-signed builds).
@@ -255,6 +261,7 @@ do_compile() {
         -e 's/@@KERNEL_DTB_PREFIX@@/${DTB_PREFIX}/' \
         -e 's/@@FITCONF_FDT_OVERLAYS@@/${FITCONF_FDT_OVERLAYS}/' \
         -e 's/@@BOOTARG_ROOT@@/${BOOTARG_ROOT}/' \
+        -e 's/@@FDT_OVERLAYS_RESIZE@@/${FDT_OVERLAYS_RESIZE}/' \
         ${WORKDIR}/uEnv.txt.in > ${WORKDIR}/uEnv.txt.temp
 
     if [ "${FUSE_SUPPORT}" = "1" ]; then

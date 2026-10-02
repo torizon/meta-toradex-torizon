@@ -8,6 +8,13 @@ WKS_FILE_DEPENDS:append = " u-boot-default-script"
 OTAROOT_PARTITION_NUMBER = "${UBOOT_BOOT_PARTITION_NUMBER}"
 export UBOOT_BOOT_PARTITION_NUMBER
 
+# Synaptics U-Boot's fdt_update (run by booti) works in place on a fixed
+# 0x1ff00-byte DTB buffer (DTB_SPACE) and silently skips its /memory fixups
+# if the FDT is larger. The base DTB plus this resize, rounded up to 4 KiB,
+# plus booti's relocation pad (CONFIG_SYS_FDT_PAD, 0x3000) must stay below
+# that.
+FDT_OVERLAYS_RESIZE = "0x8000"
+
 OSTREE_DEVICETREE = " \
     ${SYNA_KERNEL_DTS_FILE} \
     ${SYNA_KERNEL_DTBO_FILE} \

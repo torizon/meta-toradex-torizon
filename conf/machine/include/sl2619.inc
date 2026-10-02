@@ -7,7 +7,6 @@ UBOOT_BOOT_PARTITION_NUMBER = "8"
 
 # Don't overwrite 'fdtfile' if already set (fw_setenv, TCB, or rollback).
 UENV_EXTRA_CONFIGS = "\
-    env set skip_fdt_overlays 1; \
     if test -z "${fdtfile}"; then env set fdtfile ${@ os.path.basename(d.getVar('SYNA_KERNEL_DTS_FILE'))}; fi; \
     env set skip_fdt_update 0x2; \
     env set kernel_addr_r 0x7c00000; \

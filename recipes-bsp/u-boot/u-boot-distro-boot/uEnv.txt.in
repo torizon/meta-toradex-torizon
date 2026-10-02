@@ -33,7 +33,7 @@ apply_overlays=if test ${kernel_image_type} = "fitImage"; then \
                        env set fitconf_fdt_overlays "${fitconf_fdt_overlays}"#conf-"${overlay_file}"; \
                    done; \
                else \
-                   fdt addr ${fdt_addr_r} && fdt resize 0x20000 && \
+                   fdt addr ${fdt_addr_r} && fdt resize @@FDT_OVERLAYS_RESIZE@@ && \
                    fdt mknode /chosen overlays && \
                    for overlay_file in ${fdt_overlays}; do \
                        echo "Applying Overlay: ${overlay_file}" && \
