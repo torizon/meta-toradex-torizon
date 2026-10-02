@@ -1,4 +1,4 @@
-OSTREE_KERNEL_ARGS:append:sota = " console=ttyS0,115200 earlycon root=LABEL=otaroot rootfstype=ext4 cma=524288000@1556086784"
+OSTREE_KERNEL_ARGS:append:sota = " console=ttyS0,115200 earlycon root=LABEL=otaroot rootfstype=ext4 cma=524288000@3166699520"
 
 DISTRO_FEATURES:append = " tpm2"
 
