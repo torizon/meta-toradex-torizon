@@ -28,6 +28,7 @@ SRC_URI:append:imx6sx-blaze = " \
     file://0005-ARM-dts-imx6sx-blaze-enable-the-USB-OTG-controller.patch \
     file://0006-ARM-dts-imx6sx-blaze-add-the-PCF85363-RTC.patch \
     file://0007-ARM-dts-imx6sx-blaze-add-the-LVDS-display.patch \
+    file://0008-ARM-dts-imx6sx-blaze-add-the-panel-s-touch-controller.patch \
     file://rtc.cfg \
     file://display.cfg \
 "
