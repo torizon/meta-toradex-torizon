@@ -133,7 +133,7 @@ IMAGE_CMD:boot-ext4 () {
 }
 do_image_boot_ext4[depends] += "e2fsprogs-native:do_populate_sysroot"
 # Signed images use a dedicated XBOOTLDR partition; append boot-ext4 fstype.
-IMAGE_FSTYPES:append:tdx-signed = " boot-ext4"
+IMAGE_FSTYPES:append:intel-corei7-64:tdx-signed = " boot-ext4"
 do_image_wic[depends] += "${@bb.utils.contains('IMAGE_FSTYPES', 'boot-ext4', '%s:do_image_boot_ext4' % d.getVar('PN'), '', d)}"
 
 EXTRA_IMAGECMD:ota-btrfs ?= "-L otaroot -n 4096 --shrink"
