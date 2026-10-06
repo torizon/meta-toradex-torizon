@@ -48,6 +48,19 @@ INITRAMFS_EXTRA_KMODS:append:verdin-am62p = "\
     cdns_dsi \
 "
 
+# Modules necessary for our i.MX93 SoMs to display splash screen.
+# The DSI connector I2C buses sit behind a PCA954x I2C mux, and the
+# bridges come before the DSI host so it finds them on its first probe.
+INITRAMFS_EXTRA_KMODS:append:mx93-nxp-bsp:tdx = "\
+    i2c_mux_pca954x \
+    phy_fsl_imx93_mipi_dphy \
+    display_connector \
+    ti_sn65dsi83 \
+    lontium_lt8912b \
+    dw_mipi_dsi \
+    dw_mipi_dsi_imx \
+"
+
 # Modules necessary for our i.MX95 SoMs to display splash screen.
 INITRAMFS_EXTRA_KMODS:mx95-nxp-bsp = "\
     phy_fsl_imx8mp_lvds \
