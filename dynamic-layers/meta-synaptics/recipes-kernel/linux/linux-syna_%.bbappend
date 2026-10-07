@@ -21,21 +21,23 @@ SRC_URI:append:luna-sl1680 = " \
     file://luna-sl1680-core.cfg \
     file://luna-sl1680-community.cfg \
     file://0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch;patchdir=drivers/synaptics \
+    file://0001-avio-dhub-ratelimit-the-spurious-interrupt-message.patch;patchdir=drivers/synaptics \
 "
 
-# 0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch touches
-# drivers/synaptics/net/wireless/bcmdhd/dhd_linux.c, which lives inside a nested
-# git repo (drivers/synaptics has its own .git). kernel-yocto.bbclass's do_patch
-# only understands patchdir="kernel-meta" as a special case (see find_patches() in
+# These patches touch drivers/synaptics, which is a nested git repo (it has its
+# own .git). kernel-yocto.bbclass's do_patch only understands
+# patchdir="kernel-meta" as a special case (see find_patches() in
 # kernel-yocto.bbclass) - any other patchdir value, including ours, is silently
 # excluded from the applied series instead of being applied or erroring out. The
-# patchdir parameter above only serves to keep it out of that automatic series;
-# apply it for real here, directly against the nested repo. do_patch can re-run
-# without a fresh do_unpack, so skip it when already applied.
+# patchdir parameter above only serves to keep them out of that automatic series;
+# apply them for real here, directly against the nested repo. do_patch can re-run
+# without a fresh do_unpack, so skip each one when already applied.
 do_patch:append:luna-sl1680() {
     ( cd ${S}/drivers/synaptics && \
-      p=${WORKDIR}/0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch && \
-      { git apply --reverse --check $p 2>/dev/null || git apply $p; } )
+      for p in ${WORKDIR}/0001-dhd_linux-fix-issue-which-freezes-sl1680-chips-board.patch \
+               ${WORKDIR}/0001-avio-dhub-ratelimit-the-spurious-interrupt-message.patch; do
+          git apply --reverse --check $p 2>/dev/null || git apply $p || exit 1
+      done )
 }
 
 # Synaptics kernel recipe is overwriting INITRAMFS_IMAGE
