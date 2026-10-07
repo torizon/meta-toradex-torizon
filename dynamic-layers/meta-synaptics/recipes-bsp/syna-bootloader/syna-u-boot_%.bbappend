@@ -6,6 +6,11 @@ SRC_URI += "\
     file://extra-uboot-config.cfg \
 "
 
+# Show the fastlogo before booting, as the vendor U-Boot does. This also
+# initialises HDMI and hands the logo over to the kernel display driver.
+# '; true' keeps a logo failure from aborting autoboot.
+SRC_URI:append:sl1680 = " file://show-logo.cfg"
+
 # extra-uboot-config.cfg is merged straight from this layer's tree, so the
 # per-machine boot partition can't be substituted into it; set
 # CONFIG_BOOTCOMMAND in the merged .config instead.
