@@ -1,0 +1,490 @@
+From 000ecb9db2c261738a3a6607a253cb50051b402f Mon Sep 17 00:00:00 2001
+From: Luc BEAUFILS <luc.beaufils@savoirfairelinux.com>
+Date: Tue, 21 Jul 2026 17:48:51 +0200
+Subject: [PATCH] Ext4Pkg: Ext4Dxe: implement in-place file rename via SetInfo
+
+EFI_FILE_PROTOCOL.SetInfo was returning EFI_UNSUPPORTED for write
+operations. This adds rename support needed by boot counters that
+update decimal digits in filenames in place (same-length names only).
+
+Changes:
+- Ext4SetInfo: handle EFI_FILE_INFO; validate same-length ASCII rename,
+  reject size/attribute changes, reject root inode and non-regular files
+- Ext4RenameDirent: scan linear dir blocks, detect NewName collision,
+  patch entry name in place, recompute dir-block checksum, write back
+  via Ext4WriteDiskIo
+- Ext4WriteDiskIo: new thin wrapper around DISK_IO WriteDisk
+- EXT4_DIR_ENTRY_TAIL: add on-disk struct + FT sentinel for csum tail
+- Ext4Flush: return EFI_SUCCESS instead of EFI_WRITE_PROTECTED
+- Superblock: force ReadOnly when journal present (EXT3_FEATURE_COMPAT_HAS_JOURNAL);
+  no JBD2 support so journaled volumes stay safe
+- Dentry.Inode field populated on OpenDirent and OpenVolume so parent
+  directory can be re-opened for the rename walk
+---
+ Ext4Pkg/Ext4Dxe/Directory.c  | 155 +++++++++++++++++++++++++++++++++++
+ Ext4Pkg/Ext4Dxe/DiskUtil.c   |  20 +++++
+ Ext4Pkg/Ext4Dxe/Ext4Disk.h   |  10 +++
+ Ext4Pkg/Ext4Dxe/Ext4Dxe.h    |  23 ++++++
+ Ext4Pkg/Ext4Dxe/File.c       | 135 +++++++++++++++++++++++++++++-
+ Ext4Pkg/Ext4Dxe/Superblock.c |   7 ++
+ 6 files changed, 346 insertions(+), 4 deletions(-)
+
+diff --git a/Ext4Pkg/Ext4Dxe/Directory.c b/Ext4Pkg/Ext4Dxe/Directory.c
+index 88f89a4053..c0ec803b82 100644
+--- a/Ext4Pkg/Ext4Dxe/Directory.c
++++ b/Ext4Pkg/Ext4Dxe/Directory.c
+@@ -287,6 +287,7 @@ Ext4OpenDirent (
+   }
+ 
+   File->InodeNum = Entry->inode;
++  File->Dentry->Inode = Entry->inode;
+ 
+   Ext4SetupFile (File, Partition);
+ 
+@@ -355,6 +356,159 @@ Ext4OpenFile (
+   return Ext4OpenDirent (Partition, OpenMode, OutFile, &Entry, Directory);
+ }
+ 
++/**
++   Renames an existing directory entry without changing its record layout.
++
++   This intentionally supports only same-length names. Boot counting changes
++   decimal digits in place, so no directory entry splitting is needed.
++**/
++EFI_STATUS
++Ext4RenameDirent (
++  IN EXT4_FILE    *Directory,
++  IN EXT4_INO_NR  InodeNum,
++  IN CONST CHAR8  *OldName,
++  IN CONST CHAR8  *NewName,
++  IN UINTN        NameLength
++  )
++{
++  VOID                 *Block;
++  EXT4_DIR_ENTRY       *Entry;
++  EXT4_DIR_ENTRY_TAIL  *Tail;
++  UINT64               Offset;
++  UINT64               DirectorySize;
++  UINT64               TargetOffset;
++  UINTN                BlockOffset;
++  UINTN                TargetBlockOffset;
++  UINTN                Length;
++  UINT32               Checksum;
++  UINT32               BlockOffsetInExtent;
++  EXT4_EXTENT          Extent;
++  EXT4_BLOCK_NR        LogicalBlock;
++  EXT4_BLOCK_NR        PhysicalBlock;
++  EFI_STATUS           Status;
++  BOOLEAN              Found;
++
++  if ((Directory->Inode->i_flags & EXT4_INDEX_FL) != 0) {
++    return EFI_UNSUPPORTED;
++  }
++
++  DirectorySize = EXT4_INODE_SIZE (Directory->Inode);
++  if (DirectorySize % Directory->Partition->BlockSize != 0) {
++    return EFI_VOLUME_CORRUPTED;
++  }
++
++  Block = AllocatePool (Directory->Partition->BlockSize);
++  if (Block == NULL) {
++    return EFI_OUT_OF_RESOURCES;
++  }
++
++  Status = EFI_NOT_FOUND;
++  Found  = FALSE;
++
++  for (Offset = 0; Offset < DirectorySize; Offset += Directory->Partition->BlockSize) {
++    Length = Directory->Partition->BlockSize;
++    Status = Ext4Read (Directory->Partition, Directory, Block, Offset, &Length);
++    if (EFI_ERROR (Status)) {
++      goto Out;
++    }
++
++    if (EXT4_HAS_METADATA_CSUM (Directory->Partition)) {
++      Tail = (EXT4_DIR_ENTRY_TAIL *)((CHAR8 *)Block + Directory->Partition->BlockSize - sizeof (*Tail));
++      if ((Tail->det_reserved_zero1 != 0) || (Tail->det_rec_len != sizeof (*Tail)) ||
++          (Tail->det_reserved_zero2 != 0) || (Tail->det_reserved_ft != EXT4_DIR_ENTRY_TAIL_FT))
++      {
++        Status = EFI_VOLUME_CORRUPTED;
++        goto Out;
++      }
++    }
++
++    for (BlockOffset = 0; BlockOffset < Directory->Partition->BlockSize; BlockOffset += Entry->rec_len) {
++      Entry = (EXT4_DIR_ENTRY *)((CHAR8 *)Block + BlockOffset);
++      if (!Ext4ValidDirent (Entry) || (Entry->rec_len > Directory->Partition->BlockSize - BlockOffset)) {
++        Status = EFI_VOLUME_CORRUPTED;
++        goto Out;
++      }
++
++      if ((Entry->inode != InodeNum) && (Entry->name_len == NameLength) &&
++          (CompareMem (Entry->name, NewName, NameLength) == 0))
++      {
++        Status = EFI_ACCESS_DENIED;
++        goto Out;
++      }
++
++      if ((Entry->inode == InodeNum) && (Entry->name_len == NameLength) &&
++          (CompareMem (Entry->name, OldName, NameLength) == 0))
++      {
++        Found             = TRUE;
++        TargetOffset      = Offset;
++        TargetBlockOffset = BlockOffset;
++      }
++    }
++  }
++
++  if (!Found) {
++    Status = EFI_NOT_FOUND;
++    goto Out;
++  }
++
++  Length = Directory->Partition->BlockSize;
++  Status = Ext4Read (Directory->Partition, Directory, Block, TargetOffset, &Length);
++  if (EFI_ERROR (Status)) {
++    goto Out;
++  }
++
++  Entry = (EXT4_DIR_ENTRY *)((CHAR8 *)Block + TargetBlockOffset);
++  if ((Entry->inode != InodeNum) || (Entry->name_len != NameLength) ||
++      (CompareMem (Entry->name, OldName, NameLength) != 0))
++  {
++    Status = EFI_VOLUME_CORRUPTED;
++    goto Out;
++  }
++
++  CopyMem (Entry->name, NewName, NameLength);
++  if (EXT4_HAS_METADATA_CSUM (Directory->Partition)) {
++    Tail = (EXT4_DIR_ENTRY_TAIL *)((CHAR8 *)Block + Directory->Partition->BlockSize - sizeof (*Tail));
++    Checksum = Ext4CalculateChecksum (Directory->Partition, &Directory->InodeNum, sizeof (Directory->InodeNum), Directory->Partition->InitialSeed);
++    Checksum = Ext4CalculateChecksum (Directory->Partition, &Directory->Inode->i_generation, sizeof (Directory->Inode->i_generation), Checksum);
++    // The checksum tail is a synthetic dirent and is excluded in its entirety.
++    Checksum = Ext4CalculateChecksum (Directory->Partition, Block, Directory->Partition->BlockSize - sizeof (*Tail), Checksum);
++    Tail->det_checksum = Checksum;
++  }
++
++  LogicalBlock = DivU64x32Remainder (
++                   TargetOffset,
++                   Directory->Partition->BlockSize,
++                   &BlockOffsetInExtent
++                   );
++  if (BlockOffsetInExtent != 0) {
++    Status = EFI_VOLUME_CORRUPTED;
++    goto Out;
++  }
++
++  Status = Ext4GetExtent (Directory->Partition, Directory, LogicalBlock, &Extent);
++  if (EFI_ERROR (Status) || EXT4_EXTENT_IS_UNINITIALIZED (&Extent)) {
++    if (!EFI_ERROR (Status) || (Status == EFI_NO_MAPPING)) {
++      Status = EFI_VOLUME_CORRUPTED;
++    }
++
++    goto Out;
++  }
++
++  PhysicalBlock = (LShiftU64 (Extent.ee_start_hi, 32) | Extent.ee_start_lo) +
++                  (LogicalBlock - Extent.ee_block);
++
++  Status = Ext4WriteDiskIo (
++             Directory->Partition,
++             Block,
++             Directory->Partition->BlockSize,
++             EXT4_BLOCK_TO_BYTES (Directory->Partition, PhysicalBlock)
++             );
++
++Out:
++  FreePool (Block);
++  return Status;
++}
++
+ /**
+   Open the root directory on a volume.
+ 
+@@ -421,6 +575,7 @@ Ext4OpenVolume (
+ 
+   ASSERT (Partition->RootDentry != NULL);
+   RootDir->Dentry = Partition->RootDentry;
++  RootDir->Dentry->Inode = RootDir->InodeNum;
+ 
+   Ext4RefDentry (RootDir->Dentry);
+ 
+diff --git a/Ext4Pkg/Ext4Dxe/DiskUtil.c b/Ext4Pkg/Ext4Dxe/DiskUtil.c
+index 5df9ce5baf..4591bd4f4d 100644
+--- a/Ext4Pkg/Ext4Dxe/DiskUtil.c
++++ b/Ext4Pkg/Ext4Dxe/DiskUtil.c
+@@ -33,6 +33,26 @@ Ext4ReadDiskIo (
+                                      );
+ }
+ 
++/**
++   Writes to the partition's disk using the DISK_IO protocol.
++**/
++EFI_STATUS
++Ext4WriteDiskIo (
++  IN EXT4_PARTITION  *Partition,
++  IN VOID            *Buffer,
++  IN UINTN           Length,
++  IN UINT64          Offset
++  )
++{
++  return EXT4_DISK_IO (Partition)->WriteDisk (
++                                     EXT4_DISK_IO (Partition),
++                                     EXT4_MEDIA_ID (Partition),
++                                     Offset,
++                                     Length,
++                                     Buffer
++                                     );
++}
++
+ /**
+    Reads blocks from the partition's disk using the DISK_IO protocol.
+ 
+diff --git a/Ext4Pkg/Ext4Dxe/Ext4Disk.h b/Ext4Pkg/Ext4Dxe/Ext4Disk.h
+index 70cb6c3209..901162b3f9 100644
+--- a/Ext4Pkg/Ext4Dxe/Ext4Disk.h
++++ b/Ext4Pkg/Ext4Dxe/Ext4Disk.h
+@@ -422,6 +422,16 @@ typedef struct {
+   // we skip any directory entry that is not valid UTF-8.
+ } EXT4_DIR_ENTRY;
+ 
++typedef struct {
++  UINT32    det_reserved_zero1;
++  UINT16    det_rec_len;
++  UINT8     det_reserved_zero2;
++  UINT8     det_reserved_ft;
++  UINT32    det_checksum;
++} EXT4_DIR_ENTRY_TAIL;
++
++#define EXT4_DIR_ENTRY_TAIL_FT  0xDE
++
+ #define EXT4_MIN_DIR_ENTRY_LEN  8
+ 
+ // This on-disk structure is present at the bottom of the extent tree
+diff --git a/Ext4Pkg/Ext4Dxe/Ext4Dxe.h b/Ext4Pkg/Ext4Dxe/Ext4Dxe.h
+index 4e823cef40..9c9bed0a4f 100644
+--- a/Ext4Pkg/Ext4Dxe/Ext4Dxe.h
++++ b/Ext4Pkg/Ext4Dxe/Ext4Dxe.h
+@@ -228,6 +228,17 @@ Ext4ReadDiskIo (
+   IN UINT64          Offset
+   );
+ 
++/**
++   Writes to the partition's disk using the DISK_IO protocol.
++**/
++EFI_STATUS
++Ext4WriteDiskIo (
++  IN EXT4_PARTITION  *Partition,
++  IN VOID            *Buffer,
++  IN UINTN           Length,
++  IN UINT64          Offset
++  );
++
+ /**
+    Reads blocks from the partition's disk using the DISK_IO protocol.
+ 
+@@ -432,6 +443,18 @@ Ext4RetrieveDirent (
+   OUT EXT4_DIR_ENTRY  *Result
+   );
+ 
++/**
++   Renames an existing directory entry without changing its record layout.
++**/
++EFI_STATUS
++Ext4RenameDirent (
++  IN EXT4_FILE    *Directory,
++  IN EXT4_INO_NR  InodeNum,
++  IN CONST CHAR8  *OldName,
++  IN CONST CHAR8  *NewName,
++  IN UINTN        NameLength
++  );
++
+ /**
+    Opens a file.
+ 
+diff --git a/Ext4Pkg/Ext4Dxe/File.c b/Ext4Pkg/Ext4Dxe/File.c
+index 3b43618166..d2de2983fd 100644
+--- a/Ext4Pkg/Ext4Dxe/File.c
++++ b/Ext4Pkg/Ext4Dxe/File.c
+@@ -583,7 +583,7 @@ Ext4Flush (
+     return EFI_ACCESS_DENIED;
+   }
+ 
+-  return EFI_WRITE_PROTECTED;
++  return EFI_SUCCESS;
+ }
+ 
+ /**
+@@ -985,6 +985,61 @@ Ext4DuplicateFile (
+   return File;
+ }
+ 
++STATIC
++EFI_STATUS
++Ext4OpenParentDirectory (
++  IN  EXT4_PARTITION  *Partition,
++  IN  EXT4_DENTRY     *Dentry,
++  OUT EXT4_FILE       **OutFile
++  )
++{
++  EXT4_FILE   *File;
++  EFI_STATUS  Status;
++
++  File = AllocateZeroPool (sizeof (*File));
++  if (File == NULL) {
++    return EFI_OUT_OF_RESOURCES;
++  }
++
++  File->InodeNum = Dentry->Inode;
++  File->Dentry   = Dentry;
++  Ext4RefDentry (Dentry);
++  Ext4SetupFile (File, Partition);
++  Status = Ext4InitExtentsMap (File);
++  if (!EFI_ERROR (Status)) {
++    Status = Ext4ReadInode (Partition, File->InodeNum, &File->Inode);
++  }
++
++  if (EFI_ERROR (Status)) {
++    if (File->Inode != NULL) {
++      FreePool (File->Inode);
++    }
++
++    if (File->ExtentsMap != NULL) {
++      Ext4FreeExtentsMap (File);
++    }
++
++    Ext4UnrefDentry (File->Dentry);
++    FreePool (File);
++    return Status;
++  }
++
++  *OutFile = File;
++  return EFI_SUCCESS;
++}
++
++STATIC
++VOID
++Ext4CloseParentDirectory (
++  IN EXT4_FILE  *File
++  )
++{
++  FreePool (File->Inode);
++  Ext4FreeExtentsMap (File);
++  Ext4UnrefDentry (File->Dentry);
++  FreePool (File);
++}
++
+ /**
+   Sets information about a file.
+ 
+@@ -1030,14 +1085,86 @@ Ext4SetInfo (
+ {
+   EXT4_FILE       *File;
+   EXT4_PARTITION  *Partition;
++  EFI_FILE_INFO   *Info;
++  EXT4_FILE       *ParentDirectory;
++  CHAR8           NewName[EXT4_NAME_MAX + 1];
++  CHAR8           OldName[EXT4_NAME_MAX + 1];
++  UINTN           NameLength;
++  UINTN           Index;
++  EFI_STATUS      Status;
+ 
+   File      = EXT4_FILE_FROM_THIS (This);
+   Partition = File->Partition;
++  ParentDirectory = NULL;
+ 
+-  if (Partition->ReadOnly) {
++  if (Partition->ReadOnly || Partition->BlockIo->Media->ReadOnly) {
+     return EFI_WRITE_PROTECTED;
+   }
+ 
+-  // There's no write support just yet.
+-  return EFI_UNSUPPORTED;
++  if (!CompareGuid (InformationType, &gEfiFileInfoGuid)) {
++    return EFI_UNSUPPORTED;
++  }
++
++  if ((Buffer == NULL) || (BufferSize < SIZE_OF_EFI_FILE_INFO)) {
++    return EFI_BAD_BUFFER_SIZE;
++  }
++
++  Info = Buffer;
++  if ((Info->Size < SIZE_OF_EFI_FILE_INFO) || (Info->Size > BufferSize) ||
++      ((Info->Size - SIZE_OF_EFI_FILE_INFO) % sizeof (CHAR16) != 0) ||
++      (StrnLenS (Info->FileName, (Info->Size - SIZE_OF_EFI_FILE_INFO) / sizeof (CHAR16)) ==
++       (Info->Size - SIZE_OF_EFI_FILE_INFO) / sizeof (CHAR16)))
++  {
++    return EFI_BAD_BUFFER_SIZE;
++  }
++
++  if (!(File->OpenMode & EFI_FILE_MODE_WRITE)) {
++    return EFI_ACCESS_DENIED;
++  }
++
++  if (!Ext4FileIsReg (File) || (File->InodeNum == EXT4_ROOT_INODE_NR) ||
++      (File->Dentry->Parent == NULL) || (Info->FileSize != EXT4_INODE_SIZE (File->Inode)) ||
++      (Info->PhysicalSize != Ext4FilePhysicalSpace (File)) || (Info->Attribute != 0))
++  {
++    return EFI_UNSUPPORTED;
++  }
++
++  if ((StrCmp (Info->FileName, L".") == 0) || (StrCmp (Info->FileName, L"..") == 0)) {
++    return EFI_ACCESS_DENIED;
++  }
++
++  NameLength = StrLen (Info->FileName);
++  if ((NameLength == 0) || (NameLength > EXT4_NAME_MAX) ||
++      (NameLength != StrLen (File->Dentry->Name)))
++  {
++    return EFI_UNSUPPORTED;
++  }
++
++  for (Index = 0; Index < NameLength; Index++) {
++    if ((Info->FileName[Index] > 0x7f) || (File->Dentry->Name[Index] > 0x7f)) {
++      return EFI_UNSUPPORTED;
++    }
++
++    NewName[Index] = (CHAR8)Info->FileName[Index];
++    OldName[Index] = (CHAR8)File->Dentry->Name[Index];
++  }
++
++  NewName[NameLength] = '\0';
++  OldName[NameLength] = '\0';
++
++  Status = Ext4OpenParentDirectory (Partition, File->Dentry->Parent, &ParentDirectory);
++
++  if (!EFI_ERROR (Status)) {
++    Status = Ext4RenameDirent (ParentDirectory, File->InodeNum, OldName, NewName, NameLength);
++  }
++
++  if (ParentDirectory != NULL) {
++    Ext4CloseParentDirectory (ParentDirectory);
++  }
++
++  if (!EFI_ERROR (Status)) {
++    Status = StrCpyS (File->Dentry->Name, ARRAY_SIZE (File->Dentry->Name), Info->FileName);
++  }
++
++  return Status;
+ }
+diff --git a/Ext4Pkg/Ext4Dxe/Superblock.c b/Ext4Pkg/Ext4Dxe/Superblock.c
+index 5bdd1e3c0e..072016190a 100644
+--- a/Ext4Pkg/Ext4Dxe/Superblock.c
++++ b/Ext4Pkg/Ext4Dxe/Superblock.c
+@@ -219,6 +219,13 @@ Ext4OpenSuperblock (
+     Partition->ReadOnly = TRUE;
+   }
+ 
++  // Renaming updates directory metadata. Without JBD2 transaction support,
++  // journaled filesystems must remain read-only.
++  if (EXT4_HAS_COMPAT (Partition, EXT3_FEATURE_COMPAT_HAS_JOURNAL)) {
++    DEBUG ((DEBUG_INFO, "[ext4] Journal present, mounting read-only\n"));
++    Partition->ReadOnly = TRUE;
++  }
++
+   // At the time of writing, it's the only supported checksum.
+   if (EXT4_HAS_METADATA_CSUM (Partition) && (Sb->s_checksum_type != EXT4_CHECKSUM_CRC32C)) {
+     return EFI_UNSUPPORTED;
+-- 
+2.55.0
+
