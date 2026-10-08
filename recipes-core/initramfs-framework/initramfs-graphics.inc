@@ -4,7 +4,7 @@
 INITRAMFS_EXTRA_KMODS ?= ""
 
 # Modules necessary for our Verdin iMX8M(M|P) to display splash screen.
-INITRAMFS_EXTRA_KMODS:mx8-nxp-bsp = "\
+INITRAMFS_EXTRA_KMODS:append:mx8-nxp-bsp = "\
     fsl_imx_ldb \
     imx8mp_ldb \
     phy_fsl_imx8mp_lvds \
@@ -19,7 +19,7 @@ INITRAMFS_EXTRA_KMODS:mx8-nxp-bsp = "\
 INITRAMFS_EXTRA_KMODS:prepend:toradex-smarc-imx8mp = "i2c_mux_pca954x "
 
 # Modules necessary for our TI modules to display splash screen.
-INITRAMFS_EXTRA_KMODS:ti-soc = "\
+INITRAMFS_EXTRA_KMODS:append:ti-soc = "\
     pwm_tiehrpwm \
     tidss \
     display_connector \
@@ -48,8 +48,21 @@ INITRAMFS_EXTRA_KMODS:append:verdin-am62p = "\
     cdns_dsi \
 "
 
+# Modules necessary for our i.MX93 SoMs to display splash screen.
+# The DSI connector I2C buses sit behind a PCA954x I2C mux, and the
+# bridges come before the DSI host so it finds them on its first probe.
+INITRAMFS_EXTRA_KMODS:append:mx93-nxp-bsp:tdx = "\
+    i2c_mux_pca954x \
+    phy_fsl_imx93_mipi_dphy \
+    display_connector \
+    ti_sn65dsi83 \
+    lontium_lt8912b \
+    dw_mipi_dsi \
+    dw_mipi_dsi_imx \
+"
+
 # Modules necessary for our i.MX95 SoMs to display splash screen.
-INITRAMFS_EXTRA_KMODS:mx95-nxp-bsp = "\
+INITRAMFS_EXTRA_KMODS:append:mx95-nxp-bsp = "\
     phy_fsl_imx8mp_lvds \
     pwm_imx_tpm \
     imx95_ldb \
