@@ -14,6 +14,14 @@ PACKAGE_INSTALL:append:aquila-am69 = "\
     cadence-mhdp-fw \
 "
 
+# The SDMA controller and cfg80211 both ask for firmware while the initramfs is
+# still the root, so it has to be here: a request the kernel cannot satisfy
+# directly is not retried once the real rootfs appears.
+PACKAGE_INSTALL:append:common-imx6 = "\
+    firmware-imx-sdma-imx6q \
+    wireless-regdb-static \
+"
+
 SYSTEMD_DEFAULT_TARGET = "initrd.target"
 
 IMAGE_NAME_SUFFIX = ""

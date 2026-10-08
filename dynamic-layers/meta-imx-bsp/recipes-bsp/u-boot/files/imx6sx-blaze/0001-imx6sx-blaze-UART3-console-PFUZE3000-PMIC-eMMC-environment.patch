@@ -1,0 +1,171 @@
+From 207b41589ef69974147141904d749b3cf702ac0f Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 18 Sep 2026 12:54:43 +0200
+Subject: [PATCH] imx6sx-blaze: UART3 console, PFUZE3000 PMIC, eMMC environment
+
+Console: UART3 on the QSPI1B pads, muxed in board_early_init_f().
+
+PMIC: a PFUZE3000. power_init_board() recognises it by device ID and leaves
+it alone: the PFUZE100/200 standby, mode and VGEN registers decode differently
+on that part, and its rails are correct from reset.
+
+Environment: on an eMMC boot mmc_get_env_dev() takes the port from SRC_SBMR1,
+which these straps give as 2. The eMMC is uSDHC1, mmc 0.
+
+board_init(): hold PERI_3V3 (GPIO2_15), which only has a pull-up; light the
+power LED (GPIO4_19); print the board ID and DIP straps.
+
+checkboard(): print the board name. The GP1 revision fuses are blank.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ board/freescale/mx6sxsabresd/mx6sxsabresd.c | 95 +++++++++++++++++++--
+ 1 file changed, 87 insertions(+), 8 deletions(-)
+
+diff --git a/board/freescale/mx6sxsabresd/mx6sxsabresd.c b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+index 0dd135c..bb1dece 100644
+--- a/board/freescale/mx6sxsabresd/mx6sxsabresd.c
++++ b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+@@ -89,8 +89,8 @@ int dram_init(void)
+ }
+ 
+ static iomux_v3_cfg_t const uart1_pads[] = {
+-	MX6_PAD_GPIO1_IO04__UART1_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO05__UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
++	MX6_PAD_QSPI1B_SS0_B__UART3_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
++	MX6_PAD_QSPI1B_SCLK__UART3_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc2_pads[] = {
+@@ -269,9 +269,21 @@ int power_init_board(void)
+ int power_init_board(void)
+ {
+ 	struct udevice *dev;
+-	unsigned int reg;
++	unsigned int reg, dev_id;
+ 	int ret;
+ 
++	/* PFUZE3000: its standby and mode registers decode differently from the
++	 * PFUZE100/200 sequence below, and its rails are correct from reset. */
++	ret = pmic_get("pfuze100@8", &dev);
++	if (!ret) {
++		dev_id = pmic_reg_read(dev, PFUZE100_DEVICEID);
++		if (dev_id == 0x30) {
++			printf("PMIC:  PFUZE3000 DEV_ID=0x%x REV_ID=0x%x\n",
++			       dev_id, pmic_reg_read(dev, PFUZE100_REVID));
++			return 0;
++		}
++	}
++
+ 	dev = pfuze_common_init();
+ 	if (!dev)
+ 		return -ENODEV;
+@@ -517,6 +529,13 @@ static struct fsl_esdhc_cfg usdhc_cfg[3] = {
+ #define USDHC3_PWR_GPIO	IMX_GPIO_NR(2, 11)
+ #define USDHC4_CD_GPIO	IMX_GPIO_NR(6, 21)
+ 
++int board_mmc_get_env_dev(int devno)
++{
++	/* The eMMC is on uSDHC1 and always enumerates as mmc 0. This board's
++	 * BOOT_CFG2 straps report port 2, so the ROM-derived devno is not it. */
++	return 0;
++}
++
+ int board_mmc_getcd(struct mmc *mmc)
+ {
+ 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
+@@ -712,6 +731,55 @@ void setup_lcd(void)
+ }
+ #endif
+ 
++static iomux_v3_cfg_t const power_led_pads[] = {
++	MX6_PAD_QSPI1A_DATA3__GPIO4_IO_19 | MUX_PAD_CTRL(NO_PAD_CTRL),
++};
++
++static iomux_v3_cfg_t const peri_pwr_en_pads[] = {
++	MX6_PAD_KEY_ROW0__GPIO2_IO_15 | MUX_PAD_CTRL(NO_PAD_CTRL),
++};
++
++static iomux_v3_cfg_t const board_id_pads[] = {
++	MX6_PAD_RGMII2_TD2__GPIO5_IO_20 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_RGMII2_TD3__GPIO5_IO_21 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_RGMII2_TXC__GPIO5_IO_23 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_RGMII2_TX_CTL__GPIO5_IO_22 | MUX_PAD_CTRL(NO_PAD_CTRL),
++};
++
++static iomux_v3_cfg_t const dip_sw_pads[] = {
++	MX6_PAD_KEY_ROW2__GPIO2_IO_17 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_KEY_ROW3__GPIO2_IO_18 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_NAND_ALE__GPIO4_IO_0 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_NAND_CLE__GPIO4_IO_3 | MUX_PAD_CTRL(NO_PAD_CTRL),
++};
++
++/* Bit 2 is GPIO5_23 and bit 3 GPIO5_22, not pad order. */
++static unsigned int const board_id_gpios[] = {
++	IMX_GPIO_NR(5, 20), IMX_GPIO_NR(5, 21),
++	IMX_GPIO_NR(5, 23), IMX_GPIO_NR(5, 22),
++};
++
++static unsigned int const dip_sw_gpios[] = {
++	IMX_GPIO_NR(2, 17), IMX_GPIO_NR(2, 18),
++	IMX_GPIO_NR(4, 0), IMX_GPIO_NR(4, 3),
++};
++
++static int read_straps(unsigned int const *gpio, int n, char const *label)
++{
++	int i, val = 0;
++
++	for (i = 0; i < n; i++) {
++		if (gpio_request(gpio[i], label))
++			return -1;
++		gpio_direction_input(gpio[i]);
++		val |= gpio_get_value(gpio[i]) << i;
++	}
++
++	printf("%s: 0x%02X\n", label, val);
++
++	return val;
++}
++
+ int board_init(void)
+ {
+ 	/* Address of boot parameters */
+@@ -730,6 +798,21 @@ int board_init(void)
+ 	regulators_enable_boot_on(false);
+ #endif
+ 
++	/* PERI_3V3 feeds ENET, SD2, LVDS and BT; its enable only has a pull-up. */
++	imx_iomux_v3_setup_multiple_pads(peri_pwr_en_pads, ARRAY_SIZE(peri_pwr_en_pads));
++	gpio_request(IMX_GPIO_NR(2, 15), "peri_pwr_en");
++	gpio_direction_output(IMX_GPIO_NR(2, 15), 1);
++
++	imx_iomux_v3_setup_multiple_pads(power_led_pads, ARRAY_SIZE(power_led_pads));
++	gpio_request(IMX_GPIO_NR(4, 19), "power_led");
++	gpio_direction_output(IMX_GPIO_NR(4, 19), 1);
++
++	imx_iomux_v3_setup_multiple_pads(board_id_pads, ARRAY_SIZE(board_id_pads));
++	imx_iomux_v3_setup_multiple_pads(dip_sw_pads, ARRAY_SIZE(dip_sw_pads));
++
++	read_straps(board_id_gpios, ARRAY_SIZE(board_id_gpios), "Board ID");
++	read_straps(dip_sw_gpios, ARRAY_SIZE(dip_sw_gpios), "DIP");
++
+ #ifdef CONFIG_SYS_I2C_LEGACY
+ 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+ 	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+@@ -787,11 +870,7 @@ int board_late_init(void)
+ 
+ int checkboard(void)
+ {
+-#ifdef CONFIG_NXP_BOARD_REVISION
+-	printf("Board: MX6SX SABRE SDB rev%c\n", nxp_board_rev_string());
+-#else
+-       puts("Board: MX6SX SABRE SDB");
+-#endif
++	printf("Board: i.MX6SoloX Blaze\n");
+ 	return 0;
+ }
+ 
+-- 
+2.43.0
+

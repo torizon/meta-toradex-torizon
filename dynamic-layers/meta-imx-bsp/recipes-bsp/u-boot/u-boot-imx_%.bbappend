@@ -1,6 +1,9 @@
 require ${@bb.utils.contains_any('MACHINE', 'imx95-19x19-verdin imx93frdm', 'recipes-bsp/u-boot/u-boot-rollback.inc', '', d)}
 # `require` is resolved before overrides apply, so the family is read out of MACHINEOVERRIDES.
 require ${@'recipes-bsp/u-boot/u-boot-rollback.inc' if 'common-imx6' in (d.getVar('MACHINEOVERRIDES') or '').split(':') else ''}
+# The bootloader-update secondary needs u-boot-version.json and
+# u-boot-initial-env.raw, which only this include produces.
+require ${@'recipes-bsp/u-boot/u-boot-ota.inc' if d.getVar('MACHINE') == 'imx6sx-blaze' else ''}
 
 FILESEXTRAPATHS:prepend:imx95-19x19-verdin := "${THISDIR}/files:"
 FILESEXTRAPATHS:prepend:imx93-11x11-lpddr4x-frdm := "${THISDIR}/files:"
@@ -30,3 +33,23 @@ do_configure:prepend:common-imx6() {
 }
 
 SRC_URI:append:imx6sxsabresd = " file://torizon-boot.cfg file://fastboot.cfg"
+
+FILESEXTRAPATHS:prepend:imx6sx-blaze := "${THISDIR}/files/imx6sx-blaze:"
+
+SRC_URI:append:imx6sx-blaze = " \
+    file://imx6sx-blaze.dts \
+    file://imximage.cfg \
+    file://uboot.cfg \
+    file://torizon-boot.cfg \
+    file://fastboot.cfg \
+    file://0001-imx6sx-blaze-UART3-console-PFUZE3000-PMIC-eMMC-environment.patch \
+    file://0002-imx6sx-blaze-take-the-MAC-address-from-the-board-s-EEPROM.patch \
+    file://0003-imx6sx-blaze-RMII-clocking-for-ENET1.patch \
+"
+
+# No board port exists for this board: the SABRE-SD defconfig is built with this
+# board's control device tree and DDR in place of the SABRE-SD's own.
+do_configure:prepend:imx6sx-blaze() {
+    install -m 0644 ${WORKDIR}/imx6sx-blaze.dts ${S}/arch/arm/dts/imx6sx-blaze.dts
+    install -m 0644 ${WORKDIR}/imximage.cfg ${S}/board/freescale/mx6sxsabresd/imximage.cfg
+}

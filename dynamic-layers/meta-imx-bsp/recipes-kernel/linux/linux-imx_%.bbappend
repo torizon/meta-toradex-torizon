@@ -7,5 +7,30 @@ DELTA_KERNEL_DEFCONFIG:append = "torizon.cfg"
 FILESEXTRAPATHS:prepend:mx6-generic-bsp := "${THISDIR}/files:"
 SRC_URI:append:mx6-generic-bsp = " file://torizon-container.cfg"
 DELTA_KERNEL_DEFCONFIG:append:mx6-generic-bsp = " torizon-container.cfg"
+SRC_URI:append:common-imx6 = " file://no-fw-fallback.cfg"
+DELTA_KERNEL_DEFCONFIG:append:common-imx6 = " no-fw-fallback.cfg"
+
+# Patches are committed to the kernel tree by git am at build time, so the tree's
+# hash changes on every build; keep it out of the kernel release, as
+# toradex-kernel-localversion does, or sstate can pair a kernel with another
+# build's modules.
+SCMVERSION:common-imx6 = "n"
+SRC_URI:append:common-imx6 = " file://no-localversion-auto.cfg"
+DELTA_KERNEL_DEFCONFIG:append:common-imx6 = " no-localversion-auto.cfg"
 
 SRC_URI:append:imx6sxsabresd = " file://0001-ARM-dts-imx6sx-sdb-reva-reset-through-the-internal-wa.patch"
+
+SRC_URI:append:imx6sx-blaze = " \
+    file://0001-ARM-imx6sx-take-the-FEC1-reference-clock-from-the-pad.patch \
+    file://0002-ARM-dts-imx6sx-add-the-i.MX6SoloX-Blaze-board.patch \
+    file://0003-ARM-dts-imx6sx-blaze-add-the-on-board-Wi-Fi-module.patch \
+    file://0004-ARM-dts-imx6sx-blaze-enable-the-USB-host-controller.patch \
+    file://0005-ARM-dts-imx6sx-blaze-enable-the-USB-OTG-controller.patch \
+    file://0006-ARM-dts-imx6sx-blaze-add-the-PCF85363-RTC.patch \
+    file://0007-ARM-dts-imx6sx-blaze-add-the-LVDS-display.patch \
+    file://0008-ARM-dts-imx6sx-blaze-add-the-panel-s-touch-controller.patch \
+    file://rtc.cfg \
+    file://display.cfg \
+"
+
+DELTA_KERNEL_DEFCONFIG:append:imx6sx-blaze = " rtc.cfg display.cfg"
