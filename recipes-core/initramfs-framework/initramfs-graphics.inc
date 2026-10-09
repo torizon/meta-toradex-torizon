@@ -54,6 +54,10 @@ INITRAMFS_EXTRA_KMODS:append:verdin-am62p = "\
 INITRAMFS_EXTRA_KMODS:append:mx93-nxp-bsp:tdx = "\
     i2c_mux_pca954x \
     phy_fsl_imx93_mipi_dphy \
+    pwm_imx_tpm \
+    phy_fsl_imx8mp_lvds \
+    fsl_imx_ldb \
+    imx93_ldb \
     display_connector \
     ti_sn65dsi83 \
     lontium_lt8912b \
