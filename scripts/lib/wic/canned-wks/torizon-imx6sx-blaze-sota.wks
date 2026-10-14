@@ -1,0 +1,6 @@
+# short-description: OTA-enabled eMMC image for the i.MX 6SoloX Blaze board
+# long-description: An OSTree physical sysroot for the eMMC user area.
+#
+# No bootloader partition: U-Boot lives in the eMMC boot0 hardware partition,
+# so it is written there by imx6sx-blaze.uuu rather than carried here.
+part / --source otaimage --ondisk mmcblk --fstype=ext4 --align 8192

@@ -1,0 +1,212 @@
+From ff6b717bcb5cd8a24ead5d0d83f49cc34b94ba14 Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 2 Oct 2026 10:58:35 +0200
+Subject: [PATCH] ARM: dts: imx6sx-blaze: add the LVDS display
+
+The 7" 1024x600 panel on single-channel LVDS, through the mxsfb DRM
+driver on LCDIF1, fsl-ldb and panel-lvds, with the PWM1 backlight. The
+timing and the levels of the panel's control lines are the ones the
+board's existing BSP uses.
+
+LCDIF1 takes its pixel clock from ldb_di0, which is PLL5 divided by 7,
+so it stays an exact seventh of the LVDS serial clock. fsl-ldb asks for
+seven times the pixel rate on ldb_di0 itself, but that request stops at
+the ldb_di0_div_sel mux and only leaves a warning.
+
+The GPU is moved from galcore to etnaviv, the driver the i.MX6 graphics
+containers use.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 153 +++++++++++++++++++++
+ 1 file changed, 153 insertions(+)
+
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+index 21bc68f..80ff0d5 100644
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -19,6 +19,55 @@
+ 		stdout-path = &uart3;
+ 	};
+ 
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm1 0 20000 0>;
++		brightness-levels = <
++			0   2   5   7   10  12  15  17  20  22  25
++			    27  30  32  35  37  40  42  45  47  50
++			    52  55  57  60  62  65  67  70  72  75
++			    77  80  82  85  87  90  92  95  97  100
++			    102 105 107 110 112 115 117 120 122 125
++			    127 130 132 135 137 140 142 145 147 150
++			    152 155 157 160 162 165 167 170 172 175
++			    177 180 182 185 187 190 192 195 197 200
++			    202 205 207 210 212 215 217 219 222 225
++			    228 231 234 237 240 243 246 249 252 255
++		>;
++		default-brightness-level = <50>;
++	};
++
++	panel {
++		compatible = "panel-lvds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_lvds>;
++		power-supply = <&reg_peri_3v3>;
++		enable-gpios = <&gpio5 13 GPIO_ACTIVE_HIGH>;
++		backlight = <&backlight>;
++		/* Typical 7" 1024x600 active area; required by the timing parser. */
++		width-mm = <154>;
++		height-mm = <86>;
++		data-mapping = "vesa-24";
++
++		panel-timing {
++			clock-frequency = <51200000>;
++			hactive = <1024>;
++			vactive = <600>;
++			hfront-porch = <150>;
++			hback-porch = <150>;
++			hsync-len = <20>;
++			vfront-porch = <7>;
++			vback-porch = <18>;
++			vsync-len = <10>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&ldb_lvds_ch0>;
++			};
++		};
++	};
++
+ 	/*
+ 	 * 512 MB, not the SABRE-SD's 1 GiB.
+ 	 */
+@@ -121,6 +170,53 @@
+ 	status = "okay";
+ };
+ 
++&gpio5 {
++	/* panel-lvds holds reset-gpios asserted from probe on, so reset is a hog. */
++	lvds-reset-hog {
++		gpio-hog;
++		gpios = <14 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "LVDS_RESET_N";
++	};
++
++	lvds-dimo-hog {
++		gpio-hog;
++		gpios = <16 GPIO_ACTIVE_HIGH>;
++		input;
++		line-name = "LVDS_DIMO";
++	};
++
++	lvds-lr-hog {
++		gpio-hog;
++		gpios = <17 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "LVDS_LR";
++	};
++
++	lvds-ud-hog {
++		gpio-hog;
++		gpios = <18 GPIO_ACTIVE_HIGH>;
++		output-low;
++		line-name = "LVDS_UD";
++	};
++
++	lvds-selb-hog {
++		gpio-hog;
++		gpios = <19 GPIO_ACTIVE_HIGH>;
++		output-low;
++		line-name = "LVDS_SELB";
++	};
++};
++
++&gpu {
++	status = "okay";
++};
++
++/* galcore; the GPU is etnaviv's. */
++&gpu3d {
++	status = "disabled";
++};
++
+ &i2c1 {
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+@@ -261,6 +357,46 @@
+ 	};
+ };
+ 
++/*
++ * The LCDIF pixel clock is ldb_di0, PLL5 divided by 7, so it stays an exact
++ * seventh of the LVDS serial clock. fsl-ldb's own rate request on ldb_di0
++ * stops at the ldb_di0_div_sel mux, which does not propagate rates.
++ */
++&lcdif1 {
++	assigned-clocks = <&clks IMX6SX_CLK_LDB_DI0_SEL>,
++			  <&clks IMX6SX_CLK_LDB_DI0_DIV_SEL>,
++			  <&clks IMX6SX_CLK_LCDIF1_SEL>,
++			  <&clks IMX6SX_CLK_PLL5_VIDEO_DIV>;
++	assigned-clock-parents = <&clks IMX6SX_CLK_PLL5_VIDEO_DIV>,
++				 <&clks IMX6SX_CLK_LDB_DI0_DIV_7>,
++				 <&clks IMX6SX_CLK_LDB_DI0>,
++				 <0>;
++	assigned-clock-rates = <0>, <0>, <0>, <358400000>;
++	status = "okay";
++};
++
++&lcdif1_to_ldb {
++	remote-endpoint = <&ldb_from_lcdif1>;
++};
++
++&lvds_bridge {
++	status = "okay";
++};
++
++&ldb_from_lcdif1 {
++	remote-endpoint = <&lcdif1_to_ldb>;
++};
++
++&ldb_lvds_ch0 {
++	remote-endpoint = <&panel_in>;
++};
++
++&pwm1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm1>;
++	status = "okay";
++};
++
+ /*
+  * The reference design's low-power DDR timings corrupt this board's memory.
+  * Nothing is lost by disabling it: the FEC pins BUS_FREQ_HIGH from probe
+@@ -382,6 +518,23 @@
+ 		>;
+ 	};
+ 
++	pinctrl_lvds: lvdsgrp {
++		fsl,pins = <
++			MX6SX_PAD_RGMII2_RD1__GPIO5_IO_13	0x10b0
++			MX6SX_PAD_RGMII2_RD2__GPIO5_IO_14	0x10b0
++			MX6SX_PAD_RGMII2_RX_CTL__GPIO5_IO_16	0x10b0
++			MX6SX_PAD_RGMII2_RXC__GPIO5_IO_17	0x10b0
++			MX6SX_PAD_RGMII2_TD0__GPIO5_IO_18	0x10b0
++			MX6SX_PAD_RGMII2_TD1__GPIO5_IO_19	0x10b0
++		>;
++	};
++
++	pinctrl_pwm1: pwm1grp {
++		fsl,pins = <
++			MX6SX_PAD_RGMII2_RD3__PWM1_OUT		0x110b0
++		>;
++	};
++
+ 	pinctrl_usdhc1: usdhc1grp {
+ 		fsl,pins = <
+ 			MX6SX_PAD_NAND_WP_B__USDHC1_RESET_B	0x17059
+-- 
+2.43.0
+

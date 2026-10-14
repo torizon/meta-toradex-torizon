@@ -1,0 +1,65 @@
+From 6b015f6be4badcc6973ee05ea90f0c2a3462e3cc Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Wed, 30 Sep 2026 18:40:30 +0200
+Subject: [PATCH] ARM: dts: imx6sx-blaze: add the PCF85363 RTC
+
+The PCF85363 on I2C3 is the board's battery-backed RTC. Its crystal has
+no external load capacitors, so it takes the 12.5 pF load; without the
+property the driver writes 7 pF at every probe.
+
+The SNVS RTC is disabled rather than kept as rtc1: its backup input is
+tied to a main rail on this board, so it loses the time at every
+power-off. With it gone the PCF85363 is rtc0 whatever the probe order.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 25 ++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+index 3f1c543..21bc68f 100644
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -216,6 +216,24 @@
+ 	};
+ };
+ 
++&i2c3 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c3>;
++	status = "okay";
++
++	rtc_i2c: rtc@51 {
++		compatible = "nxp,pcf85363";
++		reg = <0x51>;
++		quartz-load-femtofarads = <12500>;
++	};
++};
++
++/* The SNVS domain has no backup supply on this board. */
++&snvs_rtc {
++	status = "disabled";
++};
++
+ /*
+  * Micrel KSZ8081RNBIA on ENET1, MDIO address 1, RMII. The GPIO5_12 reset is
+  * not optional: held asserted, the part never answers MDIO.
+@@ -357,6 +375,13 @@
+ 		>;
+ 	};
+ 
++	pinctrl_i2c3: i2c3grp {
++		fsl,pins = <
++			MX6SX_PAD_KEY_ROW4__I2C3_SDA		0x4001b8b1
++			MX6SX_PAD_KEY_COL4__I2C3_SCL		0x4001b8b1
++		>;
++	};
++
+ 	pinctrl_usdhc1: usdhc1grp {
+ 		fsl,pins = <
+ 			MX6SX_PAD_NAND_WP_B__USDHC1_RESET_B	0x17059
+-- 
+2.43.0
+

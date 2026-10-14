@@ -1,0 +1,332 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+ *
+ * U-Boot control device tree. Only what U-Boot itself needs; the Linux device
+ * tree carries the rest of the carrier.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include "imx6sx.dtsi"
+
+/ {
+	model = "i.MX 6SoloX Blaze";
+	compatible = "fsl,imx6sx-blaze", "fsl,imx6sx";
+
+	chosen {
+		stdout-path = &uart3;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x20000000>;	/* 512 MB */
+	};
+
+	/*
+	 * The Ethernet PHY's 3V3 is switched, enable active low.
+	 */
+	reg_enet_3v3: regulator-enet-3v3 {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_enet_3v3>;
+		regulator-name = "enet_3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&gpio4 16 GPIO_ACTIVE_LOW>;
+	};
+
+	/* The SD socket's 3V0 is switched on GPIO2_11, enable active high. */
+	vcc_sd3: regulator-vcc-sd3 {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_vcc_sd3>;
+		regulator-name = "VCC_SD3";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+		gpio = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+		off-on-delay-us = <20000>;
+		enable-active-high;
+	};
+};
+
+/*
+ * The sysreset provider `reset` needs. wdog1 asserts WDOG_ANY, which this
+ * board wires to a power cycle.
+ */
+/ {
+	wdt_reboot: wdt-reboot {
+		compatible = "wdt-reboot";
+		wdt = <&wdog1>;
+	};
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>;
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c1>;
+	status = "okay";
+
+	/*
+	 * Node name must stay pfuze100@8: pmic_get() looks the PMIC up by node
+	 * name, not compatible.
+	 */
+	pmic: pfuze100@8 {
+		compatible = "fsl,pfuze3000";
+		reg = <0x08>;
+
+		regulators {
+			sw1a_reg: sw1a {
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1475000>;
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-ramp-delay = <6250>;
+			};
+
+			/* sw1c_reg label to align with pfuze100/pfuze200 */
+			sw1c_reg: sw1b {
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1475000>;
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-ramp-delay = <6250>;
+			};
+
+			sw2_reg: sw2 {
+				regulator-min-microvolt = <2500000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			sw3a_reg: sw3 {
+				regulator-min-microvolt = <900000>;
+				regulator-max-microvolt = <1650000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			swbst_reg: swbst {
+				regulator-min-microvolt = <5000000>;
+				regulator-max-microvolt = <5150000>;
+			};
+
+			snvs_reg: vsnvs {
+				regulator-min-microvolt = <1000000>;
+				regulator-max-microvolt = <3000000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			vref_reg: vrefddr {
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			vgen1_reg: vldo1 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			vgen2_reg: vldo2 {
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <1550000>;
+			};
+
+			vgen3_reg: vccsd {
+				regulator-min-microvolt = <2850000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+
+			vgen4_reg: v33 {
+				regulator-min-microvolt = <2850000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+
+			vgen5_reg: vldo3 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			vgen6_reg: vldo4 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+		};
+	};
+};
+
+/*
+ * Micrel KSZ8081RNBIA on ENET1 at MDIO address 1, RMII -- not the SABRE-SD's
+ * rgmii-id. The PHY's reset is GPIO5_12 and is not optional: held asserted the
+ * part never answers MDIO.
+ */
+&fec1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_enet1>;
+	phy-supply = <&reg_enet_3v3>;
+	phy-mode = "rmii";
+	phy-handle = <&ethphy1>;
+	phy-reset-gpios = <&gpio5 12 GPIO_ACTIVE_LOW>;
+	phy-reset-duration = <15>;
+	phy-reset-post-delay = <10>;
+	status = "okay";
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy1: ethernet-phy@1 {
+			reg = <1>;
+			micrel,led-mode = <1>;
+		};
+	};
+};
+
+/*
+ * I2C3 carries a Microchip 24AA02E48 at 0x50 whose last six bytes hold this
+ * board's EUI-48. board_late_init() reads it into ethaddr.
+ */
+&i2c3 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3>;
+	status = "okay";
+};
+
+/* eMMC, 8-bit, soldered down: the boot device and the environment store. */
+&usdhc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc1>;
+	bus-width = <8>;
+	non-removable;
+	status = "okay";
+};
+
+/*
+ * no-1-8-v: the socket is 3V0 only, and a card negotiating 1.8 V panics on
+ * this hardware.
+ */
+&usdhc3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc3>;
+	bus-width = <4>;
+	no-1-8-v;
+	vmmc-supply = <&vcc_sd3>;
+	cd-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+/*
+ * USB OTG1, the port the boot ROM's serial downloader comes up on and the one
+ * fastboot and ums answer on; the SoC device tree leaves it disabled.
+ * Peripheral rather than otg: this is the install port, and the control device
+ * tree carries no ID pin for role detection.
+ */
+&usbotg1 {
+	dr_mode = "peripheral";
+	status = "okay";
+};
+
+&wdog1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_wdog>;
+	fsl,ext-reset-output;
+};
+
+&iomuxc {
+	pinctrl_uart3: uart3grp {
+		fsl,pins = <
+			MX6SX_PAD_QSPI1B_SS0_B__UART3_DCE_TX	0x1b0b1
+			MX6SX_PAD_QSPI1B_SCLK__UART3_DCE_RX	0x1b0b1
+		>;
+	};
+
+	pinctrl_i2c1: i2c1grp {
+		fsl,pins = <
+			MX6SX_PAD_GPIO1_IO01__I2C1_SDA		0x4001b088
+			MX6SX_PAD_GPIO1_IO00__I2C1_SCL		0x4001b088
+		>;
+	};
+
+	pinctrl_enet1: enet1grp {
+		fsl,pins = <
+			MX6SX_PAD_ENET1_MDIO__ENET1_MDIO		0xa0b1
+			MX6SX_PAD_ENET1_MDC__ENET1_MDC			0xa0b1
+			MX6SX_PAD_RGMII1_TD0__ENET1_TX_DATA_0		0xa0b1
+			MX6SX_PAD_RGMII1_TD1__ENET1_TX_DATA_1		0xa0b1
+			MX6SX_PAD_RGMII1_TX_CTL__ENET1_TX_EN		0xa0b1
+			MX6SX_PAD_RGMII1_RXC__ENET1_RX_ER		0x3081
+			MX6SX_PAD_RGMII1_RD0__ENET1_RX_DATA_0		0x3081
+			MX6SX_PAD_RGMII1_RD1__ENET1_RX_DATA_1		0x3081
+			MX6SX_PAD_RGMII1_RX_CTL__ENET1_RX_EN		0x3081
+			MX6SX_PAD_ENET1_TX_CLK__ENET1_REF_CLK1		0x91
+			MX6SX_PAD_ENET1_RX_CLK__ENET1_REF_CLK_25M	0x91
+			MX6SX_PAD_RGMII2_RD0__GPIO5_IO_12		0x80000000
+		>;
+	};
+
+	pinctrl_enet_3v3: enet3v3grp {
+		fsl,pins = <
+			MX6SX_PAD_QSPI1A_DATA0__GPIO4_IO_16	0x80000000
+		>;
+	};
+
+	pinctrl_i2c3: i2c3grp {
+		fsl,pins = <
+			MX6SX_PAD_KEY_ROW4__I2C3_SDA		0x4001b8b1
+			MX6SX_PAD_KEY_COL4__I2C3_SCL		0x4001b8b1
+		>;
+	};
+
+	pinctrl_usdhc1: usdhc1grp {
+		fsl,pins = <
+			MX6SX_PAD_NAND_WP_B__USDHC1_RESET_B	0x17059
+			MX6SX_PAD_SD1_CMD__USDHC1_CMD		0x17059
+			MX6SX_PAD_SD1_CLK__USDHC1_CLK		0x10059
+			MX6SX_PAD_SD1_DATA0__USDHC1_DATA0	0x17059
+			MX6SX_PAD_SD1_DATA1__USDHC1_DATA1	0x17059
+			MX6SX_PAD_SD1_DATA2__USDHC1_DATA2	0x17059
+			MX6SX_PAD_SD1_DATA3__USDHC1_DATA3	0x17059
+			MX6SX_PAD_NAND_DATA00__USDHC1_DATA4	0x17059
+			MX6SX_PAD_NAND_DATA01__USDHC1_DATA5	0x17059
+			MX6SX_PAD_NAND_DATA02__USDHC1_DATA6	0x17059
+			MX6SX_PAD_NAND_DATA03__USDHC1_DATA7	0x17059
+		>;
+	};
+
+	pinctrl_usdhc3: usdhc3grp {
+		fsl,pins = <
+			MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17059
+			MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10061
+			MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17059
+			MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17059
+			MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17059
+			MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17059
+			MX6SX_PAD_KEY_COL0__GPIO2_IO_10		0x17059
+		>;
+	};
+
+	pinctrl_vcc_sd3: vccsd3grp {
+		fsl,pins = <
+			MX6SX_PAD_KEY_COL1__GPIO2_IO_11		0x17059
+		>;
+	};
+
+	pinctrl_wdog: wdoggrp {
+		fsl,pins = <
+			MX6SX_PAD_GPIO1_IO13__WDOG1_WDOG_ANY	0x30b0
+		>;
+	};
+};

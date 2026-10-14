@@ -1,0 +1,71 @@
+From 712cf8749e4d2a2781fc46a8877055f3b7b1f381 Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 2 Oct 2026 17:12:20 +0200
+Subject: [PATCH] ARM: dts: imx6sx-blaze: add the panel's touch controller
+
+The 7" panel's Sitronix ST1633 on I2C4 at 0x70, with its interrupt on
+GPIO4_14 and its active-low shutdown on GPIO2_12, for the in-tree
+st1232 driver. The board's existing BSP runs the controller at 0x70.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 35 ++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+index 80ff0d5..f10da2b 100644
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -325,6 +325,27 @@
+ 	};
+ };
+ 
++/*
++ * The panel's ST1633 touch controller. The FRAM, ADC and audio amplifier on
++ * the same bus are not described.
++ */
++&i2c4 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c4>;
++	status = "okay";
++
++	touchscreen@70 {
++		compatible = "sitronix,st1633";
++		reg = <0x70>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_touch>;
++		interrupt-parent = <&gpio4>;
++		interrupts = <14 IRQ_TYPE_EDGE_FALLING>;
++		gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
++	};
++};
++
+ /* The SNVS domain has no backup supply on this board. */
+ &snvs_rtc {
+ 	status = "disabled";
+@@ -518,6 +539,20 @@
+ 		>;
+ 	};
+ 
++	pinctrl_i2c4: i2c4grp {
++		fsl,pins = <
++			MX6SX_PAD_CSI_DATA07__I2C4_SDA		0x4001b088
++			MX6SX_PAD_CSI_DATA06__I2C4_SCL		0x4001b088
++		>;
++	};
++
++	pinctrl_touch: touchgrp {
++		fsl,pins = <
++			MX6SX_PAD_KEY_COL2__GPIO2_IO_12		0x17059
++			MX6SX_PAD_NAND_WE_B__GPIO4_IO_14	0x80000000
++		>;
++	};
++
+ 	pinctrl_lvds: lvdsgrp {
+ 		fsl,pins = <
+ 			MX6SX_PAD_RGMII2_RD1__GPIO5_IO_13	0x10b0
+-- 
+2.43.0
+

@@ -1,0 +1,72 @@
+From dce8eb40d5388b19f5111e04e42b6ab4f7a757c1 Mon Sep 17 00:00:00 2001
+From: Dmitry Starchenko <dmitry.starchenko@emcraft.com>
+Date: Thu, 24 Sep 2026 13:32:14 +0200
+Subject: [PATCH] ARM: dts: imx6sx-blaze: enable the USB host controller
+
+USB OTG2 drives the host receptacle, with its VBUS switch and
+over-current input.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Dmitry Starchenko <dmitry.starchenko@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 32 ++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+index f6f1e5f..2374b9b 100644
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -91,6 +91,17 @@
+ 		enable-active-high;
+ 		startup-delay-us = <70000>;
+ 	};
++
++	reg_usb_otg2_vbus: regulator-usb-otg2-vbus {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_usb_otg2>;
++		regulator-name = "usb_otg2_vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &uart3 {
+@@ -286,6 +297,15 @@
+ 	status = "okay";
+ };
+ 
++&usbotg2 {
++	vbus-supply = <&reg_usb_otg2_vbus>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usb_otg2_oc>;
++	dr_mode = "host";
++	over-current-active-low;
++	status = "okay";
++};
++
+ &wdog1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_wdog>;
+@@ -410,4 +430,16 @@
+ 			MX6SX_PAD_KEY_ROW0__GPIO2_IO_15		0x80000000
+ 		>;
+ 	};
++
++	pinctrl_usb_otg2: usbotg2grp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO12__GPIO1_IO_12	0x10b0
++		>;
++	};
++
++	pinctrl_usb_otg2_oc: usbotg2ocgrp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO11__USB_OTG2_OC	0x17059
++		>;
++	};
+ };
+-- 
+2.43.0
+

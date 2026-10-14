@@ -1,0 +1,66 @@
+From 8b399b406f7a696f26022e28d76b1016cc31cf7f Mon Sep 17 00:00:00 2001
+From: Vladimir Skvortsov <vskvortsov@emcraft.com>
+Date: Fri, 18 Sep 2026 12:54:59 +0200
+Subject: [PATCH] ARM: imx6sx: take the FEC1 reference clock from the pad
+
+imx6sx_enet_clk_sel() clears both the FEC clock mux select and the pad
+direction unconditionally at machine init. That is right for the RGMII
+reference designs, where the PHY has its own crystal, and wrong for an RMII
+board where the PHY supplies the 50 MHz reference back to the SoC -- GPR1[13]
+has to select the external clock.
+
+Nothing needs to set IMX6SX_CLK_ENET_REF: with bit 13 set the reference
+arrives on the pad, so the SoC's internal ENET_REF is not the source and its
+rate does not matter. The link comes up at 100/full with no rate assignment
+in the device tree.
+
+Because it runs at machine init it also overwrites whatever the bootloader
+configured, so it cannot be worked around from the device tree or from
+U-Boot. The in-tree i.MX6SX RMII boards, udoo-neo and softing-vining-2000,
+carry no clock configuration for it either.
+
+Without it the PHY never answers MDIO and the interface does not come up.
+
+The patch is applied only to this machine's kernel, so it sets the bit
+unconditionally; a change for the kernel itself would key it on the FEC's
+phy-mode.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Vladimir Skvortsov <vskvortsov@emcraft.com>
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index b57d54a..7577b9a 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -14,14 +14,24 @@
+ #include "common.h"
+ #include "cpuidle.h"
+ 
++/* FEC1 only; IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_EXT selects both FECs. */
++#define IMX6SX_GPR1_FEC1_CLOCK_MUX_SEL_EXT	BIT(13)
++
+ static void __init imx6sx_enet_clk_sel(void)
+ {
+ 	struct regmap *gpr;
+ 
+ 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6sx-iomuxc-gpr");
+ 	if (!IS_ERR(gpr)) {
++		/*
++		 * FEC1 is RMII with the PHY driving the 50 MHz reference back
++		 * into the SoC, so GPR1[13] selects the external clock. This
++		 * runs at machine init, after the bootloader, so it has the
++		 * final say.
++		 */
+ 		regmap_update_bits(gpr, IOMUXC_GPR1,
+-				   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK, 0);
++				   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK,
++				   IMX6SX_GPR1_FEC1_CLOCK_MUX_SEL_EXT);
+ 		regmap_update_bits(gpr, IOMUXC_GPR1,
+ 				   IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK, 0);
+ 	} else {
+-- 
+2.43.0
+

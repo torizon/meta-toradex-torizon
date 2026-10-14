@@ -1,0 +1,78 @@
+From 231a3fab6b3843d4d1b057378753d6f05dfa15e9 Mon Sep 17 00:00:00 2001
+From: Dmitry Starchenko <dmitry.starchenko@emcraft.com>
+Date: Thu, 24 Sep 2026 13:32:18 +0200
+Subject: [PATCH] ARM: dts: imx6sx-blaze: enable the USB OTG controller
+
+USB OTG1 drives the second receptacle, which doubles as the
+serial-downloader port; the ID pin selects its role.
+
+Upstream-Status: Inappropriate [board-specific]
+Signed-off-by: Dmitry Starchenko <dmitry.starchenko@emcraft.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts | 36 ++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+index 2374b9b..3f1c543 100644
+--- a/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6sx-blaze.dts
+@@ -92,6 +92,17 @@
+ 		startup-delay-us = <70000>;
+ 	};
+ 
++	reg_usb_otg1_vbus: regulator-usb-otg1-vbus {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_usb_otg1>;
++		regulator-name = "usb_otg1_vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	reg_usb_otg2_vbus: regulator-usb-otg2-vbus {
+ 		compatible = "regulator-fixed";
+ 		pinctrl-names = "default";
+@@ -297,6 +308,14 @@
+ 	status = "okay";
+ };
+ 
++&usbotg1 {
++	vbus-supply = <&reg_usb_otg1_vbus>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usb_otg1_id>, <&pinctrl_usb_otg1_oc>;
++	over-current-active-low;
++	status = "okay";
++};
++
+ &usbotg2 {
+ 	vbus-supply = <&reg_usb_otg2_vbus>;
+ 	pinctrl-names = "default";
+@@ -430,6 +449,23 @@
+ 			MX6SX_PAD_KEY_ROW0__GPIO2_IO_15		0x80000000
+ 		>;
+ 	};
++	pinctrl_usb_otg1: usbotg1grp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO09__GPIO1_IO_9	0x10b0
++		>;
++	};
++
++	pinctrl_usb_otg1_oc: usbotg1ocgrp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO08__USB_OTG1_OC	0x17059
++		>;
++	};
++
++	pinctrl_usb_otg1_id: usbotg1idgrp {
++		fsl,pins = <
++			MX6SX_PAD_GPIO1_IO10__ANATOP_OTG1_ID	0x17059
++		>;
++	};
+ 
+ 	pinctrl_usb_otg2: usbotg2grp {
+ 		fsl,pins = <
+-- 
+2.43.0
+
