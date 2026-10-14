@@ -24,6 +24,11 @@ do_install:append:intel-x86-common() {
 	install -m 644 ${WORKDIR}/x86/fstab ${D}${sysconfdir}/fstab
 }
 
+do_install:append:intel-x86-common:tdx-signed() {
+	# Mount xbootldr to /boot for ostree updates.
+	echo 'LABEL=xbootldr /boot ext4 defaults,noatime 0  0' >> ${D}${sysconfdir}/fstab
+}
+
 do_install:append:cfs-support () {
 	# Get rid of the /dev/root entry in fstab to avoid errors from
 	# systemd-remount-fs.

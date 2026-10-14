@@ -18,10 +18,18 @@ SRC_URI:remove:tegra = "\
     file://0002-only-scan-for-block-devices.patch \
 "
 
+SRC_URI:append:tdx-signed = "\
+    file://ostreeuki \
+"
+
 PACKAGES:append = " \
     initramfs-module-plymouth \
     initramfs-module-ostree \
     initramfs-module-kmod \
+"
+
+PACKAGES:append:tdx-signed = " \
+    initramfs-module-ostreeuki \
 "
 
 PACKAGES:append:cfs-support = "\
@@ -35,6 +43,10 @@ FILES:initramfs-module-plymouth = "/init.d/02-plymouth"
 SUMMARY:initramfs-module-ostree = "initramfs support for ostree based filesystems"
 RDEPENDS:initramfs-module-ostree = "${PN}-base ostree-switchroot"
 FILES:initramfs-module-ostree = "/init.d/95-ostree"
+
+SUMMARY:initramfs-module-ostreeuki = "initramfs support for resolving OSTree deployments from systemd-boot UKI entries"
+RDEPENDS:initramfs-module-ostreeuki = "${PN}-base"
+FILES:initramfs-module-ostreeuki = "/init.d/93-ostreeuki"
 
 SUMMARY:initramfs-module-composefs = "initramfs support for booting composefs images"
 RDEPENDS:initramfs-module-composefs = "${PN}-base"
@@ -60,6 +72,10 @@ do_install:append() {
     install -m 0755 ${WORKDIR}/plymouth ${D}/init.d/02-plymouth
     install -m 0755 ${WORKDIR}/ostree ${D}/init.d/95-ostree
     install -m 0755 ${WORKDIR}/kmod ${D}/init.d/01-kmod
+}
+
+do_install:append:tdx-signed() {
+    install -m 0755 ${WORKDIR}/ostreeuki ${D}/init.d/93-ostreeuki
 }
 
 require recipes-extended/ostree/ostree-prepare-root.inc

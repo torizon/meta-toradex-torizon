@@ -44,6 +44,7 @@ IMAGE_LINGUAS ?= "en-us"
 ERROR_QA:remove = "version-going-backwards"
 
 DISTRO_FEATURES:append = " pam systemd usrmerge"
+DISTRO_FEATURES:append:intel-corei7-64 = " tpm2"
 DISTRO_FEATURES:remove = "sysvinit ptest"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 PACKAGECONFIG:append:pn-systemd = " serial-getty-generator"
