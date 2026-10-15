@@ -12,6 +12,7 @@ BBMASK += "meta-tegra/external/sota/recipes-bsp/uefi/edk2-firmware-tegra_%.bbapp
 do_image_tegraflash[depends] += " tegra-minimal-initramfs:do_image_complete"
 
 IMAGE_INSTALL:append:tegra = " nvidia-docker nvidia-drm-loadconf"
+IMAGE_ROOTFS_SIZE = "${@'4194304' if d.getVar('RESIZE_HELPER') else tegra_default_rootfs_size(d)}"
 
 MACHINE_EXTRA_RDEPENDS:remove = " tegra-redundant-boot"
 
