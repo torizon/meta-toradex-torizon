@@ -153,6 +153,15 @@ write_credentials() {
     fi
     sync
 
+    # Preserve any initial root metadata files
+    if [ -f "${SOTA_CRED_DIR}/director/root.json" ]; then
+        cp -r ${SOTA_CRED_DIR}/director ${temp_dir}
+    fi
+
+    if [ -f "${SOTA_CRED_DIR}/repo/root.json" ]; then
+        cp -r ${SOTA_CRED_DIR}/repo ${temp_dir}
+    fi
+
     rm -rf ${SOTA_CRED_DIR}
     mv -f ${temp_dir} ${SOTA_CRED_DIR}
 
