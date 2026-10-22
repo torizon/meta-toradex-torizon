@@ -9,7 +9,7 @@ SRC_URI += " \
     file://tzn-mqtt.service \
 "
 
-SRCREV = "516ce5198a077fffcc2a19d946b3c21814841f01"
+SRCREV = "939273473fd5b9d85278a43a949627fab0699456"
 SRCREV:use-head-next = "${AUTOREV}"
 
 S = "${WORKDIR}/git"
