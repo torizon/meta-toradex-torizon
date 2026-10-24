@@ -5,11 +5,11 @@
 #
 # genio2img stages this file into its working directory; run
 # `torizoncore-builder build --file tcbuild-genio.yaml` from there.
-# Only rootfs-level classes work on the raw-image path: filesystem overlays,
-# Yocto packages delivered as installed files, preloaded containers, and
-# prebuilt kernel modules dropped into the filesystem. Device-tree,
-# kernel-module-build, kernel-argument, and secboot customisations are
-# rejected by tcb on raw/WIC images and are out of scope.
+# The raw-image path supports filesystem overlays, Yocto packages delivered as
+# installed files, preloaded containers, prebuilt kernel modules dropped into
+# the filesystem, and kernel arguments. Device-tree overlays need a tcb release
+# that writes FIT hash values for the images it adds. Kernel-module builds and
+# secboot are out of scope.
 input:
   raw-image:
     local: input.wic
