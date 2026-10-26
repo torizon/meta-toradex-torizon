@@ -6,6 +6,8 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MPL-2.0;md5=815ca599c9df247a0c7
 
 inherit allarch
 
+require recipes-bsp/u-boot/u-boot-fusing.inc
+
 SRC_URI = " \
             file://50-secondaries.toml \
             file://secondaries.json \
@@ -14,6 +16,7 @@ SRC_URI = " \
             "
 SRC_URI:append:imx-generic-bsp = " \
                                    file://fuse_actions-in.sh \
+                                   file://dummy_actions.sh \
                                    "
 
 RDEPENDS:${PN} += "bash coreutils jq util-linux mmc-utils sed u-boot-fw-utils"
@@ -24,6 +27,12 @@ DEPENDS:imx-generic-bsp = "jq-native"
 # Check if bootloader update is supported
 BL_UPDATE_SUPPORT ?= "1"
 BL_UPDATE_SUPPORT:intel-x86-common ?= "0"
+
+# Where uEnv.txt cannot program fuses (unsigned builds, SoCs absent from the fusing table) the
+# fuses ECU stays, with a handler that refuses updates: Torizon Cloud rejects a returning ECU.
+FUSE_ACTION_HANDLER = "${@'fuse_actions.sh' \
+    if d.getVar('FUSE_SUPPORT') == '1' and d.getVar('FUSE_SUPPORT_TYPE') == 'NXP' \
+    else 'dummy_actions.sh'}"
 
 do_install:append () {
     install -m 0700 -d ${D}${libdir}/sota/conf.d
@@ -39,10 +48,16 @@ do_install:append () {
 }
 
 do_install:append:imx-generic-bsp () {
-    sed -e 's/@@MACHINE@@/${MACHINE}/' \
-        ${WORKDIR}/fuse_actions-in.sh > ${WORKDIR}/fuse_actions.sh
+    if [ "${FUSE_ACTION_HANDLER}" = "fuse_actions.sh" ]; then
+        sed -e 's/@@MACHINE@@/${MACHINE}/' \
+            ${WORKDIR}/fuse_actions-in.sh > ${WORKDIR}/fuse_actions.sh
+    fi
     install -d ${D}${bindir}
-    install -m 0744 ${WORKDIR}/fuse_actions.sh ${D}${bindir}/fuse_actions.sh
+    install -m 0744 ${WORKDIR}/${FUSE_ACTION_HANDLER} ${D}${bindir}/${FUSE_ACTION_HANDLER}
+    # The ECU keeps its handler path: copies of secondaries.json, as in /etc/sota, name it.
+    if [ "${FUSE_ACTION_HANDLER}" != "fuse_actions.sh" ]; then
+        ln -s ${FUSE_ACTION_HANDLER} ${D}${bindir}/fuse_actions.sh
+    fi
 
     local machine="${MACHINE}"
     cat ${D}${libdir}/sota/secondaries.json |\
@@ -69,6 +84,7 @@ FILES:${PN} = " \
                 "
 FILES:${PN}:append:imx-generic-bsp = " \
                                 ${bindir}/fuse_actions.sh \
+                                ${bindir}/${FUSE_ACTION_HANDLER} \
                                 "
 FILES:${PN}:remove:intel-x86-common = "\
     ${bindir}/bl_actions.sh \

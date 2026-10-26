@@ -5,6 +5,9 @@
 # - FUSE_SUPPORT: whether or not to add support for fusing in uEnv.txt.
 # - FUSE_SUPPORT_TYPE: type of support to add (allowed value: "NXP").
 #
+# Set the variables in this file globally, not per recipe: aktualizr-default-sec reads them too,
+# to pick its fuse handler.
+#
 FUSE_SUPPORT_SIGNED_BUILD = "0"
 FUSE_SUPPORT_SIGNED_BUILD:tdx-signed = "1"
 FUSE_SUPPORT_DEFAULT = "0"
