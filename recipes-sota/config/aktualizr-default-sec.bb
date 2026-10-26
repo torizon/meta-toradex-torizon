@@ -24,27 +24,63 @@ DEPENDS = "jq-native"
 
 # Which secondaries the device registers ("1") or not ("0"). A secondary a device has registered
 # must stay registered in later images: Torizon Cloud rejects an ECU that disappears and returns.
+# Per-machine defaults are in conf/distro/include/torizon-secondaries.inc; a machine with none for
+# the bootloader (or, on i.MX, the fuses) stops the build until one is chosen.
 TORIZON_SECONDARY_DOCKER_COMPOSE ?= "1"
 TORIZON_SECONDARY_BOOTLOADER ?= "${TORIZON_SECONDARY_BOOTLOADER_DEFAULT}"
 TORIZON_SECONDARY_FUSES ?= "${TORIZON_SECONDARY_FUSES_DEFAULT}"
-# Per-machine defaults: the secondaries every machine registers today.
-TORIZON_SECONDARY_BOOTLOADER_DEFAULT ??= "1"
-TORIZON_SECONDARY_FUSES_DEFAULT ??= "${@'1' if 'imx-generic-bsp' in \
+TORIZON_SECONDARY_BOOTLOADER_DEFAULT ??= ""
+# Only i.MX machines have ever registered the fuses secondary.
+TORIZON_SECONDARY_FUSES_DEFAULT ??= "${@'' if 'imx-generic-bsp' in \
                                   d.getVar('MACHINEOVERRIDES').split(':') else '0'}"
 
-# Check if bootloader update is supported. Where it is not, the bootloader ECU stays, with a
-# handler that refuses updates (see FUSE_ACTION_HANDLER).
-BL_UPDATE_SUPPORT ?= "1"
-BL_UPDATE_SUPPORT:intel-x86-common ?= "0"
-BL_UPDATE_SUPPORT:genericx86-64 ?= "0"
-BOOTLOADER_ACTION_HANDLER = "${@'bl_actions.sh' \
-    if d.getVar('BL_UPDATE_SUPPORT') == '1' else 'dummy_actions.sh'}"
+# Where the bootloader cannot be updated the bootloader ECU stays, with a handler that refuses
+# updates (see FUSE_ACTION_HANDLER).
+BOOTLOADER_ACTION_HANDLER = "bl_actions.sh"
+BOOTLOADER_ACTION_HANDLER:intel-x86-common = "dummy_actions.sh"
+BOOTLOADER_ACTION_HANDLER:genericx86-64 = "dummy_actions.sh"
 
 # Where uEnv.txt cannot program fuses (unsigned builds, SoCs absent from the fusing table) the
 # fuses ECU stays, with a handler that refuses updates: Torizon Cloud rejects a returning ECU.
 FUSE_ACTION_HANDLER = "${@'fuse_actions.sh' \
     if d.getVar('FUSE_SUPPORT') == '1' and d.getVar('FUSE_SUPPORT_TYPE') == 'NXP' \
     else 'dummy_actions.sh'}"
+
+python () {
+    # Multiconfigs with a distro other than Torizon OS never build this recipe.
+    if not bb.utils.contains('DISTRO_FEATURES', 'sota', True, False, d):
+        raise bb.parse.SkipRecipe('needs the sota distro feature')
+
+    machine = d.getVar('MACHINE')
+
+    if d.getVar('BL_UPDATE_SUPPORT') is not None:
+        bb.fatal(
+            'BL_UPDATE_SUPPORT is set, but it no longer has any effect. Whether an image '
+            'registers the bootloader secondary is now set by TORIZON_SECONDARY_BOOTLOADER '
+            '("1" or "0"), and the handler it gets depends on the machine. Remove '
+            'BL_UPDATE_SUPPORT; to keep what images have registered so far, leave '
+            'TORIZON_SECONDARY_BOOTLOADER at "1" (BL_UPDATE_SUPPORT = "0" kept the bootloader '
+            'secondary registered as well).')
+
+    for var, secondary in (('TORIZON_SECONDARY_DOCKER_COMPOSE', 'docker-compose'),
+                           ('TORIZON_SECONDARY_BOOTLOADER', 'bootloader'),
+                           ('TORIZON_SECONDARY_FUSES', 'fuses')):
+        value = d.getVar(var) or ''
+        if value in ('0', '1'):
+            continue
+        # Firmware multiconfigs (such as TI's k3r5) parse this recipe too, for machines without
+        # values, and never build it.
+        if not value and d.getVar('BB_CURRENT_MC') != 'default':
+            raise bb.parse.SkipRecipe('%s is not set in multiconfig %s'
+                                      % (var, d.getVar('BB_CURRENT_MC')))
+        state = 'not set' if not value else 'set to "%s"' % value
+        bb.fatal(
+            '%s is %s for MACHINE "%s". Set it to "1" to register the %s secondary, as '
+            'Torizon OS has done so far, or to "0" not to, in local.conf or, with "?=", in '
+            'the machine configuration. A device that has registered the secondary needs '
+            '"1" in every later image: Torizon Cloud rejects an ECU that disappears and '
+            'comes back.' % (var, state, machine, secondary))
+}
 
 do_install:append () {
     install -m 0700 -d ${D}${libdir}/sota/conf.d
