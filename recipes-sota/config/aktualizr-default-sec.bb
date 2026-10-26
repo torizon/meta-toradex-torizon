@@ -13,10 +13,10 @@ SRC_URI = " \
             file://secondaries.json \
             file://bl_actions.sh \
             file://common_actions.sh \
+            file://dummy_actions.sh \
             "
 SRC_URI:append:imx-generic-bsp = " \
                                    file://fuse_actions-in.sh \
-                                   file://dummy_actions.sh \
                                    "
 
 RDEPENDS:${PN} += "bash coreutils jq util-linux mmc-utils sed u-boot-fw-utils"
@@ -24,9 +24,13 @@ RDEPENDS:${PN}:remove:genericx86-64 = "u-boot-fw-utils"
 RDEPENDS:${PN}:remove:intel-x86-common = "u-boot-fw-utils"
 DEPENDS:imx-generic-bsp = "jq-native"
 
-# Check if bootloader update is supported
+# Check if bootloader update is supported. Where it is not, the bootloader ECU stays, with a
+# handler that refuses updates (see FUSE_ACTION_HANDLER).
 BL_UPDATE_SUPPORT ?= "1"
 BL_UPDATE_SUPPORT:intel-x86-common ?= "0"
+BL_UPDATE_SUPPORT:genericx86-64 ?= "0"
+BOOTLOADER_ACTION_HANDLER = "${@'bl_actions.sh' \
+    if d.getVar('BL_UPDATE_SUPPORT') == '1' else 'dummy_actions.sh'}"
 
 # Where uEnv.txt cannot program fuses (unsigned builds, SoCs absent from the fusing table) the
 # fuses ECU stays, with a handler that refuses updates: Torizon Cloud rejects a returning ECU.
@@ -40,10 +44,14 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/secondaries.json ${D}${libdir}/sota/secondaries.json
     sed -i "s/@@MACHINE@@/${MACHINE}/g" ${D}${libdir}/sota/secondaries.json
 
-    if [ "${BL_UPDATE_SUPPORT}" = "1" ]; then
-        install -d ${D}${bindir}
-        install -m 0744 ${WORKDIR}/bl_actions.sh ${D}${bindir}/bl_actions.sh
+    install -d ${D}${bindir}
+    install -m 0744 ${WORKDIR}/${BOOTLOADER_ACTION_HANDLER} \
+        ${D}${bindir}/${BOOTLOADER_ACTION_HANDLER}
+    if [ "${BOOTLOADER_ACTION_HANDLER}" = "bl_actions.sh" ]; then
         install -m 0644 ${WORKDIR}/common_actions.sh ${D}${bindir}/common_actions.sh
+    else
+        # The ECU keeps its handler path: copies of secondaries.json, as in /etc/sota, name it.
+        ln -s ${BOOTLOADER_ACTION_HANDLER} ${D}${bindir}/bl_actions.sh
     fi
 }
 
@@ -81,12 +89,9 @@ FILES:${PN} = " \
                 ${libdir}/sota/secondaries.json \
                 ${bindir}/bl_actions.sh \
                 ${bindir}/common_actions.sh \
+                ${bindir}/dummy_actions.sh \
                 "
 FILES:${PN}:append:imx-generic-bsp = " \
                                 ${bindir}/fuse_actions.sh \
                                 ${bindir}/${FUSE_ACTION_HANDLER} \
                                 "
-FILES:${PN}:remove:intel-x86-common = "\
-    ${bindir}/bl_actions.sh \
-    ${bindir}/common_actions.sh \
-"
