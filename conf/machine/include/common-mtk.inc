@@ -41,9 +41,12 @@ DEPENDS:append:pn-bl2 = " openssl-native"
 # of that name and leaves the reference untouched, so it reaches U-Boot as a
 # literal and is expanded there.
 UBOOT_BOOT_PARTITION_NUMBER = "${distro_bootpart}"
-# fitImage conf node is conf-<KERNEL_DEVICETREE, '/'->'_'>; point fdtfile/fdt_file at it.
-FITIMAGE_CONF_NODE = "${@d.getVar('KERNEL_DEVICETREE').split()[0].replace('/', '_')}"
-UENV_EXTRA_CONFIGS = "env set otaroot ${distro_bootpart} ; env set fdtfile ${FITIMAGE_CONF_NODE} ; env set fdt_file ${FITIMAGE_CONF_NODE}"
+# fitImage conf nodes are conf-<KERNEL_DEVICETREE, '/'->'_'>. With the prefix the
+# boot script selects conf-mediatek_${fdtfile}, so both U-Boot's default fdtfile
+# and one set in uEnv.txt (TorizonCore Builder's 'dt apply') name a conf node.
+# OSTree writes no fdt_file for FIT; a rollback to a deployment without dtb/ boots by it.
+KERNEL_DTB_PREFIX = "mediatek/"
+UENV_EXTRA_CONFIGS = "env set otaroot ${distro_bootpart} ; env set fdt_file ${fdtfile}"
 
 # Device tree deployed into the OSTree boot directory.
 OSTREE_DEVICETREE ?= "mediatek/lec-mtk-i1200-ufs.dtb"
