@@ -363,9 +363,8 @@ class BootimgEFIPlugin(SourcePlugin):
                 shutil.move("%s/grub.cfg" % cr_workdir,
                             "%s/hdd/boot/EFI/BOOT/grub.cfg" % cr_workdir)
             elif source_params['loader'] == 'systemd-boot':
-                for mod in [x for x in os.listdir(kernel_dir) if x.startswith("systemd-")]:
-                    cp_cmd = "cp %s/%s %s/EFI/BOOT/%s" % (kernel_dir, mod, hdddir, mod[8:])
-                    exec_cmd(cp_cmd, True)
+                # The bootloader is installed explicitly via IMAGE_EFI_BOOT_FILES.
+                pass
             else:
                 raise WicError("unrecognized bootimg-efi loader: %s" %
                                source_params['loader'])
@@ -396,8 +395,9 @@ class BootimgEFIPlugin(SourcePlugin):
 
         label = part.label if part.label else "ESP"
 
-        dosfs_cmd = "mkdosfs -n %s -i %s -C %s %d" % \
-                    (label, part.fsuuid, bootimg, blocks)
+        extraopts = part.mkfs_extraopts or ""
+        dosfs_cmd = "mkdosfs -n %s -i %s %s -C %s %d" % \
+                    (label, part.fsuuid, extraopts, bootimg, blocks)
         exec_native_cmd(dosfs_cmd, native_sysroot)
 
         # TODO: upstream it - maintain properties and dates

@@ -174,7 +174,26 @@ CORE_IMAGE_BASE_INSTALL:append:cfs-support = "\
     composefs \
 "
 
+CORE_IMAGE_BASE_INSTALL:append:intel-corei7-64:tdx-signed = " \
+    efitools \
+    mokutil \
+"
+
 # Enable WIC generation with images utilizing tdx-signed or inherited
 # classes (such as torizon-signed)
 IMAGE_FSTYPES_REMOVE:remove:tdx-signed = "ota-ext4 wic"
 IMAGE_FSTYPES:append:tdx-signed = " ota-ext4 wic"
+
+python __anonymous() {
+    overrides = d.getVar("OVERRIDES").split(":")
+    if "intel-corei7-64" in overrides and "tdx-signed" in overrides:
+        d.appendVarFlag("do_image_ostree", "depends", " %s:do_uki" % d.getVar("IMAGE_BASENAME"))
+}
+
+IMAGE_CMD:ostree:append:intel-corei7-64:tdx-signed () {
+    kernelver="$(cat ${DEPLOY_DIR_IMAGE}/kernel-abiversion)"
+
+    cp ${DEPLOY_DIR_IMAGE}/${UKI_FILENAME} usr/lib/modules/${kernelver}/uki.efi
+    rm -v -f usr/lib/modules/${kernelver}/initramfs.img
+    ln -fs uki.efi usr/lib/modules/${kernelver}/vmlinuz
+}
