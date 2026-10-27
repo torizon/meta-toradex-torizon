@@ -60,3 +60,16 @@ TORIZON_SECONDARY_BOOTLOADER_DEFAULT:smarc-rzv2l = "1"
 TORIZON_SECONDARY_BOOTLOADER_DEFAULT:stm32mp15-disco = "1"
 TORIZON_SECONDARY_BOOTLOADER_DEFAULT:stm32mp25-disco = "1"
 TORIZON_SECONDARY_BOOTLOADER_DEFAULT:stm32mp25-eval = "1"
+
+# Machines where bootloader updates are officially supported (handler "uboot-emmc"); every other
+# machine gets the "dummy" handler, which keeps the secondary but refuses updates.
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:apalis-imx6 = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:apalis-imx8 = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:colibri-imx6 = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:colibri-imx6ull-emmc = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:colibri-imx7-emmc = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:colibri-imx8x = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:verdin-am62 = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:verdin-am62p = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:verdin-imx8mm = "uboot-emmc"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT:verdin-imx8mp = "uboot-emmc"

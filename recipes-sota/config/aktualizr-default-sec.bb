@@ -34,11 +34,12 @@ TORIZON_SECONDARY_BOOTLOADER_DEFAULT ??= ""
 TORIZON_SECONDARY_FUSES_DEFAULT ??= "${@'' if 'imx-generic-bsp' in \
                                   d.getVar('MACHINEOVERRIDES').split(':') else '0'}"
 
-# Where the bootloader cannot be updated the bootloader ECU stays, with a handler that refuses
-# updates (see FUSE_ACTION_HANDLER).
-BOOTLOADER_ACTION_HANDLER = "bl_actions.sh"
-BOOTLOADER_ACTION_HANDLER:intel-x86-common = "dummy_actions.sh"
-BOOTLOADER_ACTION_HANDLER:genericx86-64 = "dummy_actions.sh"
+# Bootloader secondary handler: "uboot-emmc" (bl_actions.sh, U-Boot in the eMMC hardware boot
+# partitions) where bootloader updates are officially supported, else "dummy" (refuses updates).
+BOOTLOADER_ACTION_HANDLER_TYPE ?= "${BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT}"
+BOOTLOADER_ACTION_HANDLER_TYPE_DEFAULT ??= "dummy"
+BOOTLOADER_ACTION_HANDLER = "${@'bl_actions.sh' \
+    if d.getVar('BOOTLOADER_ACTION_HANDLER_TYPE') == 'uboot-emmc' else 'dummy_actions.sh'}"
 
 # Where uEnv.txt cannot program fuses (unsigned builds, SoCs absent from the fusing table) the
 # fuses ECU stays, with a handler that refuses updates: Torizon Cloud rejects a returning ECU.
@@ -57,14 +58,25 @@ python () {
         bb.fatal(
             'BL_UPDATE_SUPPORT is set, but it no longer has any effect. Whether an image '
             'registers the bootloader secondary is now set by TORIZON_SECONDARY_BOOTLOADER '
-            '("1" or "0"), and the handler it gets depends on the machine. Remove '
+            '("1" or "0"), and the handler it gets by BOOTLOADER_ACTION_HANDLER_TYPE. Remove '
             'BL_UPDATE_SUPPORT; to keep what images have registered so far, leave '
-            'TORIZON_SECONDARY_BOOTLOADER at "1" (BL_UPDATE_SUPPORT = "0" kept the bootloader '
-            'secondary registered as well).')
+            'TORIZON_SECONDARY_BOOTLOADER at "1", whatever BL_UPDATE_SUPPORT was. For the '
+            'handler, BL_UPDATE_SUPPORT = "0" is now BOOTLOADER_ACTION_HANDLER_TYPE = "dummy", '
+            'and "1" is "uboot-emmc".')
 
-    for var, secondary in (('TORIZON_SECONDARY_DOCKER_COMPOSE', 'docker-compose'),
-                           ('TORIZON_SECONDARY_BOOTLOADER', 'bootloader'),
-                           ('TORIZON_SECONDARY_FUSES', 'fuses')):
+    handler_type = d.getVar('BOOTLOADER_ACTION_HANDLER_TYPE')
+    if handler_type not in ('dummy', 'uboot-emmc'):
+        bb.fatal(
+            'BOOTLOADER_ACTION_HANDLER_TYPE is "%s" for MACHINE "%s". It must be "dummy" (the '
+            'bootloader secondary refuses updates) or "uboot-emmc" (bl_actions.sh, for U-Boot in '
+            'the eMMC hardware boot partitions).' % (handler_type, machine))
+
+    handler_note = (' The bootloader secondary refuses updates unless '
+                    'BOOTLOADER_ACTION_HANDLER_TYPE is "uboot-emmc" (U-Boot in the eMMC hardware '
+                    'boot partitions).')
+    for var, secondary, note in (('TORIZON_SECONDARY_DOCKER_COMPOSE', 'docker-compose', ''),
+                                 ('TORIZON_SECONDARY_BOOTLOADER', 'bootloader', handler_note),
+                                 ('TORIZON_SECONDARY_FUSES', 'fuses', '')):
         value = d.getVar(var) or ''
         if value in ('0', '1'):
             continue
@@ -79,7 +91,7 @@ python () {
             'Torizon OS has done so far, or to "0" not to, in local.conf or, with "?=", in '
             'the machine configuration. A device that has registered the secondary needs '
             '"1" in every later image: Torizon Cloud rejects an ECU that disappears and '
-            'comes back.' % (var, state, machine, secondary))
+            'comes back.%s' % (var, state, machine, secondary, note))
 }
 
 do_install:append () {
