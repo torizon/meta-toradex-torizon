@@ -134,8 +134,11 @@ which TorizonCore Builder's (TCB's) raw-image path can't read directly:
 `torizoncore-builder` can run against the system image directly, and
 `img2genio` re-sparses and repacks the result — only the rootfs changed,
 partition layout preserved. Rootfs-level customizations (filesystem overlays,
-preloaded containers) are supported; device-tree, kernel-argument, U-Boot-env,
-and splash edits are not (TCB rejects them on raw/WIC images). The Genio
+preloaded containers) and kernel arguments are supported. Device trees and
+device-tree overlays need a TCB release that writes FIT hash values for the
+images it adds (torizon/torizoncore-builder#181); U-Boot skips an added image
+without one. U-Boot-env and splash
+edits are not supported. The Genio
 system image is 4Kn, so it needs a `torizoncore-builder` release that can open
 4096-byte-sector raw images, and `android-sdk-libsparse-utils` on the host.
 
