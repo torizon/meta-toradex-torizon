@@ -14,15 +14,11 @@ set_kernel_load_addr=env set bootcmd_unzip_k ";"; \
                      if test ${kernel_image_type} = "fitImage"; then \
                          env set fitimage_addr_r ${ramdisk_addr_r}; \
                          env set kernel_addr_load ${fitimage_addr_r}; \
+                     elif test ${kernel_image_type} = "Image.gz" && test -z "${kernel_comp_addr_r}"; then \
+                         env set kernel_addr_load ${loadaddr}; \
+                         env set bootcmd_unzip_k "unzip $kernel_addr_load $kernel_addr_r"; \
                      else \
-                         if test -n ${kernel_comp_addr_r}; then \
-                             env set kernel_addr_load ${loadaddr}; \
-                         elif test ${kernel_image_type} = "Image.gz"; then \
-                             env set kernel_addr_load ${loadaddr}; \
-                             env set bootcmd_unzip_k "unzip $kernel_addr_load $kernel_addr_r"; \
-                         else \
-                             env set kernel_addr_load ${kernel_addr_r}; \
-                         fi; \
+                         env set kernel_addr_load ${kernel_addr_r}; \
                      fi
 
 load_overlay=load ${devtype} ${devnum}:${otaroot} ${loadaddr} /boot${fdtdir}/${overlays_file}; env import -t ${loadaddr} ${filesize}
