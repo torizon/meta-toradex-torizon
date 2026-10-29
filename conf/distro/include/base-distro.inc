@@ -14,6 +14,8 @@ SDK_NAME_PREFIX = "${DISTRO}"
 SDK_VERSION = "${DISTRO_VERSION}"
 
 IMAGE_CLASSES:remove = "image_types_fsl"
+# Keep build credentials out of the deployed testdata.json
+IMAGE_CLASSES:append = " image_testdata_redact"
 
 # Torizon machine specific overrides
 INHERIT += "torizon"
