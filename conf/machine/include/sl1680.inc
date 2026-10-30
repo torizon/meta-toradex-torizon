@@ -31,16 +31,6 @@ SYNA_SDK_CONFIG_FILE = "sl1680_poky_aarch64_rdk_defconfig"
 
 UBOOT_BOOT_PARTITION_NUMBER = "6"
 
-# Don't overwrite 'fdtfile' if already set (fw_setenv, TCB, or rollback).
-UENV_EXTRA_CONFIGS = "\
-    if test -z "${fdtfile}"; then env set fdtfile ${@ os.path.basename(d.getVar('SYNA_KERNEL_DTS_FILE'))}; fi; \
-    env set skip_fdt_update 0x2; \
-    env set kernel_addr_r 0x7c00000; \
-    env set ramdisk_addr_r 0xcf00000; \
-    env set fdt_addr_r 0x10000000; \
-    env set initrd_high 0xffffffffffffffff; \
-"
-
 hostname:pn-base-files = "torizon-sl1680"
 
 DISTRO_FEATURES_REMOVE:remove = "vulkan"

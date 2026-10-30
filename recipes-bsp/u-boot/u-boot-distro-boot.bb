@@ -236,6 +236,25 @@ BOOTCMD_INIT_ENV_SUPP:sl1680 = "1"
 UBOOT_BOOT_PARTITION_NUMBER ?= "1"
 OTAROOT_PARTITION_NUMBER ?= "1"
 UENV_EXTRA_CONFIGS ?= "true"
+
+# UENV_VARS: variables written to the uEnv.txt header as 'name=value', one
+# flag per variable, so tools like TorizonCore Builder can find and change
+# them:
+#
+#   UENV_VARS[kernel_addr_r] ?= "0x7c00000"
+#
+# Values are taken literally by U-Boot: a reference to another U-Boot variable
+# (${...}) is not expanded, so anything only known at boot belongs in
+# UENV_EXTRA_CONFIGS. An empty value writes 'name=', which 'env import' takes
+# as deleting the variable. Machine files should use '?=' so local.conf can
+# override them ('??=' on a flag acts like '=').
+python write_uenv_vars() {
+    with open(d.expand("${WORKDIR}/uenv-vars.txt"), "w") as f:
+        for name in sorted(d.getVarFlags("UENV_VARS") or {}):
+            f.write("%s=%s\n" % (name, d.getVarFlag("UENV_VARS", name)))
+}
+do_compile[prefuncs] += "write_uenv_vars"
+do_compile[vardeps] += "UENV_VARS"
 BOOTARG_ROOT ?= "LABEL=otaroot"
 
 do_compile() {
@@ -263,6 +282,11 @@ do_compile() {
         -e 's/@@BOOTARG_ROOT@@/${BOOTARG_ROOT}/' \
         -e 's/@@FDT_OVERLAYS_RESIZE@@/${FDT_OVERLAYS_RESIZE}/' \
         ${WORKDIR}/uEnv.txt.in > ${WORKDIR}/uEnv.txt.temp
+    if [ -s ${WORKDIR}/uenv-vars.txt ] && ! grep -q '^@@UENV_VARS@@$' ${WORKDIR}/uEnv.txt.temp; then
+        bbfatal "UENV_VARS is set but uEnv.txt.in has no @@UENV_VARS@@ line."
+    fi
+    sed -e '/^@@UENV_VARS@@$/{r ${WORKDIR}/uenv-vars.txt' -e 'd}' \
+        -i ${WORKDIR}/uEnv.txt.temp
 
     if [ "${FUSE_SUPPORT}" = "1" ]; then
         if [ "${FUSE_SUPPORT_TYPE}" = "NXP" ]; then
