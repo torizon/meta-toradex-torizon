@@ -1,0 +1,9 @@
+# user rac runs the Remote Access Client (remote-access.service) and can
+# execute any command without password, so that remote commands requiring
+# root (e.g. reboot, restarting services) work out of the box. RAC calls
+# sudo non-interactively, so NOPASSWD is required for the commands allowed.
+#
+# This is a security tradeoff: to restrict what RAC is allowed to do, replace
+# the rule below with a narrower one, e.g.:
+#   rac ALL=(root) NOPASSWD: /usr/bin/systemctl reboot *, /usr/bin/systemctl restart *
+rac	ALL=(ALL:ALL) NOPASSWD: ALL
