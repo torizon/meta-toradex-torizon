@@ -9,7 +9,11 @@ ConditionPathExists=|/var/sota/import/pkey.pem
 RestartSec=10
 Restart=always
 Environment="CONFIG_FILE=/etc/rac/client.toml"
-ExecStartPre=/usr/bin/install -d -o torizon -g torizon -m 0700 @@RUNRAC_FOLDER@@
+# rac is started as root so it can read the device TLS key, then it drops
+# privileges to the rac user (unprivileged_user_group in client.toml).
+# migrate-rac-state.sh creates/migrates @@RUNRAC_FOLDER@@ and ensures it (and
+# any pre-existing state in it) is owned by rac, see TOR-4693.
+ExecStartPre=/usr/libexec/rac/migrate-rac-state.sh
 ExecStart=/usr/bin/rac
 
 [Install]
