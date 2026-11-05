@@ -1,0 +1,52 @@
+name: Feature freeze
+
+# pull_request_target is needed to label PRs opened from forks. This workflow
+# never checks out or runs code from the PR, so that is safe here.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: feature-freeze-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  freeze-check:
+    name: freeze-check
+    runs-on: ubuntu-latest
+    steps:
+      # The label is informational only; a failure here must not block merges.
+      - name: Sync 'freeze' label with TORIZON_FEATURE_FREEZE
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          # TORIZON_FEATURE_FREEZE is defined at the org level.
+          # Do not set a repo-level var of the same name, it would override
+          # the org's.
+          FREEZE: ${{ vars.TORIZON_FEATURE_FREEZE == 'true' }}
+          HAS_FREEZE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'freeze') }}
+        run: |
+          if [ "$FREEZE" = "true" ] && [ "$HAS_FREEZE_LABEL" != "true" ]; then
+            gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=freeze"
+          elif [ "$FREEZE" != "true" ] && [ "$HAS_FREEZE_LABEL" = "true" ]; then
+            gh api -X DELETE "repos/$REPO/issues/$PR/labels/freeze"
+          fi
+
+      - name: Block merge during feature freeze unless labeled 'fix'
+        env:
+          FREEZE: ${{ vars.TORIZON_FEATURE_FREEZE == 'true' }}
+          IS_FIX: ${{ contains(github.event.pull_request.labels.*.name, 'fix') }}
+        run: |
+          if [ "$FREEZE" != "true" ]; then
+            echo "No feature freeze: merge allowed."
+          elif [ "$IS_FIX" = "true" ]; then
+            echo "Feature freeze active, but PR is labeled 'fix': merge allowed."
+          else
+            echo "::error::Feature freeze active (TORIZON_FEATURE_FREEZE=true): only PRs labeled 'fix' can be merged."
+            exit 1
+          fi
