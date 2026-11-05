@@ -15,6 +15,13 @@ INITRAMFS_EXTRA_KMODS:append:mx8-nxp-bsp = "\
     ti_sn65dsi83 \
     lontium_lt8912b \
 "
+
+# Modules necessary for our Colibri iMX8X to display splash screen.
+INITRAMFS_EXTRA_KMODS:append:colibri-imx8x = "\
+    phy_mixel_lvds_combo \
+    imx8qxp_ldb \
+"
+
 # On Toradex SMARC iMX8MP we need this extra module, before the rest of iMX8 modules
 INITRAMFS_EXTRA_KMODS:prepend:toradex-smarc-imx8mp = "i2c_mux_pca954x "
 
