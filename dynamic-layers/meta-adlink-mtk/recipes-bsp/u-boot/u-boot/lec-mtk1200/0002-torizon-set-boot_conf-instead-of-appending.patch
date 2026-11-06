@@ -1,0 +1,41 @@
+From: Linghao Zhang <linghao.zhang@kemaro.ch>
+Date: Fri, 6 Nov 2026 16:08:42 +0100
+Subject: [PATCH] torizon: set boot_conf instead of appending to it
+
+board_late_init() of the Adlink board-support patch builds boot_conf as
+"<current boot_conf>#<SKU overlay>" on every boot (a fresh environment even
+yields a literal "<NULL>" prefix). Torizon's update rollback counter saves the
+whole environment after an OTA install, so the value persists and grows by one
+entry per update boot. It stops growing once the command no longer fits the
+256-byte buffer the vendor code formats it into; from then on setenv fails
+with a syntax error on every boot and boot_conf keeps its stored value.
+
+U-Boot derives the SKU overlay from the hardware pins at every boot, so the
+old value is never needed: set boot_conf to exactly that overlay.
+
+Upstream-Status: Pending
+Signed-off-by: Linghao Zhang <linghao.zhang@kemaro.ch>
+---
+ board/mediatek/lec_mtk_i1200/lec_mtk_i1200.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/board/mediatek/lec_mtk_i1200/lec_mtk_i1200.c b/board/mediatek/lec_mtk_i1200/lec_mtk_i1200.c
+--- a/board/mediatek/lec_mtk_i1200/lec_mtk_i1200.c
++++ b/board/mediatek/lec_mtk_i1200/lec_mtk_i1200.c
+@@ -297,7 +297,6 @@ static void reset_ethphy(void)
+ 
+ int board_late_init(void)
+ {
+-	char *boot_conf_orig = env_get("boot_conf");
+ 	char cmd[256];
+ 
+     uint32_t sku_id_0 = (*(volatile uint32_t *)SKU_REG >> SKU_BIT0) & 0x1;
+@@ -312,7 +311,7 @@ int board_late_init(void)
+     for (i = 0; i < sizeof(skus)/sizeof(struct sku_info); i++) {
+         if (skus[i].sku_id == sku_id) {
+ 		printf("SKU:   %s\n", skus[i].sku_str);
+-		snprintf(cmd, sizeof(cmd), "setenv boot_conf '%s#%s'", boot_conf_orig, skus[i].dtbo_file);
++		snprintf(cmd, sizeof(cmd), "setenv boot_conf '%s'", skus[i].dtbo_file);
+ 		run_command(cmd, 0);
+ 		break;
+         }

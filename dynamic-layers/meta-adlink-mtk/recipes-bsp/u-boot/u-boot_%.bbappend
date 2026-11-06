@@ -8,6 +8,12 @@ FILESEXTRAPATHS:prepend:lec-mtk1200 := "${THISDIR}/${PN}/lec-mtk1200:"
 
 SRC_URI:append:lec-mtk1200 = " file://0001-torizon-restore-distro-boot_targets.patch"
 
+# Make board_late_init() set boot_conf to the SKU overlay instead of appending to
+# the stored value, which grew by one entry per OTA update until it no longer
+# fit the vendor's 256-byte command buffer (setenv then fails on every boot).
+# Applies on top of the vendor board-support patch.
+SRC_URI:append:lec-mtk1200 = " file://0002-torizon-set-boot_conf-instead-of-appending.patch"
+
 # Accept the legacy-format boot.scr (FIT_SIGNATURE defaults LEGACY_IMAGE_FORMAT off).
 SRC_URI:append:lec-mtk1200 = " file://legacy-image-format.cfg"
 
