@@ -9,6 +9,10 @@ PACKAGE_INSTALL:append:cfs-support = "\
     initramfs-module-composefs \
 "
 
+PACKAGE_INSTALL:append:tdx-signed = "\
+    initramfs-module-ostreeuki \
+"
+
 # Additional firmware needed for splash screen on DisplayPort with Aquila AM69
 PACKAGE_INSTALL:append:aquila-am69 = "\
     cadence-mhdp-fw \

@@ -1,0 +1,85 @@
+#!/bin/sh
+
+LOADER_ENTRY_SELECTED="/sys/firmware/efi/efivars/LoaderEntrySelected-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f"
+OSTREE_CMDLINE_EXTRA="/run/ostree/cmdline-extra"
+OSTREE_UKI_BOOT_MOUNT="/run/ostree-uki-boot"
+
+ostreeuki_enabled() {
+	[ -f "${LOADER_ENTRY_SELECTED}" ]
+}
+
+ostreeuki_decode_loader_entry() {
+	dd if="${LOADER_ENTRY_SELECTED}" bs=1 skip=4 2>/dev/null | tr -d '\000\r\n'
+}
+
+ostreeuki_find_bls_entry() {
+	entry_conf="$1"
+
+	mkdir -p "${OSTREE_UKI_BOOT_MOUNT}"
+	if ! mountpoint -q "${OSTREE_UKI_BOOT_MOUNT}"; then
+		if [ -e /dev/disk/by-label/xbootldr ]; then
+			mount -o ro /dev/disk/by-label/xbootldr "${OSTREE_UKI_BOOT_MOUNT}" 2>/dev/null || true
+		fi
+	fi
+
+	entry_name="$(printf '%s\n' "${entry_conf%.conf}" | sed 's/+[0-9][0-9]*-[0-9][0-9]*$//')"
+	entry_name_re="$(printf '%s\n' "${entry_name}" | sed 's/[][\\.^$*+?(){}|]/\\&/g')"
+	for bls_entry in "${OSTREE_UKI_BOOT_MOUNT}/loader/entries/"*.conf; do
+		[ -f "${bls_entry}" ] || continue
+		bls_name="${bls_entry##*/}"
+		if ! printf '%s\n' "${bls_name}" | grep -Eq "^${entry_name_re}(\\+[0-9]+-[0-9]+)?\\.conf$"; then
+			continue
+		fi
+
+		# Ambiguity means boot metadata cannot be tied to selected entry.
+		[ -z "${matched_bls_entry}" ] || return 1
+		matched_bls_entry="${bls_entry}"
+	done
+
+	[ -n "${matched_bls_entry}" ] || return 1
+	echo "${matched_bls_entry}"
+}
+
+ostreeuki_get_ostree_arg() {
+	bls_entry="$1"
+	options="$(sed -n 's/^options[[:space:]]\{1,\}//p' "${bls_entry}" | tail -n 1)"
+
+	for arg in ${options}; do
+		case "${arg}" in
+		ostree=*)
+			echo "${arg}"
+			return 0
+			;;
+		esac
+	done
+
+	return 1
+}
+
+ostreeuki_cleanup() {
+	if mountpoint -q "${OSTREE_UKI_BOOT_MOUNT}"; then
+		umount "${OSTREE_UKI_BOOT_MOUNT}" 2>/dev/null || true
+	fi
+}
+
+ostreeuki_run() {
+	entry_conf="$(ostreeuki_decode_loader_entry)"
+	if [ -z "${entry_conf}" ]; then
+		fatal "ERROR: LoaderEntrySelected is empty"
+	fi
+
+	bls_entry="$(ostreeuki_find_bls_entry "${entry_conf}")"
+	if [ -z "${bls_entry}" ]; then
+		fatal "ERROR: BLS entry selected by systemd-boot was not found: ${entry_conf}"
+	fi
+
+	ostree_arg="$(ostreeuki_get_ostree_arg "${bls_entry}")"
+	if [ -z "${ostree_arg}" ]; then
+		fatal "ERROR: no ostree= option found in ${bls_entry}"
+	fi
+
+	mkdir -p "$(dirname "${OSTREE_CMDLINE_EXTRA}")"
+	echo "${ostree_arg}" > "${OSTREE_CMDLINE_EXTRA}"
+	info "Resolved OSTree deployment from ${bls_entry}"
+	ostreeuki_cleanup
+}
