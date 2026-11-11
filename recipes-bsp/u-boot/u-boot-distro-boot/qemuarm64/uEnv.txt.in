@@ -1,5 +1,6 @@
 kernel_image_type=@@KERNEL_IMAGETYPE@@
 otaroot=1
+@@UENV_VARS@@
 
 # check kernel_image2 to avoid booting from other then default emmc in case of
 # bootlimit is reached and there is no other deployed image

@@ -15,6 +15,13 @@ export UBOOT_BOOT_PARTITION_NUMBER
 # that.
 FDT_OVERLAYS_RESIZE = "0x8000"
 
+UENV_VARS[fdtfile] ?= "${@os.path.basename(d.getVar('SYNA_KERNEL_DTS_FILE'))}"
+UENV_VARS[skip_fdt_update] ?= "0x2"
+UENV_VARS[kernel_addr_r] ?= "0x7c00000"
+UENV_VARS[ramdisk_addr_r] ?= "0xcf00000"
+UENV_VARS[fdt_addr_r] ?= "0x10000000"
+UENV_VARS[initrd_high] ?= "0xffffffffffffffff"
+
 OSTREE_DEVICETREE = " \
     ${SYNA_KERNEL_DTS_FILE} \
     ${SYNA_KERNEL_DTBO_FILE} \
