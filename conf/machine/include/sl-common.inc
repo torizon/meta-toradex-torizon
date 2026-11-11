@@ -8,6 +8,19 @@ WKS_FILE_DEPENDS:append = " u-boot-default-script"
 OTAROOT_PARTITION_NUMBER = "${UBOOT_BOOT_PARTITION_NUMBER}"
 export UBOOT_BOOT_PARTITION_NUMBER
 
+# The Synaptics U-Boot default environment has an A/B altbootcmd, which
+# boot.cmd keeps since it only sets its own when altbootcmd is empty. Replace
+# it from uEnv.txt, which comes with the OS, so deployed boards get it via OTA
+# too. kernel_image2 is deleted so 'env save' doesn't persist a rollback
+# target that may not exist on later boots.
+UENV_EXTRA_CONFIGS:prepend = "\
+    if test "${altbootcmd}" != "env set rollback 1; run bootcmd"; then \
+        env set altbootcmd "env set rollback 1; run bootcmd"; \
+        env delete kernel_image2; \
+        env save; \
+    fi; \
+"
+
 # Synaptics U-Boot's fdt_update (run by booti) works in place on a fixed
 # 0x1ff00-byte DTB buffer (DTB_SPACE) and silently skips its /memory fixups
 # if the FDT is larger. The base DTB plus this resize, rounded up to 4 KiB,
