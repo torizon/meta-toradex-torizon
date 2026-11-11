@@ -1,0 +1,53 @@
+From: Linghao Zhang <linghao.zhang@kemaro.ch>
+Date: Fri, 6 Nov 2026 15:50:51 +0100
+Subject: [PATCH] lec-mtk1200: target the root node in the memory overlays
+
+The memory-{2G,4G,8G}.dts overlays use target-path = "/soc", but the kernel's
+memory node is at the root (/memory@40000000). The overlay only adds an unused
+/soc/memory@40000000, so MemTotal never changes (3.7 GiB on an 8 GB unit).
+Target "/" so the overlay replaces the real memory node.
+
+Upstream-Status: Pending
+Signed-off-by: Linghao Zhang <linghao.zhang@kemaro.ch>
+---
+ memory-2G.dts | 2 +-
+ memory-4G.dts | 2 +-
+ memory-8G.dts | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/memory-2G.dts b/memory-2G.dts
+--- a/memory-2G.dts
++++ b/memory-2G.dts
+@@ -3,7 +3,7 @@
+ 
+ / {
+ 	fragment@0 {
+-        target-path = "/soc";
++        target-path = "/";
+ 		__overlay__ {
+ 			memory@40000000 {
+ 				device_type = "memory";
+diff --git a/memory-4G.dts b/memory-4G.dts
+--- a/memory-4G.dts
++++ b/memory-4G.dts
+@@ -3,7 +3,7 @@
+ 
+ / {
+ 	fragment@0 {
+-        target-path = "/soc";
++        target-path = "/";
+ 		__overlay__ {
+ 			memory@40000000 {
+ 				device_type = "memory";
+diff --git a/memory-8G.dts b/memory-8G.dts
+--- a/memory-8G.dts
++++ b/memory-8G.dts
+@@ -3,7 +3,7 @@
+ 
+ / {
+ 	fragment@0 {
+-        target-path = "/soc";
++        target-path = "/";
+ 		__overlay__ {
+ 			memory@40000000 {
+ 				device_type = "memory";
