@@ -2,7 +2,7 @@ SUMMARY = "Remote access client (RAC) for Torizon OS"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=34400b68072d710fecd0a2940a0d1658"
 
-inherit cargo systemd
+inherit cargo systemd useradd
 
 # Main source respository
 SRC_URI = " \
@@ -10,6 +10,9 @@ SRC_URI = " \
     git://github.com/toradex/tough.git;protocol=https;branch=rac;name=tough;destsuffix=tough \
     file://remote-access.service \
     file://client.toml \
+    file://sudoers.rac \
+    file://migrate-rac-state.sh \
+    file://rac-tmpfiles.conf \
 "
 
 SRCREV_FORMAT = "rac_tough"
@@ -24,6 +27,17 @@ SRCREV_tough:use-head-next = "${AUTOREV}"
 S = "${WORKDIR}/git"
 
 SYSTEMD_SERVICE:${PN} = "remote-access.service"
+
+# RAC drops privileges to the rac user, which has full sudo access so that
+# remote commands requiring root can run. The user is created here rather than
+# in torizon-users so that the account, and its sudo rights, only exist on
+# images that actually ship RAC.
+USERADD_PACKAGES = "${PN}"
+GROUPADD_PARAM:${PN} = "--system rac"
+USERADD_PARAM:${PN} = "--system -g rac -d /home/rac -m -s /bin/sh rac"
+
+# Remote commands are executed through sudo
+RDEPENDS:${PN} += "sudo"
 
 PV = "0.0+git${SRCPV}"
 
@@ -914,7 +928,14 @@ cargo_add_rac_patch_paths() {
 
 do_configure[postfuncs] += "cargo_add_rac_patch_paths"
 
-RUNRAC_FOLDER ??= "/home/torizon/run/rac"
+RUNRAC_FOLDER ??= "/home/rac/run/rac"
+
+# The default RUNRAC_FOLDER changed from /home/torizon/run/rac (RAC running
+# as the torizon user) to /home/rac/run/rac as part of TOR-4693. Keep track
+# of the old default so migrate-rac-state.sh can move/re-own any pre-existing
+# RAC state (device key, TUF trust root, SSH host keys) from an older RAC
+# instead of leaving it torizon-owned or silently discarding it.
+OLD_RUNRAC_FOLDER ??= "/home/torizon/run/rac"
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
@@ -926,4 +947,21 @@ do_install:append() {
     install -m 0644 ${WORKDIR}/client.toml ${D}${sysconfdir}/rac
     sed -i "s|@@RUNRAC_FOLDER@@|${RUNRAC_FOLDER}|g" \
         ${D}${sysconfdir}/rac/client.toml
+
+    install -m 0755 -d ${D}${sysconfdir}/sudoers.d
+    install -m 0440 ${WORKDIR}/sudoers.rac ${D}${sysconfdir}/sudoers.d/50-rac
+
+    install -d ${D}${libexecdir}/rac
+    install -m 0755 ${WORKDIR}/migrate-rac-state.sh ${D}${libexecdir}/rac/migrate-rac-state.sh
+    sed -i \
+        -e "s|@@RUNRAC_FOLDER@@|${RUNRAC_FOLDER}|g" \
+        -e "s|@@OLD_RUNRAC_FOLDER@@|${OLD_RUNRAC_FOLDER}|g" \
+        ${D}${libexecdir}/rac/migrate-rac-state.sh
+
+    install -d ${D}${nonarch_libdir}/tmpfiles.d
+    install -m 0644 ${WORKDIR}/rac-tmpfiles.conf ${D}${nonarch_libdir}/tmpfiles.d/rac.conf
 }
+
+FILES:${PN} += " \
+    ${nonarch_libdir}/tmpfiles.d/rac.conf \
+"
