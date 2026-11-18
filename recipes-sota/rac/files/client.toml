@@ -11,7 +11,7 @@ unprivileged_user_group = "torizon:torizon"
 local_tuf_repo_path = "@@RUNRAC_FOLDER@@/uptane-repo"
 poll_timeout = { secs = 30, nanos = 0 }
 validation_poll_timeout = { secs = 30, nanos = 0 }
-enable_dbus_client = true
+enable_dbus_server = true
 
 [device.session.spawned_sshd]
 sshd_path = "/usr/sbin/sshd"
