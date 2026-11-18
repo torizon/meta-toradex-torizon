@@ -22,6 +22,17 @@
             "target_name_path": "/var/sota/storage/bootloader/target_name",
             "metadata_path": "/var/sota/storage/bootloader/metadata",
             "action_handler_path": "/usr/bin/bl_actions.sh"
+        },
+        {
+            "partial_verifying": false,
+            "ecu_hardware_id": "@@MACHINE@@-fuses",
+            "full_client_dir": "/var/sota/storage/fuse",
+            "ecu_private_key": "sec.private",
+            "ecu_public_key": "sec.public",
+            "firmware_path": "/var/sota/storage/fuse/fuse.yml",
+            "target_name_path": "/var/sota/storage/fuse/target_name",
+            "metadata_path": "/var/sota/storage/fuse/metadata",
+            "action_handler_path": "/usr/bin/fuse_actions.sh"
         }
     ]
 }

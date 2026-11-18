@@ -35,6 +35,9 @@ INITRAMFS_FSTYPES = "cpio.gz"
 BUILD_OSTREE_TARBALL = "0"
 IMAGE_FSTYPES:remove:sota = "${IMAGE_FSTYPES_REMOVE}"
 
+# The secondaries aktualizr-default-sec registers on each known machine
+require conf/distro/include/torizon-secondaries.inc
+
 # No need to install boot script, kernel image, devicetrees or firmware into the boot partition
 IMAGE_BOOT_FILES = ""
 IMAGE_BOOT_FILES_REMOVE:sota = "boot.scr-${MACHINE};boot.scr overlays.txt overlays/*;overlays/"
