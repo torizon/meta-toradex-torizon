@@ -49,6 +49,7 @@ CORE_IMAGE_BASE_INSTALL:append = " \
     ostree-devicetree-overlays \
     packagegroup-core-full-cmdline-multiuser \
     packagegroup-core-full-cmdline-utils \
+    pam-ssh-agent-auth \
     parted \
     rsync \
     sshfs-fuse \
