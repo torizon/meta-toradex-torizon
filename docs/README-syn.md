@@ -64,6 +64,9 @@ For flashing, there are two possible ways: use the helper script `flash-image.sh
     a. After the build is done, get the file called `SYNAIMG-flash.tar.gz` from the `deploy/images/${MACHINE}` folder.  
     b. Unpack it into a proper folder, using the tar command: `tar -xf SYNAIMG-flash.tar.gz`.  
     c. With the board in recovery mode, execute the script: `./flash-image.sh`.  
+    d. If more than one board is in recovery mode at the same time, `flash-image` cannot tell which one to flash.
+    In that case, use the optional `-p` flag to pass the USB port path of the target board (e.g. `./flash-image.sh -p 1-2.3`).
+    You can find the USB port path with `lsusb -t`. Run `./flash-image.sh -h` to see the usage.  
 
 2. Another option is to do all the steps manually:
 
