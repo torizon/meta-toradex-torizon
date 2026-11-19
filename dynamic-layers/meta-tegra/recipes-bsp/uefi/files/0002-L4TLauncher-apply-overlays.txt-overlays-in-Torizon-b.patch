@@ -1,0 +1,155 @@
+From 655c0ad9326cab344a3bdb7e877225397c16312d Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Tue, 17 Nov 2026 10:55:45 -0300
+Subject: L4TLauncher: apply overlays.txt overlays in Torizon boot
+
+Torizon lists the device tree overlays to apply at boot in
+<fdtdir>/overlays.txt, as 'fdt_overlays=a.dtbo b.dtbo', with the files
+under <fdtdir>/overlays/. TorizonCore Builder's dto command and
+OSTREE_DEVICETREE_OVERLAY_BOOT rely on it, but the Torizon boot ignored
+it. We read it from the booted deployment's fdtdir, so a rollback also
+brings back that deployment's overlays.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ .../Application/L4TLauncher/L4TLauncher.c     | 111 ++++++++++++++++++
+ 1 file changed, 111 insertions(+)
+
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+index e3f2cd4..3f6f52f 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+@@ -1156,6 +1156,107 @@ CheckCommandString (
+   return EFI_NOT_FOUND;
+ }
+ 
++/**
++  Build the OVERLAYS list for the Torizon boot from <FdtDir>/overlays.txt.
++
++  overlays.txt holds a single "fdt_overlays=a.dtbo b.dtbo" line, the same
++  file U-Boot imports on other Torizon machines. Each name is resolved to
++  <FdtDir>/overlays/<name>, and the paths are joined with commas, the
++  format ExtLinuxBoot() expects for the extlinux.conf OVERLAYS key.
++
++  @param[in]  RootFsHandle  Handle of the partition holding FdtDir.
++  @param[in]  FdtDir        Device tree directory of the deployment.
++
++  @retval  Comma-separated overlay paths, to be freed by the caller, or
++           NULL if there are no overlays to apply.
++
++**/
++STATIC
++CHAR16 *
++TorizonGetOverlays (
++  IN EFI_HANDLE  RootFsHandle,
++  IN CHAR16      *FdtDir
++  )
++{
++  EFI_STATUS       Status;
++  EFI_FILE_HANDLE  FileHandle;
++  CHAR16           *Path;
++  CHAR16           *FileLine;
++  CHAR16           *Names    = NULL;
++  CHAR16           *Overlays = NULL;
++  CHAR16           *Tmp;
++  CHAR16           *Name;
++  CHAR16           *End;
++  BOOLEAN          Last;
++  BOOLEAN          Ascii;
++
++  // The path is cleaned up here rather than with the other boot paths at
++  // the end of ProcessExtLinuxConfig(), as we open the file right away.
++  Path = CatSPrint (NULL, L"%s/overlays.txt", FdtDir);
++  if (Path == NULL) {
++    return NULL;
++  }
++
++  PathCleanUpDirectories (Path);
++  Status = OpenAndReadFileToBuffer (RootFsHandle, Path, &FileHandle, NULL, NULL);
++  FreePool (Path);
++  if (EFI_ERROR (Status)) {
++    // No overlays.txt in this deployment: boot with the base device tree.
++    // OpenAndReadFileToBuffer() prints an error for the missing file,
++    // which is expected here.
++    return NULL;
++  }
++
++  // Parse it line by line, like uEnv.txt, stopping at the first
++  // fdt_overlays= entry.
++  while ((Names == NULL) && !FileHandleEof (FileHandle)) {
++    FileLine = FileHandleReturnLine (FileHandle, &Ascii);
++    if (FileLine == NULL) {
++      break;
++    }
++
++    CheckCommandString (CleanExtLinuxLine (FileLine), L"fdt_overlays=", &Names);
++    FreePool (FileLine);
++  }
++
++  FileHandleClose (FileHandle);
++  if (Names == NULL) {
++    return NULL;
++  }
++
++  // Split the names on blanks, in place, and append each one to the list
++  // as "[,]<FdtDir>/overlays/<name>". Repeated blanks yield empty names,
++  // which are skipped, so the list is split the same way U-Boot does.
++  for (Name = Names; *Name != CHAR_NULL; Name = End + 1) {
++    for (End = Name; *End != CHAR_NULL && *End != L' ' && *End != L'\t'; End++) {
++    }
++
++    // Remember if this is the last name before terminating it, so we
++    // don't step past the end of the buffer.
++    Last = (*End == CHAR_NULL);
++    *End = CHAR_NULL;
++    if (End != Name) {
++      Tmp = CatSPrint (Overlays, L"%s%s/overlays/%s", (Overlays == NULL) ? L"" : L",", FdtDir, Name);
++      if (Overlays != NULL) {
++        FreePool (Overlays);
++      }
++
++      // Out of memory: boot with no overlays rather than a partial list.
++      Overlays = Tmp;
++      if (Overlays == NULL) {
++        break;
++      }
++    }
++
++    if (Last) {
++      break;
++    }
++  }
++
++  FreePool (Names);
++  return Overlays;
++}
++
+ /**
+   Process the extlinux.conf file
+ 
+@@ -1380,6 +1481,11 @@ ProcessExtLinuxConfig (
+         StrCatS (BootConfig->BootOptions[0].DtbPath, StrLen(UEnvFDTDir) + StrLen(UEnvFDTFile) + 2, L"/");
+         StrCatS (BootConfig->BootOptions[0].DtbPath, StrLen(UEnvFDTDir) + StrLen(UEnvFDTFile) + 2, UEnvFDTFile);
+       }
++
++      // Overlays are only applied on top of DtbPath, so they're only
++      // looked up when there is one. On rollback UEnvFDTDir comes from
++      // fdtdir2, so the previous deployment's overlays are used.
++      BootConfig->BootOptions[0].Overlays = TorizonGetOverlays (*RootFsHandle, UEnvFDTDir);
+     }
+   }
+ 
+@@ -2802,6 +2908,11 @@ L4TLauncher (
+           FreePool (ExtLinuxConfig.BootOptions[Index].MenuLabel);
+           ExtLinuxConfig.BootOptions[Index].MenuLabel = NULL;
+         }
++
++        if (ExtLinuxConfig.BootOptions[Index].Overlays != NULL) {
++          FreePool (ExtLinuxConfig.BootOptions[Index].Overlays);
++          ExtLinuxConfig.BootOptions[Index].Overlays = NULL;
++        }
+       }
+ 
+       if (ExtLinuxConfig.MenuTitle != NULL) {

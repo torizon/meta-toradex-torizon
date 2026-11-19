@@ -1,0 +1,94 @@
+From 2ae6329b241ab4309237e6a5ed976217370a28a0 Mon Sep 17 00:00:00 2001
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Date: Tue, 17 Nov 2026 10:56:02 -0300
+Subject: L4TLauncher: skip device tree overlays that fail to apply
+
+A missing or broken overlay fails the whole boot entry. On a Jetson
+Orin Nano running Torizon this left the board at the UEFI setup menu,
+where the boot counter never expires and rollback never happens. We
+skip the overlay instead, as U-Boot does, restoring the device tree if
+a failed apply left it half-modified.
+
+With Secure Boot enabled, an overlay that fails to load still fails the
+boot entry, as that can be a failed signature check.
+
+Upstream-Status: Inappropriate [Torizon OS specific]
+
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+ .../Application/L4TLauncher/L4TLauncher.c     | 47 +++++++++++++------
+ 1 file changed, 32 insertions(+), 15 deletions(-)
+
+diff --git a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+index 3f6f52f..638de5e 100644
+--- a/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
++++ b/Silicon/NVIDIA/Application/L4TLauncher/L4TLauncher.c
+@@ -1641,6 +1641,7 @@ ExtLinuxBoot (
+   UINTN                      OverlaySize;
+   CHAR16                     *Overlays = NULL;
+   CHAR16                     *OverlayPath;
++  VOID                       *FdtBackup;
+   UINTN                      Index;
+   CHAR8                      SWModule[] = "kernel";
+   INTN                       FdtStatus;
+@@ -1755,29 +1756,45 @@ ExtLinuxBoot (
+                    &OverlayBuffer,
+                    &OverlaySize
+                    );
++        // An overlay that can't be loaded or applied is skipped, as U-Boot
++        // does, instead of failing the boot entry: that would stop at the
++        // UEFI menu, where the boot counter never expires and a Torizon
++        // rollback never happens.
+         if (EFI_ERROR (Status)) {
+           ErrorPrint (L"%a: Failed to load overlay %s: %r\r\n", __FUNCTION__, OverlayPath, Status);
+-          goto Exit;
+-        }
+-
+-        FdtStatus = fdt_check_header (OverlayBuffer);
+-        if (FdtStatus != 0) {
++          // With Secure Boot, a load failure can be a failed signature
++          // check, so keep refusing to boot instead of skipping it.
++          if (IsSecureBootEnabled ()) {
++            goto Exit;
++          }
++        } else if ((FdtStatus = fdt_check_header (OverlayBuffer)) != 0) {
+           ErrorPrint (L"%a: Overlay %s bad header: %lld\r\n", __FUNCTION__, OverlayPath, FdtStatus);
+-          goto Exit;
+-        }
+-
+-        if (gL4TSupportProtocol != NULL) {
+-          Status = gL4TSupportProtocol->ApplyTegraDeviceTreeOverlay (ExpandedFdtBase, OverlayBuffer, SWModule);
++        } else if ((FdtBackup = AllocateCopyPool (fdt_totalsize (ExpandedFdtBase), ExpandedFdtBase)) == NULL) {
++          // Without a backup a failed apply can't be undone, so skip it.
++          ErrorPrint (L"%a: No memory to apply overlay %s\r\n", __FUNCTION__, OverlayPath);
+         } else {
+-          Status = ApplyTegraDeviceTreeOverlay (ExpandedFdtBase, OverlayBuffer, SWModule);
++          if (gL4TSupportProtocol != NULL) {
++            Status = gL4TSupportProtocol->ApplyTegraDeviceTreeOverlay (ExpandedFdtBase, OverlayBuffer, SWModule);
++          } else {
++            Status = ApplyTegraDeviceTreeOverlay (ExpandedFdtBase, OverlayBuffer, SWModule);
++          }
++
++          // The overlay is applied in place and a failure can leave the fdt
++          // half-modified, so restore the copy taken before applying it.
++          if (EFI_ERROR (Status)) {
++            ErrorPrint (L"%a: Failed to apply overlay %s: %r\r\n", __FUNCTION__, OverlayPath, Status);
++            CopyMem (ExpandedFdtBase, FdtBackup, fdt_totalsize (FdtBackup));
++          }
++
++          FreePool (FdtBackup);
+         }
+ 
+-        if (EFI_ERROR (Status)) {
+-          goto Exit;
++        // Nothing was allocated if the overlay failed to load.
++        if (OverlayBuffer != NULL) {
++          FreePool (OverlayBuffer);
++          OverlayBuffer = NULL;
+         }
+ 
+-        FreePool (OverlayBuffer);
+-        OverlayBuffer = NULL;
+         OverlayPath   = &Overlays[Index + 1];
+       }
+ 
