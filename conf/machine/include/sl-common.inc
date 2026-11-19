@@ -24,6 +24,10 @@ BBMASK += "/meta-synaptics/dynamic-layers/virtualization-layer/recipes-container
 
 PREFERRED_PROVIDER_virtual/dtb = ""
 
+# meta-synaptics only sets this in its own local.conf template, which we
+# don't use. Its swupdate image recipes fail to parse when it's unset.
+ENABLE_RESCUE_MODE ?= "0"
+
 PREFERRED_VERSION_meson = "1.3.1"
 PREFERRED_VERSION_meson-native = "1.3.1"
 
