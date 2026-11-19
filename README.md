@@ -37,12 +37,13 @@ If your machine is not listed above or you prefer a manual setup, you can follow
     $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y
     $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
     $ git clone https://git.yoctoproject.org/git/meta-virtualization -b scarthgap
+    $ git clone https://git.yoctoproject.org/meta-lts-mixins -b scarthgap/rust
     ```
 
 2. **Set up the environment**: Source the appropriate script your BSP uses to set up the build environment.
 3. **Configure your build**:
 
-- Add the `meta-toradex-torizon` layer and its dependencies to your `conf/bblayers.conf` file.
+- Add the `meta-toradex-torizon` layer and its dependencies to your `conf/bblayers.conf` file: `meta-updater`, `meta-virtualization` and `meta-lts-mixins` (provides the Rust toolchain).
 - Edit `conf/local.conf` to set the `MACHINE` you wish to build.
 - In the same file, set the distribution to `DISTRO='common-torizon'`.
 

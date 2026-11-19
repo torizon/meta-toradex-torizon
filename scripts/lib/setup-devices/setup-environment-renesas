@@ -32,6 +32,7 @@ BBLAYERS += "\${TOPDIR}/../work/meta-toradex-torizon"
 # Torizon deps
 BBLAYERS += "\${TOPDIR}/../work/meta-updater"
 BBLAYERS += "\${TOPDIR}/../work/meta-virtualization"
+BBLAYERS += "\${TOPDIR}/../work/meta-lts-mixins"
 # meta-updater and meta-virtualization deps
 BBLAYERS += "\${TOPDIR}/../work/meta-openembedded/meta-filesystems"
 BBLAYERS += "\${TOPDIR}/../work/meta-openembedded/meta-python"

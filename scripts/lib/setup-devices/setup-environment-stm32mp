@@ -124,6 +124,7 @@ BASELAYERS ?= " \\
   \${OEROOT}/layers/meta-openembedded/meta-perl \\
   \${OEROOT}/layers/meta-virtualization \\
   \${OEROOT}/layers/meta-updater \\
+  \${OEROOT}/layers/meta-lts-mixins \\
 "
 
 # These layers hold machine specific content, aka Board Support Packages

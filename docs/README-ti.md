@@ -80,6 +80,7 @@ $ git clone https://git.yoctoproject.org/openembedded-core -b scarthgap oe-core
 ```bash
 $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
+$ git clone https://git.yoctoproject.org/meta-lts-mixins -b scarthgap/rust
 $ git clone https://git.yoctoproject.org/meta-virtualization -b scarthgap
 ```
   * And finally, download the dependency for `meta-updater` and `meta-virtualization`:

@@ -72,6 +72,7 @@ BBLAYERS += "\${OEROOT}/layers/meta-toradex-torizon"
 # Torizon deps
 BBLAYERS += "\${OEROOT}/layers/meta-updater"
 BBLAYERS += "\${OEROOT}/layers/meta-virtualization"
+BBLAYERS += "\${OEROOT}/layers/meta-lts-mixins"
 # meta-updater and meta-virtualization deps
 BBLAYERS += "\${OEROOT}/layers/meta-openembedded/meta-filesystems"
 BBLAYERS += "\${OEROOT}/layers/meta-openembedded/meta-python"

@@ -86,6 +86,7 @@ $ repo sync -j 10
 ```bash
 $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x.y sources/meta-toradex-torizon
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap sources/meta-updater
+$ git clone https://git.yoctoproject.org/meta-lts-mixins -b scarthgap/rust sources/meta-lts-mixins
 $ ln -s sources/meta-toradex-torizon/scripts/setup-environment setup-environment
 ```
 
