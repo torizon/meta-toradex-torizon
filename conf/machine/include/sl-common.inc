@@ -57,13 +57,47 @@ IMAGE_CMD:ota-ext4:append () {
     sed -i '/bl_b/d' ${EMMC_PART_LIST_FILE}
     sed -i '/boot_a/d' ${EMMC_PART_LIST_FILE}
     sed -i '/boot_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/firmware_b/d' ${EMMC_PART_LIST_FILE}
     sed -i '/rootfs_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/fastlogo_a/d' ${EMMC_PART_LIST_FILE}
     sed -i '/fastlogo_b/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/devinfo/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/misc/d' ${EMMC_PART_LIST_FILE}
-    sed -i '/home/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/^devinfo/d' ${EMMC_PART_LIST_FILE}
+    sed -i '/^home/d' ${EMMC_PART_LIST_FILE}
+
+    # sl1680's U-Boot runs show_logo, which reads the logo from fastlogo_a and
+    # keeps A/B boot control in misc. Without misc, its bootctrl code misses the
+    # lookup failure (it checks for -1, part_get_info_by_name() returns -ENOENT)
+    # and writes into rootfs_a instead, corrupting its ext4 group descriptors.
+    if ! echo ":${MACHINEOVERRIDES}:" | grep -q ':sl1680:'; then
+        sed -i '/^fastlogo_a/d' ${EMMC_PART_LIST_FILE}
+        sed -i '/^misc/d' ${EMMC_PART_LIST_FILE}
+    fi
+
+    # rootfs_a goes last, so resize-helper can grow it to the end of the eMMC
+    # and its sparse chunks are flashed last (the flash tool drops the USB link
+    # on the first write after them). The bootloaders find fastlogo_a and misc
+    # by name, not by number.
+    rootfs_line=$(grep '^rootfs_a' ${EMMC_PART_LIST_FILE})
+    sed -i '/^rootfs_a/d' ${EMMC_PART_LIST_FILE}
+    echo "${rootfs_line}" >> ${EMMC_PART_LIST_FILE}
+
+    # U-Boot keeps its environment at fixed offsets, in the last 64 KiB below
+    # 64 MiB and below 80 MiB (CONFIG_ENV_OFFSET and CONFIG_ENV_OFFSET_REDUND),
+    # and nothing in the list covers them. Reserve them: insert ubootenv before
+    # the first partition that would reach 64 MiB, ending at 80 MiB.
+    awk '
+        !done && $1 !~ /^#/ && NF {
+            split($0, f, ",")
+            start = (f[2] + 0 > 0) ? f[2] + 0 : pos
+            if (start + f[3] >= 64) {
+                if (start != pos || pos >= 64) exit 1
+                printf "%-20s,0\t,%d\t,                \n", "ubootenv", 80 - pos
+                done = 1
+            }
+            pos = start + f[3]
+        }
+        { print }
+    ' ${EMMC_PART_LIST_FILE} > ${EMMC_PART_LIST_FILE}.tmp || bbfatal "can't reserve 64-80 MiB for the U-Boot environment"
+    mv ${EMMC_PART_LIST_FILE}.tmp ${EMMC_PART_LIST_FILE}
+    grep -q '^ubootenv' ${EMMC_PART_LIST_FILE} || bbfatal "no room reserved for the U-Boot environment"
 
     # Re-create emmc_image_list and copy to SYNAIMG folder
     cat <<EOF >${EMMC_IMAGE_LIST_FILE}
@@ -89,6 +123,9 @@ EOF
             for subimg in $(seq 0 $(expr $subimg_cnt - 1)); do
                 echo "rootfs_ota_s.subimg.${subimg},sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
             done
+        elif [ "${partition}" = "misc" ] || [ "${partition}" = "ubootenv" ]; then
+            # runtime state, not a subimage: ship it erased like the vendor list
+            echo "erase,sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
         else
             echo "${partition}.subimg.gz,sd${partition_count}" >> ${EMMC_IMAGE_LIST_FILE}
         fi
