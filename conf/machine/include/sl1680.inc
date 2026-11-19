@@ -1,4 +1,4 @@
-OSTREE_KERNEL_ARGS:append:sota = " console=ttyS0,115200 earlycon root=LABEL=otaroot rootfstype=ext4 cma=524288000@1556086784"
+OSTREE_KERNEL_ARGS:append:sota = " console=ttyS0,115200 earlycon root=LABEL=otaroot rootfstype=ext4 cma=524288000@3166699520"
 
 DISTRO_FEATURES:append = " tpm2"
 
@@ -29,7 +29,7 @@ IMAGE_INSTALL:append = " \
 SYNA_SDK_CONFIG_NAME = "sl1680_poky_aarch64_rdk"
 SYNA_SDK_CONFIG_FILE = "sl1680_poky_aarch64_rdk_defconfig"
 
-UBOOT_BOOT_PARTITION_NUMBER = "6"
+UBOOT_BOOT_PARTITION_NUMBER = "8"
 
 # Don't overwrite 'fdtfile' if already set (fw_setenv, TCB, or rollback).
 UENV_EXTRA_CONFIGS = "\
