@@ -4,6 +4,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRC_URI += "\
     file://extra-uboot-config.cfg \
+    file://0001-dolphin-klamath-drop-the-A-B-altbootcmd-default.patch \
 "
 
 # Show the fastlogo before booting, as the vendor U-Boot does. This also

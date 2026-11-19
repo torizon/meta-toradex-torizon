@@ -1,0 +1,30 @@
+From: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+Subject: [PATCH] dolphin, klamath: drop the A/B altbootcmd default
+
+It switches boot slots, which Torizon (single slot, OSTree rollback)
+does not have, so hitting the bootlimit reboots the same broken
+deployment. With no default, the Torizon boot script sets its own.
+
+Upstream-Status: Inappropriate [Torizon-specific single-slot OSTree rollback]
+Signed-off-by: Eduardo Ferreira <eduardo.barbosa@toradex.com>
+---
+--- a/include/configs/dolphin.h
++++ b/include/configs/dolphin.h
+@@ -55,6 +55,5 @@
+ 		     "setenv initrd_high; run rescue_load; run rescue_setup; run rescue_exec\0"
+ #else
+ #define CFG_EXTRA_ENV_SETTINGS \
+-	"upgrade_available=0\0" \
+-	"altbootcmd=if test ${boot_slot} = 1; then bootslot set b; bootcount reset;bootcount reset; run bootcmd; else bootslot set a; bootcount reset; bootcount reset; run bootcmd; fi\0"
++	"upgrade_available=0\0"
+ #endif
+--- a/include/configs/klamath.h
++++ b/include/configs/klamath.h
+@@ -72,6 +72,5 @@
+ #else
+ #define CFG_EXTRA_ENV_SETTINGS \
+ 	"usb_pgood_delay=3000\0" \
+-	"upgrade_available=0\0" \
+-	"altbootcmd=if test ${boot_slot} = 1; then bootslot set b; bootcount reset;bootcount reset; run bootcmd; else bootslot set a; bootcount reset; bootcount reset; run bootcmd; fi\0"
++	"upgrade_available=0\0"
+ #endif
