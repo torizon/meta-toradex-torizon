@@ -23,5 +23,11 @@ PACKAGECONFIG:append:pn-nativesdk-qemu = " sdl"
 NET_NAME:pn-networkmanager = "enp"
 NET_NUMS:pn-networkmanager = "0"
 
+# Enable OVMF Secure Boot build (produces ovmf.secboot.fd + EnrollDefaultKeys.efi)
+PACKAGECONFIG:append:pn-ovmf = " secureboot"
+
+# Expose TPM2 to OVMF (auto-enables -D TPM_ENABLE=TRUE in the OVMF build)
+MACHINE_FEATURES:append = " tpm2"
+
 PREFERRED_PROVIDER_u-boot-default-script = ""
 PREFERRED_PROVIDER_virtual/dtb = ""

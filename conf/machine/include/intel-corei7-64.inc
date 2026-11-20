@@ -2,7 +2,7 @@
 WKS_FILE:intel-corei7-64:sota = "efiimage-sota.wks"
 WKS_FILE_DEPENDS:remove = "tezi-metadata virtual/dtb"
 
-OSTREE_KERNEL_ARGS:sota:append:intel-corei7-64 = "console=ttyS0,115200 root=LABEL=otaroot rootfstype=ext4 quiet logo.nologo vt.global_cursor_default=0 plymouth.ignore-serial-consoles splash fbcon=map:10 "
+OSTREE_KERNEL_ARGS:sota:append:intel-corei7-64 = "console=ttyS0,115200 root=LABEL=otaroot rootfstype=ext4 quiet logo.nologo vt.global_cursor_default=0 plymouth.ignore-serial-consoles splash fbcon=map:10 systemd.gpt_auto=0 "
 
 XENOMAI_KERNEL_ARGS = "audit=0 hpet=disable clocksource=tsc tsc=reliable intel_pstate=disable intel_idle.max_cstate=0 intel.max_cstate=0 processor.max_cstate=0 processor_idle.max_cstate=0 \
                     rcupdate.rcu_cpu_stall_suppress=1 mce=off nmi_watchdog=0 nosoftlockup noht numa_balancing=disable hugepages=1024 rcu_nocb_poll=1024 irqaffinity=0 isolcpus=1,3 rcu_nocbs=1,3 nohz_full=1,3 \
