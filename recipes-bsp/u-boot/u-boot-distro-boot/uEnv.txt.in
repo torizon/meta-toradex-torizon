@@ -2,6 +2,7 @@ kernel_image_type=@@KERNEL_IMAGETYPE@@
 overlays_file="overlays.txt"
 otaroot=@@OTAROOT_PARTITION_NUMBER@@
 fitconf_fdt_overlays="@@FITCONF_FDT_OVERLAYS@@"
+@@UENV_VARS@@
 
 set_bootargs=env set bootcmd_args env set bootargs ${defargs} root=@@BOOTARG_ROOT@@ rootfstype=ext4 ${bootargs} ${tdxargs}
 
@@ -13,15 +14,11 @@ set_kernel_load_addr=env set bootcmd_unzip_k ";"; \
                      if test ${kernel_image_type} = "fitImage"; then \
                          env set fitimage_addr_r ${ramdisk_addr_r}; \
                          env set kernel_addr_load ${fitimage_addr_r}; \
+                     elif test ${kernel_image_type} = "Image.gz" && test -z "${kernel_comp_addr_r}"; then \
+                         env set kernel_addr_load ${loadaddr}; \
+                         env set bootcmd_unzip_k "unzip $kernel_addr_load $kernel_addr_r"; \
                      else \
-                         if test -n ${kernel_comp_addr_r}; then \
-                             env set kernel_addr_load ${loadaddr}; \
-                         elif test ${kernel_image_type} = "Image.gz"; then \
-                             env set kernel_addr_load ${loadaddr}; \
-                             env set bootcmd_unzip_k "unzip $kernel_addr_load $kernel_addr_r"; \
-                         else \
-                             env set kernel_addr_load ${kernel_addr_r}; \
-                         fi; \
+                         env set kernel_addr_load ${kernel_addr_r}; \
                      fi
 
 load_overlay=load ${devtype} ${devnum}:${otaroot} ${loadaddr} /boot${fdtdir}/${overlays_file}; env import -t ${loadaddr} ${filesize}
@@ -56,7 +53,7 @@ check_rollback_needed=if test -n "${kernel_image2}" && test "${rollback}" = "1";
     env set bootargs ${bootargs2}; \
     env set fdtdir ${fdtdir2}; \
     env set fdt_file ${fdt_file2}; \
-    env set fdtfile ${fdtfile2}; \
+    test -n "${fdtfile2}" && env set fdtfile ${fdtfile2}; \
     env set torizon_bootargs_l ${torizon_bootargs_l2}; \
     env set torizon_bootargs_r ${torizon_bootargs_r2}; \
     test -n "${kernel_image_type2}" && env set kernel_image_type ${kernel_image_type2}; \
