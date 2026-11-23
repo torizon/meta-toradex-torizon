@@ -14,8 +14,8 @@ SRC_URI = " \
 
 SRCREV_FORMAT = "rac_tough"
 
-SRCREV_rac = "c54d1d48c071db549ca8119cfd1f60f7c1c28127"
-SRCREV_tough = "69e51d241b950951907b439a9996692967a9e82b"
+SRCREV_rac = "b42cd4336de7385586674b254a890d968b0507c7"
+SRCREV_tough = "bd1caa87c959309d680267f7f6bbed8f455fa810"
 
 # Track the latest revisions on head-next builds.
 SRCREV_rac:use-head-next = "${AUTOREV}"
