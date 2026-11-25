@@ -16,6 +16,9 @@ if ! grep -q "# Torizon" conf/local.conf; then
 
   sed -i "/^PACKAGE_CLASSES .*/c\# PACKAGE_CLASSES = \"package_deb\"" conf/local.conf
   sed -i "/^EXTRA_IMAGE_FEATURES += \"package-management\"/c\# EXTRA_IMAGE_FEATURES += \"package-management\"" conf/local.conf
+  # poky's local.conf template enables debug-tweaks, which gives root an
+  # empty password, allowed over SSH
+  sed -i "s/^EXTRA_IMAGE_FEATURES ?\?= \"debug-tweaks\"/# &/" conf/local.conf
 
   _TDX_OEROOT=$(dirname "$(pwd)")
   _TDX_BUILDDIR=$(pwd)
