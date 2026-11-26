@@ -155,6 +155,7 @@ if ! grep -q "# Torizon" conf/bblayers.conf; then
 # Torizon
 BBLAYERS += "\${OEROOT}/sources/meta-toradex-torizon"
 BBLAYERS += "\${OEROOT}/sources/meta-updater"
+BBLAYERS += "\${OEROOT}/sources/meta-lts-mixins"
 
 OEROOT := "\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)))}/../.."
 EOF

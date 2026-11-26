@@ -94,6 +94,7 @@ $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x
 ```bash
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
 $ git clone https://git.yoctoproject.org/meta-virtualization -b scarthgap
+$ git clone https://git.yoctoproject.org/meta-lts-mixins -b scarthgap/rust
 ```
   * And finally, download `meta-updater` and `meta-virtualization` dependency: 
 ```bash

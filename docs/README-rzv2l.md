@@ -12,6 +12,7 @@ $ git clone https://github.com/torizon/meta-toradex-torizon.git -b scarthgap-7.x
 3. Clone Torizon dependencies into `rz-community-bsp`
 ```
 $ git clone https://github.com/uptane/meta-updater.git -b scarthgap
+$ git clone https://git.yoctoproject.org/meta-lts-mixins -b scarthgap/rust
 $ git clone https://git.yoctoproject.org/meta-virtualization -b scarthgap
 ```
 4. Create a symlink to our `setup-environment`:
