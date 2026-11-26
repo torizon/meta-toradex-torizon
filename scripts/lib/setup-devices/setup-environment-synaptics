@@ -169,6 +169,7 @@ BBLAYERS += " \\
   ${_TDX_LAYERS_DIR}/meta-clang \\
   ${_TDX_LAYERS_DIR}/meta-lts-mixins \\
   ${_TDX_LAYERS_DIR}/meta-qt5 \\
+  ${_TDX_LAYERS_DIR}/meta-selinux \\
   ${_TDX_LAYERS_DIR}/meta-synaptics \\
   ${_TDX_LAYERS_DIR}/meta-swupdate \\
   ${_TDX_LAYERS_DIR}/meta-virtualization \\
