@@ -11,6 +11,8 @@ CFS_ALWAYS_ENABLE="${CFS_ALWAYS_ENABLE:-0}"
 SYSROOT_DIR="/sysroot"
 COMPOSEFS_NAME=".ostree.cfs"
 PREPARE_ROOT_CFG="/usr/lib/ostree/prepare-root.conf"
+# Written by the "ostreeuki" module (only present on UKI/tdx-signed setups).
+CMDLINE_EXTRA_FILE="/run/ostree/cmdline-extra"
 
 composefs_enabled() {
 	return 0
@@ -149,15 +151,25 @@ composefs_ensure_fsverity() {
 		return 1
 	fi
 
-	if [ -z "${bootparam_ostree}" ]; then
-		info "Parameter ostree= not passed in kernel cmdline"
+	# Determine deployment being booted from the kernel cmdline; when booting from a
+	# signed UKI the ostree= parameter cannot be part of the (signed) embedded cmdline,
+	# so it is resolved by the "ostreeuki" module (93-ostreeuki) into CMDLINE_EXTRA_FILE.
+	# That file only exists on setups using UKIs (i.e. tdx-signed).
+	ostree_param="${bootparam_ostree}"
+	if [ -z "${ostree_param}" ] && [ -f "${CMDLINE_EXTRA_FILE}" ]; then
+		ostree_param="$(sed -n 's/.*\bostree=\([^[:space:]]*\).*/\1/p' "${CMDLINE_EXTRA_FILE}" | tail -n 1)"
+		[ -n "${ostree_param}" ] && \
+			info "Using ostree=${ostree_param} from ${CMDLINE_EXTRA_FILE}"
+	fi
+
+	if [ -z "${ostree_param}" ]; then
+		composefs_warn "Parameter ostree= not passed in kernel cmdline"
 		return 1
 	fi
 
-	# Determine deployment being booted from kernel cmdline:
-	deployment="$(realpath -e "${SYSROOT_DIR}${bootparam_ostree}" 2>/dev/null)"
+	deployment="$(realpath -e "${SYSROOT_DIR}${ostree_param}" 2>/dev/null)"
 	if [ -z "${deployment}" ]; then
-		info "Could not determine current deployment (ostree=${bootparam_ostree})"
+		composefs_warn "Could not determine current deployment (ostree=${ostree_param})"
 		return 1
 	fi
 
