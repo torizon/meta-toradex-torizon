@@ -3,7 +3,7 @@ TDX_PURPOSE ?= "Testing"
 
 TDX_MAJOR ?= "7"
 TDX_MINOR ?= "8"
-TDX_PATCH ?= "0"
+TDX_PATCH ?= "1"
 
 def get_tdx_prerelease(purpose, datetime):
     if purpose == "Testing":
