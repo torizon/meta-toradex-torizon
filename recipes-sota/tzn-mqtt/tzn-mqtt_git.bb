@@ -22,6 +22,9 @@ LIC_FILES_CHKSUM = " \
 
 SYSTEMD_SERVICE:${PN} = "tzn-mqtt.service"
 
+# Remove -fcanon-prefix-map from CFLAGS since it's not supported by all GCC versions.
+CFLAGS:remove = "-fcanon-prefix-map"
+
 require ${BPN}-crates.inc
 
 do_install:append() {
