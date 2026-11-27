@@ -113,11 +113,20 @@ do_deploy:append:verdin-imx8mm() {
                     "${DEPLOYDIR}/u-boot-dtbs/freescale/"
 }
 
-# Key-free u-boot.dtb, for the K3 machines. With UBOOT_SIGN_ENABLE = "1",
-# oe-core's uboot-sign.bbclass injects the build's own FIT signing key into
-# u-boot.dtb in place, so no copy without it survives. TCB needs one to install
-# the user's key into, or it cannot reproduce what Yocto built. concat_dtb() is
-# where the injection happens, so a prepend there catches the file in time.
+do_deploy:append:apalis-imx8() {
+    # TCB_SIGNING_SUPPORT already requires FIT signing here, which is what
+    # leaves the snapshot behind; the second test completes the condition under
+    # which uboot_assemble_fitimage_helper() calls concat_dtb().
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" -a -n "${UBOOT_DTB_BINARY}" ]; then
+        tcbsgn_deploy_pristine_dtb
+    fi
+}
+
+# Key-free u-boot.dtb. With UBOOT_SIGN_ENABLE = "1", oe-core's uboot-sign.bbclass
+# injects the build's own FIT signing key into u-boot.dtb in place, so no copy
+# without it survives. TCB needs one to install the user's key into, or it
+# cannot reproduce what Yocto built. concat_dtb() is where the injection
+# happens, so a prepend there catches the file in time.
 
 TCB_SIGNING_UBOOT_DTB_NOKEYS ?= "${UBOOT_DTB_BINARY}-nokeys"
 
@@ -165,6 +174,13 @@ tcbsgn_deploy_pristine_dtb() {
     # symlink deploy_dtb() makes, for consumers with no binman tree to read.
     install -m 0644 "${srcdir}/${TCB_SIGNING_UBOOT_DTB_NOKEYS}" \
                     "${DEPLOYDIR}/${TCB_SIGNING_UBOOT_DTB_NOKEYS}"
+}
+
+# For the Apalis iMX8 machine, get U-Boot DTB without the kernel FIT key.
+concat_dtb:prepend:apalis-imx8() {
+    if [ "${TCB_SIGNING_SUPPORT}" = "1" ]; then
+        tcbsgn_snapshot_pristine_dtb "$@"
+    fi
 }
 
 # Gated: oe-core calls concat_dtb() for every K3 machine with FIT signing on,
