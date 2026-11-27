@@ -42,6 +42,7 @@ def is_k3_secboot_enabled(d):
 # reads comes from the globally inherited signing class, so a recipe and an
 # image resolve it the same way.
 TCB_SIGNING_SUPPORT ?= "0"
+TCB_SIGNING_SUPPORT:apalis-imx8 ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
 TCB_SIGNING_SUPPORT:verdin-imx8mp ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
 TCB_SIGNING_SUPPORT:verdin-imx8mm ?= "${@is_hab_signed_bootloader_and_fit_enabled(d)}"
 TCB_SIGNING_SUPPORT:verdin-am62 ?= "${@is_k3_secboot_and_fit_enabled(d)}"
@@ -57,12 +58,13 @@ TCB_SIGNING_SUPPORT[vardepvalue] = "${TCB_SIGNING_SUPPORT}"
 # The machines that pack a tarball. The packing recipe's COMPATIBLE_MACHINE and
 # the hold at the end of this file both derive from this list, so neither can
 # name a machine the other does not; each entry also needs a file list below.
-TCB_SIGNING_PACK_MACHINES ?= "verdin-imx8mp verdin-imx8mm verdin-am62 verdin-am62p"
+TCB_SIGNING_PACK_MACHINES ?= "verdin-imx8mp verdin-imx8mm verdin-am62 verdin-am62p apalis-imx8"
 
 # What goes into the tarball, relative to DEPLOY_DIR_IMAGE. The shell expands
 # these in that directory, so globs work and an entry matching nothing fails
 # the build rather than producing a short tarball.
 TCB_SIGNING_FILELIST ?= ""
+TCB_SIGNING_FILELIST:apalis-imx8 ?= "imx-boot-tools/head.hash imx-boot-tools/scfw_tcm.bin imx-boot-tools/mx8qmb0-ahab-container.img bl31* u-boot.dtb-nokeys u-boot-nodtb.bin"
 TCB_SIGNING_FILELIST:verdin-imx8mp ?= "uboot_config bl31* lpddr4_pmu_train_* u-boot.dtb u-boot-nodtb.bin spl/ u-boot-dtbs/"
 TCB_SIGNING_FILELIST:verdin-imx8mm ?= "uboot_config bl31* lpddr4_pmu_train_* u-boot.dtb u-boot-nodtb.bin spl/ u-boot-dtbs/"
 
@@ -75,6 +77,7 @@ TCB_SIGNING_FILELIST:verdin-am62p ?= "${TCB_SIGNING_EXPORT_DIR}/"
 # The do_deploy tasks that put those files in DEPLOY_DIR_IMAGE. Keep this in
 # step with TCB_SIGNING_FILELIST: a file packed but not depended upon is a race.
 TCB_SIGNING_INPUT_DEPENDS ?= ""
+TCB_SIGNING_INPUT_DEPENDS:apalis-imx8 ?= "virtual/bootloader ${IMX_DEFAULT_ATF_PROVIDER} ${IMX_EXTRA_FIRMWARE} imx-boot"
 TCB_SIGNING_INPUT_DEPENDS:verdin-imx8mp ?= "virtual/bootloader ${IMX_DEFAULT_ATF_PROVIDER} ${IMX_EXTRA_FIRMWARE}"
 TCB_SIGNING_INPUT_DEPENDS:verdin-imx8mm ?= "virtual/bootloader ${IMX_DEFAULT_ATF_PROVIDER} ${IMX_EXTRA_FIRMWARE}"
 
